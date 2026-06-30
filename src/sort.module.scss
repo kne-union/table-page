@@ -1,0 +1,58 @@
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+.title-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.has-sort {
+  padding-right: 2px;
+}
+
+.sort-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  height: 18px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 2px;
+  transition: background-color 200ms;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+
+    .sort-icon:not(.active) {
+      color: rgba(0, 0, 0, 0.45);
+    }
+  }
+}
+
+.sort-icon {
+  display: block;
+  font-size: 10px;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.25);
+  transition: color 200ms;
+
+  &.active {
+    color: var(--primary-color, #1677ff);
+  }
+}
+
+.sort-up {
+  margin-bottom: -2px;
+}
+
+.sort-down {
+  margin-top: -2px;
+}

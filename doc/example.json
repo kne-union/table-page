@@ -1,0 +1,115 @@
+{
+  "isFull": false,
+  "list": [
+    {
+      "title": "这里填写示例标题",
+      "description": "这里填写示例说明",
+      "code": "./base.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        }
+      ]
+    },
+    {
+      "title": "TableView",
+      "description": "表格视图组件，支持列配置、行选择、列宽设置、粘性表头等",
+      "code": "./table-view.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    },
+    {
+      "title": "Table",
+      "description": "基于 antd Table 的表格组件，与 TableView 使用一致的 columns、rowSelection 等 API",
+      "code": "./table.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    },
+    {
+      "title": "useSelectedRow",
+      "description": "行选择 Hook，配合 Table / TableView 实现多选、全选、批量操作与单选",
+      "code": "./use-selected-row.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    },
+    {
+      "title": "useSort",
+      "description": "排序 Hook，配合 Table / TableView 实现表头排序、单列/多列排序与 sortDataSource 本地排序",
+      "code": "./use-sort.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    },
+    {
+      "title": "column ellipsis",
+      "description": "列 ellipsis 配置，基于 antd Typography 实现超出省略与 tooltip 展示",
+      "code": "./column-ellipsis.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    }
+  ]
+}

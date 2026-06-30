@@ -1,0 +1,81 @@
+// Table 复用 TableView 的 class 时，覆盖 antd 表格结构与 flex 布局的冲突
+.table {
+  :global(.ant-table-wrapper) {
+    border-radius: 0;
+
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+
+  :global(.ant-table),
+  :global(.ant-table-container),
+  :global(.ant-table-content),
+  :global(.ant-table-header) {
+    border-radius: 0 !important;
+  }
+
+  :global(.ant-table-container) {
+    border: none !important;
+    border-start-start-radius: 0 !important;
+    border-start-end-radius: 0 !important;
+    border-end-start-radius: 0 !important;
+    border-end-end-radius: 0 !important;
+
+    &::before,
+    &::after {
+      border-radius: 0 !important;
+    }
+  }
+
+  :global(.ant-table) {
+    background: transparent;
+    border-radius: 0 !important;
+  }
+
+  :global(table) {
+    border-radius: 0 !important;
+  }
+
+  :global(.ant-table-thead > tr:first-child > .ant-table-cell) {
+    border-radius: 0 !important;
+  }
+
+  :global(.ant-table-thead > tr > .ant-table-cell),
+  :global(.ant-table-tbody > tr > .ant-table-cell) {
+    display: table-cell !important;
+    flex: none !important;
+    padding: 0;
+    font-weight: inherit;
+    color: inherit;
+    vertical-align: top;
+    border-inline-end: none !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  :global(.ant-table-thead > tr.info-page-table-header > .ant-table-cell) {
+    background: var(--bg-color-grey-1) !important;
+  }
+
+  :global(.ant-table-tbody > tr:last-child > .ant-table-cell) {
+    border-bottom-color: transparent !important;
+  }
+
+  :global(.ant-table-placeholder > .ant-table-cell) {
+    border: none !important;
+  }
+}
+
+.selection-col {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.radio-col {
+  width: 30px;
+}

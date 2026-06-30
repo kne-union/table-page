@@ -1,0 +1,159 @@
+### TableView
+
+表格视图组件，基于 Ant Design 的 Row/Col 布局实现，支持列配置、行选择、粘性表头等能力。
+
+#### 属性
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| dataSource | array | - | 表格数据源 |
+| columns | array | - | 列配置，见下方 columns 说明 |
+| rowKey | string \| function | `'id'` | 行唯一标识字段名或取值函数 |
+| rowSelection | object | - | 行选择配置，见下方 rowSelection 说明 |
+| placeholder | string | `'-'` | 空值占位符 |
+| emptyIsPlaceholder | boolean | `true` | 空值是否显示占位符 |
+| empty | ReactNode | `<Empty />` | 无数据时的展示内容 |
+| sticky | boolean | - | 是否启用粘性表头 |
+| headerStyle | object | - | 表头自定义样式 |
+| onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
+| render | function | - | 自定义渲染 `(props) => ReactNode`，可获取 `header` 和 `renderBody` |
+| sortRender | function | - | 排序按钮渲染，由 `useSort` 提供 |
+
+#### columns
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| name | string | - | 字段名，对应 dataSource 中的属性 |
+| title | ReactNode | - | 列标题 |
+| width | number \| string | - | 列最小宽度，支持数字（如 `50`，视为 50px）或字符串（如 `'50px'`），参与列宽计算，内容超出时会自动撑开 |
+| span | number | - | 列占比（基于 24 栅格），未设置时自动均分剩余栅格 |
+| align | string | `'top'` | 垂直对齐方式 |
+| justify | string | `'flex-start'` | 水平对齐方式 |
+| format | string \| function | - | 值格式化 |
+| render | function | - | 自定义单元格渲染 `(value, { column, dataSource, context }) => ReactNode` |
+| sort | boolean \| object | - | 是否支持排序，`{ single: true }` 为单列排序 |
+| ellipsis | boolean \| object | `false` | 超出省略，基于 antd Typography；`true` 开启省略与 tooltip，`{ showTitle: false }` 关闭 tooltip |
+| display | boolean \| function | - | 是否显示该列 |
+| emptyIsPlaceholder | boolean | - | 该列空值是否显示占位符 |
+| placeholder | string | - | 该列空值占位符 |
+| renderPlaceholder | function | - | 自定义空值渲染 |
+
+#### rowSelection
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| type | `'checkbox'` \| `'radio'` | - | 选择类型 |
+| selectedRowKeys | array | - | 已选中的行 key 列表 |
+| onChange | function | - | 选中变化回调 `(selectedRowKeys, id, { context, checked }) => void` |
+| allowSelectedAll | boolean | - | 是否允许全选（仅 checkbox 模式） |
+| isSelectedAll | boolean | - | 是否全选状态 |
+| onIsSelectAllChange | function | - | 全选状态变化回调 |
+
+### useSelectedRow
+
+行选择 Hook，用于配合 `Table` / `TableView` 的 `rowSelection`，API 参考 `@kne/components-core` 同名 Hook。
+
+#### 参数
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| rowKey | string \| function | `'id'` | 行唯一标识 |
+| type | `'checkbox'` \| `'radio'` | `'checkbox'` | 选择类型 |
+
+#### 返回值
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| selectedRowKeys | array | 已选行 key 列表 |
+| selectedRows | array | 已选行数据 |
+| onSelect | function | `(item, checked) => void` |
+| onSelectAll | function | `(checked, selected, items) => void` |
+| setSelectedRows | function | 直接设置已选行数据 |
+| setSelectedRowKeys | function | `(keys, dataSource) => void` |
+| clearSelectedRows | function | 清空选择 |
+| getRowSelection | function | `(dataSource, extra?) => rowSelection` 生成 `rowSelection` 配置 |
+
+#### 示例
+
+```jsx
+const { selectedRowKeys, getRowSelection, clearSelectedRows } = Table.useSelectedRow({ rowKey: 'id' });
+
+<Table
+  dataSource={dataSource}
+  columns={columns}
+  rowSelection={getRowSelection(dataSource)}
+/>;
+```
+
+### useSort
+
+排序 Hook，配合 `Table` / `TableView` 的 `sortRender` 实现表头排序。
+
+#### 参数
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| sort | array | - | 受控排序值 `[{ name, sort: 'ASC' \| 'DESC' }]` |
+| defaultSort | array | `[]` | 默认排序 |
+| onSortChange | function | - | 排序变化回调 `(sort) => void` |
+
+#### 返回值
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| sort | array | 当前排序配置 |
+| setSort | function | 设置排序 |
+| sortRender | function | `({ name, single }) => ReactNode`，传给 Table / TableView |
+
+#### columns.sort
+
+| 值 | 说明 |
+|----|------|
+| `true` | 开启排序，默认单列模式 |
+| `{ single: true }` | 单列排序，切换列时清除其他列 |
+| `{ single: false }` | 多列排序 |
+
+#### sortDataSource
+
+本地排序工具函数：`sortDataSource(dataSource, sort, columns)`。
+
+#### 示例
+
+```jsx
+const { sort, sortRender } = Table.useSort({ onSortChange: console.log });
+const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns), [sort, dataSource]);
+
+<Table dataSource={sortedData} columns={columns} sortRender={sortRender} />;
+```
+
+### Table
+
+表格组件，以 antd `Table` 作为展示层，外层 API 与 `TableView` 保持一致，可直接复用相同的 `columns`、`rowSelection` 等配置。此外支持透传 antd Table 的原生属性（如 `scroll`、`pagination`、`size` 等）。
+
+#### 属性
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| dataSource | array | - | 表格数据源 |
+| columns | array | - | 列配置，见 TableView 的 columns 说明 |
+| rowKey | string \| function | `'id'` | 行唯一标识字段名或取值函数 |
+| rowSelection | object | - | 行选择配置，见 TableView 的 rowSelection 说明 |
+| placeholder | string | `'-'` | 空值占位符 |
+| emptyIsPlaceholder | boolean | `true` | 空值是否显示占位符 |
+| empty | ReactNode | `<Empty />` | 无数据时的展示内容 |
+| sticky | boolean | - | 是否启用粘性表头 |
+| headerStyle | object | - | 表头自定义样式 |
+| onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
+| render | function | - | 自定义渲染 `(props) => ReactNode`，`header` 为 `null`，`renderBody` 返回 antd Table |
+| sortRender | function | - | 排序按钮渲染，由 `useSort` 提供 |
+| pagination | boolean \| object | `false` | 分页配置，默认不显示；传入对象时使用 antd 分页 |
+| ...antdTableProps | - | - | 其余属性透传给 antd `Table`（如 `scroll`、`bordered`） |
+
+#### 与 TableView 的差异
+
+| 项目 | TableView | Table |
+|------|-----------|-------|
+| 展示层 | Row/Col 自定义布局 | antd `Table` |
+| `columns.span` | 基于 24 栅格分配列宽 | 不生效，请使用 `width` |
+| 单选展示 | 右侧勾选图标 | antd 左侧 radio 列 |
+| 扩展能力 | 自定义 `render` 拆分表头/表体 | 支持 antd 原生 `scroll`、`pagination` 等 |
