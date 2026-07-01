@@ -1,15 +1,17 @@
-// Table 复用 TableView 的 class 时，覆盖 antd 表格结构与 flex 布局的冲突
+// Table 复用 TableView 视觉风格，但不覆盖 antd fixed / sticky / shadow 行为
 .table {
-  :global(.ant-table-wrapper) {
-    border-radius: 0;
+  box-sizing: border-box;
 
-    &::before,
-    &::after {
-      display: none;
-    }
+  :global(.info-page-table-body) {
+    width: 100%;
   }
 
-  :global(.ant-table),
+  :global(.ant-table-wrapper) {
+    border-radius: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
   :global(.ant-table-container),
   :global(.ant-table-content),
   :global(.ant-table-header) {
@@ -22,44 +24,79 @@
     border-start-end-radius: 0 !important;
     border-end-start-radius: 0 !important;
     border-end-end-radius: 0 !important;
-
-    &::before,
-    &::after {
-      border-radius: 0 !important;
-    }
   }
 
   :global(.ant-table) {
     background: transparent;
-    border-radius: 0 !important;
+    --ant-table-header-border-radius: 0;
   }
 
   :global(table) {
     border-radius: 0 !important;
   }
 
-  :global(.ant-table-thead > tr:first-child > .ant-table-cell) {
-    border-radius: 0 !important;
+  :global(.ant-table-header) {
+    background: var(--bg-color-grey-1) !important;
   }
 
   :global(.ant-table-thead > tr > .ant-table-cell),
   :global(.ant-table-tbody > tr > .ant-table-cell) {
-    display: table-cell !important;
-    flex: none !important;
     padding: 0;
     font-weight: inherit;
     color: inherit;
     vertical-align: top;
-    border-inline-end: none !important;
     border-bottom: 1px solid #f0f0f0 !important;
+  }
+
+  :global(.ant-table-thead > tr > .ant-table-cell:not([class*='ant-table-cell-fix'])) {
+    border-inline-end: 1px solid rgba(240, 240, 240, 0) !important;
+    border-right-color: transparent !important;
 
     &::before {
-      display: none;
+      opacity: 0 !important;
+    }
+  }
+
+  :global(.ant-table-thead > tr > .ant-table-cell[class*='ant-table-cell-fix']) {
+    &::before {
+      opacity: 0 !important;
     }
   }
 
   :global(.ant-table-thead > tr.info-page-table-header > .ant-table-cell) {
     background: var(--bg-color-grey-1) !important;
+  }
+
+  :global(.ant-table-thead > tr.info-page-table-header:first-child > .ant-table-cell:first-child) {
+    border-start-start-radius: var(--radius-default, 2px) !important;
+  }
+
+  :global(.ant-table-thead > tr.info-page-table-header:first-child > .ant-table-cell:last-child) {
+    border-start-end-radius: var(--radius-default, 2px) !important;
+  }
+
+  :global(.ant-table-tbody > tr.info-page-table-row) {
+    cursor: pointer;
+
+    &.is-selected-all {
+      cursor: not-allowed;
+      background: var(--bg-color-grey-3);
+      color: var(--font-color-grey-2);
+    }
+
+    &.is-selected {
+      background: var(--primary-color-1);
+      color: var(--primary-color);
+    }
+
+    &.is-disabled {
+      cursor: not-allowed;
+      color: var(--font-color-grey-2);
+    }
+
+    &:hover:not(.is-selected-all):not(.is-selected):not(.is-disabled) > :global(.ant-table-cell) {
+      background: var(--bg-color-grey-1);
+    }
   }
 
   :global(.ant-table-tbody > tr:last-child > .ant-table-cell) {
@@ -71,6 +108,10 @@
   }
 }
 
+.table-cell {
+  word-break: break-all;
+}
+
 .selection-col {
   width: 1%;
   white-space: nowrap;
@@ -78,4 +119,44 @@
 
 .radio-col {
   width: 30px;
+}
+
+.is-computed {
+  visibility: hidden;
+}
+
+:global(.has-config-btn) {
+  :global(.sort-btn) {
+    right: 44px;
+  }
+}
+
+.table {
+  :global(.ant-table-thead > tr > .ant-table-cell.has-config-btn) {
+    padding-right: 12px !important;
+
+    :global(.table-cell-resize-bar) {
+      right: -10px;
+    }
+  }
+
+  :global(.ant-table-thead .ant-table-cell):hover,
+  :global(.ant-table-thead .ant-table-cell.is-moving) {
+    :global(.table-cell-resize-bar) {
+      visibility: visible;
+    }
+  }
+
+  &.is-resize {
+    user-select: none;
+    cursor: col-resize;
+  }
+}
+
+.column-resize-guide {
+  position: fixed;
+  width: 0;
+  border-right: 1px dashed var(--primary-color, #1677ff);
+  pointer-events: none;
+  z-index: 100;
 }

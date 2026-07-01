@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Checkbox, Empty, Table as AntTable } from 'antd';
 import classnames from 'classnames';
 import get from 'lodash/get';
@@ -9,6 +9,8 @@ import viewStyle from '../TableView/style.module.scss';
 import style from './style.module.scss';
 import useSelectedRow from '../useSelectedRow';
 import useSort, { renderColumnTitle } from '../useSort';
+import useTableConfig from '../useTableConfig';
+import useElementWidth from '../useElementWidth';
 import { getColumnEllipsis, renderCellContent } from '../renderCellContent';
 
 const mapJustifyToAlign = justify => {
@@ -34,14 +36,30 @@ const toAntdWidth = width => {
   return parsed || width;
 };
 
+const toAntdFixed = fixed => {
+  if (fixed === 'right') {
+    return 'right';
+  }
+  if (fixed === true || fixed === 'left') {
+    return 'left';
+  }
+  return undefined;
+};
+
 const getColCellStyle = column => ({
   textAlign: mapJustifyToAlign(column.justify),
   verticalAlign: column.align === 'middle' ? 'middle' : column.align === 'bottom' ? 'bottom' : 'top'
 });
 
+const getAntCellClassName = (...extra) => classnames(style['table-cell'], 'info-page-table-col', ...extra);
+
 const wrapColContent = node => <span className={viewStyle['col-content']}>{node}</span>;
 
 const Table = p => {
+  const tableRef = useRef(null);
+  const tableWidth = useElementWidth(tableRef);
+  const [isLayout, setIsLayout] = useState(true);
+
   const props = Object.assign(
     {},
     {
@@ -49,28 +67,116 @@ const Table = p => {
       valueIsEmpty: isEmpty,
       placeholder: '-',
       emptyIsPlaceholder: true,
-      empty: <Empty />
+      empty: <Empty />,
+      controllerOpen: true
     },
     p
   );
-  const { className, dataSource, columns, rowKey, rowSelection, valueIsEmpty, emptyIsPlaceholder, placeholder, empty, onRowSelect, render, context, sticky, headerStyle, pagination = false, sortRender, ...others } = props;
+  const {
+    className,
+    dataSource,
+    columns,
+    rowKey,
+    rowSelection,
+    valueIsEmpty,
+    emptyIsPlaceholder,
+    placeholder,
+    empty,
+    onRowSelect,
+    render,
+    context,
+    sticky,
+    headerStyle,
+    pagination = false,
+    sortRender,
+    name,
+    controllerOpen,
+    tableServerApis,
+    scroll,
+    ...others
+  } = props;
+
+  useEffect(() => {
+    if (tableWidth) {
+      setTimeout(() => setIsLayout(false), 0);
+    }
+  }, [tableWidth]);
+
+  const { visibleColumns, columnsConfig, currentMoveColumnIndex, totalWidth, computedColumnProps, hasFixedColumn } = useTableConfig({
+    columns,
+    name,
+    controllerOpen,
+    tableWidth,
+    rowKey,
+    tableServerApis
+  });
+
+  const [resizeGuideStyle, setResizeGuideStyle] = useState(null);
+
+  const updateResizeGuide = useCallback(() => {
+    if (currentMoveColumnIndex === null || !tableRef.current) {
+      setResizeGuideStyle(null);
+      return;
+    }
+    const root = tableRef.current;
+    const headerCell = root.querySelector('.ant-table-thead .ant-table-cell.is-moving');
+    const tableContainer = root.querySelector('.ant-table-container');
+    if (!headerCell || !tableContainer) {
+      setResizeGuideStyle(null);
+      return;
+    }
+    const headerRect = headerCell.getBoundingClientRect();
+    const resizeBar = headerCell.querySelector('.table-cell-resize-bar');
+    const barRect = resizeBar?.getBoundingClientRect();
+    const containerRect = tableContainer.getBoundingClientRect();
+    setResizeGuideStyle({
+      position: 'fixed',
+      left: Math.round(barRect?.right ?? headerRect.right),
+      top: Math.round(containerRect.top),
+      height: Math.round(containerRect.height),
+      zIndex: 100
+    });
+  }, [currentMoveColumnIndex]);
+
+  useLayoutEffect(() => {
+    updateResizeGuide();
+  }, [updateResizeGuide, columnsConfig, tableWidth, dataSource, isLayout]);
+
+  useEffect(() => {
+    if (currentMoveColumnIndex === null) {
+      return;
+    }
+    const handleUpdate = () => updateResizeGuide();
+    window.addEventListener('mousemove', handleUpdate);
+    window.addEventListener('scroll', handleUpdate, true);
+    const resizeObserver = new ResizeObserver(handleUpdate);
+    if (tableRef.current) {
+      resizeObserver.observe(tableRef.current);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleUpdate);
+      window.removeEventListener('scroll', handleUpdate, true);
+      resizeObserver.disconnect();
+    };
+  }, [currentMoveColumnIndex, updateResizeGuide]);
 
   const antdColumns = useMemo(() => {
-    return columns.map(column => {
-      const { name, title, width, align, justify } = column;
-      return {
-        key: name,
-        dataIndex: name,
+    return visibleColumns.map((column, index) => {
+      const { name: colName, title, width, align, justify, fixed } = column;
+      const baseColumn = {
+        key: colName,
+        dataIndex: colName,
         title: <span className={viewStyle['col-content']}>{renderColumnTitle(title, column, sortRender)}</span>,
         width: toAntdWidth(width),
+        fixed: toAntdFixed(fixed),
         align: mapJustifyToAlign(justify),
         ellipsis: getColumnEllipsis(column),
         onHeaderCell: () => ({
-          className: classnames(viewStyle['col'], 'info-page-table-col'),
+          className: getAntCellClassName(),
           style: getColCellStyle(column)
         }),
         onCell: () => ({
-          className: classnames(viewStyle['col'], 'info-page-table-col'),
+          className: getAntCellClassName(),
           style: getColCellStyle(column)
         }),
         render: (_, record) => {
@@ -89,8 +195,30 @@ const Table = p => {
           return renderCellContent(computeDisplay({ column: computedColumn, placeholder, dataSource: record, context }), computedColumn, viewStyle['col-content']);
         }
       };
+
+      if (!controllerOpen) {
+        return baseColumn;
+      }
+
+      const configProps = computedColumnProps(column, index, {
+        title: <span className={viewStyle['col-content']}>{renderColumnTitle(title, column, sortRender)}</span>
+      });
+      const antdFixed = toAntdFixed(fixed);
+
+      return Object.assign({}, baseColumn, configProps, {
+        width: configProps.width,
+        fixed: antdFixed,
+        onHeaderCell: () => ({
+          className: getAntCellClassName(configProps.onHeaderCell?.().className),
+          style: getColCellStyle(column)
+        }),
+        onCell: () => ({
+          className: getAntCellClassName(configProps.onCell?.().className),
+          style: getColCellStyle(column)
+        })
+      });
     });
-  }, [columns, context, emptyIsPlaceholder, placeholder, sortRender, valueIsEmpty]);
+  }, [visibleColumns, columnsConfig, context, emptyIsPlaceholder, placeholder, sortRender, valueIsEmpty, controllerOpen, computedColumnProps, currentMoveColumnIndex]);
 
   const antdRowSelection = useMemo(() => {
     if (!rowSelection) {
@@ -101,6 +229,7 @@ const Table = p => {
 
     return {
       type: rowSelection.type === 'radio' ? 'radio' : 'checkbox',
+      ...(hasFixedColumn ? { fixed: 'left' } : {}),
       selectedRowKeys: rowSelection.isSelectedAll ? (dataSource || []).filter(item => !item.disabled).map(getRowKey) : rowSelection.selectedRowKeys,
       onChange: (selectedRowKeys, selectedRows, info) => {
         if (info.type === 'all') {
@@ -129,18 +258,28 @@ const Table = p => {
             columnTitle: rowSelection.allowSelectedAll ? checkboxNode => wrapColContent(checkboxNode) : wrapColContent(<Checkbox style={{ visibility: 'hidden' }} />),
             renderCell: (checked, record, index, originNode) => wrapColContent(originNode),
             onCell: () => ({
-              className: classnames(viewStyle['col'], style['selection-col'], 'info-page-table-col')
+              className: getAntCellClassName(style['selection-col'])
             })
           }
         : {
             columnWidth: 30,
             renderCell: (checked, record, index, originNode) => wrapColContent(originNode),
             onCell: () => ({
-              className: classnames(viewStyle['col'], style['radio-col'], 'info-page-table-col')
+              className: getAntCellClassName(style['radio-col'])
             })
           })
     };
-  }, [context, dataSource, rowKey, rowSelection]);
+  }, [context, dataSource, rowKey, rowSelection, hasFixedColumn]);
+
+  const tableScroll = useMemo(() => {
+    let x;
+    if (hasFixedColumn) {
+      x = totalWidth;
+    } else if (controllerOpen) {
+      x = Math.max(tableWidth, totalWidth);
+    }
+    return Object.assign({}, x != null ? { x } : {}, scroll);
+  }, [hasFixedColumn, controllerOpen, totalWidth, tableWidth, scroll]);
 
   const tableElement = (
     <AntTable
@@ -152,9 +291,11 @@ const Table = p => {
       rowSelection={antdRowSelection}
       pagination={pagination}
       sticky={sticky ? { offsetHeader: 0 } : undefined}
+      tableLayout={controllerOpen || hasFixedColumn ? 'fixed' : undefined}
+      scroll={tableScroll}
       onHeaderRow={() => ({
         className: classnames(viewStyle['header'], 'info-page-table-header', {
-          [viewStyle['sticky']]: sticky
+          [viewStyle['sticky']]: sticky && !hasFixedColumn
         }),
         style: headerStyle
       })}
@@ -176,7 +317,7 @@ const Table = p => {
           if (record.disabled) {
             return;
           }
-          onRowSelect && onRowSelect(record, { columns, dataSource });
+          onRowSelect && onRowSelect(record, { columns: visibleColumns, dataSource });
           if (!rowSelection || rowSelection.isSelectedAll) {
             return;
           }
@@ -196,8 +337,15 @@ const Table = p => {
   );
 
   const wrappedTable = (
-    <div className={classnames(viewStyle['table'], style['table'], 'info-page-table', className)}>
-      <div className="info-page-table-body">{tableElement}</div>
+    <div
+      ref={tableRef}
+      className={classnames(viewStyle['table'], style['table'], 'info-page-table', className, {
+        [style['is-resize']]: currentMoveColumnIndex !== null,
+        [style['is-computed']]: isLayout
+      })}
+    >
+      <div className="info-page-table-body">{!isLayout && tableElement}</div>
+      {currentMoveColumnIndex !== null && resizeGuideStyle && <span className={style['column-resize-guide']} style={resizeGuideStyle} aria-hidden />}
     </div>
   );
 

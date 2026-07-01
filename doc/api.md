@@ -147,6 +147,9 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | render | function | - | 自定义渲染 `(props) => ReactNode`，`header` 为 `null`，`renderBody` 返回 antd Table |
 | sortRender | function | - | 排序按钮渲染，由 `useSort` 提供 |
 | pagination | boolean \| object | `false` | 分页配置，默认不显示；传入对象时使用 antd 分页 |
+| name | string | - | 表格唯一标识，用于持久化列配置 |
+| controllerOpen | boolean | `true` | 是否开启列宽拖动与列配置面板 |
+| tableServerApis | object | - | 自定义列配置存储 API，默认使用 `localStorage` |
 | ...antdTableProps | - | - | 其余属性透传给 antd `Table`（如 `scroll`、`bordered`） |
 
 #### 与 TableView 的差异
@@ -156,4 +159,37 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | 展示层 | Row/Col 自定义布局 | antd `Table` |
 | `columns.span` | 基于 24 栅格分配列宽 | 不生效，请使用 `width` |
 | 单选展示 | 右侧勾选图标 | antd 左侧 radio 列 |
+| 列宽拖动 / 字段显示隐藏 | 不支持 | 支持，见下方说明 |
 | 扩展能力 | 自定义 `render` 拆分表头/表体 | 支持 antd 原生 `scroll`、`pagination` 等 |
+
+#### columns 扩展（仅 Table）
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| hidden | boolean | `false` | 默认隐藏该列，可在列配置面板中重新显示 |
+| min | number | `80` | 列最小宽度（px），拖动调整列宽时的下限，无需手动配置 |
+| max | number | `600` | 列最大宽度（px），拖动调整列宽时的上限，无需手动配置 |
+| fixed | `'left'` \| `'right'` \| boolean | - | 固定列，固定列不可隐藏或拖动排序 |
+
+#### 列宽拖动与字段显示/隐藏
+
+设置 `name` 开启列配置持久化；`controllerOpen` 控制是否显示拖动手柄与设置面板（默认 `true`）。列只需配置 `width`，`min` / `max` 有默认值（80 / 600），一般无需手动指定。
+
+```jsx
+<Table
+  name="order-list"
+  dataSource={dataSource}
+  columns={[
+    { name: 'id', title: '订单编号', width: 160, min: 120, max: 240, fixed: 'left' },
+    { name: 'customerName', title: '客户名称', width: 200, min: 140, max: 360 },
+    { name: 'remark', title: '备注', width: 200, hidden: true }
+  ]}
+/>
+```
+
+- 悬停表头列右侧拖动手柄可调整列宽
+- 点击最后一列表头设置图标可显示/隐藏列、拖拽排序
+- `hidden: true` 的列默认隐藏，可在面板中重新显示
+- `fixed` 列固定显示且不可隐藏
+
+完整示例见文档 `column config`。

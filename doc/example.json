@@ -18,7 +18,7 @@
     },
     {
       "title": "TableView",
-      "description": "表格视图组件，支持列配置、行选择、列宽设置、粘性表头等",
+      "description": "表格视图组件，支持行选择、列宽设置、粘性表头等",
       "code": "./table-view.js",
       "scope": [
         {
@@ -37,7 +37,7 @@
     },
     {
       "title": "Table",
-      "description": "基于 antd Table 的表格组件，与 TableView 使用一致的 columns、rowSelection 等 API",
+      "description": "基于 antd Table 的表格组件，支持列宽拖动、字段显示/隐藏，与 TableView 使用一致的 columns、rowSelection 等 API",
       "code": "./table.js",
       "scope": [
         {
@@ -96,6 +96,25 @@
       "title": "column ellipsis",
       "description": "列 ellipsis 配置，基于 antd Typography 实现超出省略与 tooltip 展示",
       "code": "./column-ellipsis.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    },
+    {
+      "title": "column config",
+      "description": "列宽拖动调整、显示/隐藏字段、列排序与 localStorage 持久化（仅 Table）",
+      "code": "./column-config.js",
       "scope": [
         {
           "name": "_TablePage",

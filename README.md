@@ -32,7 +32,7 @@ render(<BaseExample />);
 ```
 
 - TableView
-- 表格视图组件，支持列配置、行选择、列宽设置、粘性表头等
+- 表格视图组件，支持行选择、列宽设置、粘性表头等
 - _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd)
 
 ```jsx
@@ -199,7 +199,7 @@ render(<BaseExample />);
 ```
 
 - Table
-- 基于 antd Table 的表格组件，与 TableView 使用一致的 columns、rowSelection 等 API
+- 基于 antd Table 的表格组件，支持列宽拖动、字段显示/隐藏，与 TableView 使用一致的 columns、rowSelection 等 API
 - _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd)
 
 ```jsx
@@ -720,6 +720,122 @@ render(<BaseExample />);
 
 ```
 
+- column config
+- 列宽拖动调整、显示/隐藏字段、列排序与 localStorage 持久化（仅 Table）
+- _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd)
+
+```jsx
+const { Table } = _TablePage;
+const { Flex, Badge, Tag } = antd;
+
+const dataSource = [
+  {
+    id: 'ORD20240115001',
+    customerName: '深圳市腾讯计算机系统有限公司',
+    contact: '张三',
+    phone: '13800138000',
+    amount: 42500,
+    status: '已完成',
+    orderDate: '2024-01-15',
+    deliveryDate: '2024-01-17',
+    remark: '客户要求春节前完成交付，需协调物流加急处理。'
+  },
+  {
+    id: 'ORD20240115002',
+    customerName: '华为技术有限公司',
+    contact: '李四',
+    phone: '13900149000',
+    amount: 85000,
+    status: '处理中',
+    orderDate: '2024-01-15',
+    deliveryDate: '2024-01-20',
+    remark: '项目处于需求评审阶段，待客户确认最终配置清单。'
+  },
+  {
+    id: 'ORD20240115003',
+    customerName: '阿里巴巴集团控股有限公司',
+    contact: '王五',
+    phone: '13700157000',
+    amount: 120000,
+    status: '待发货',
+    orderDate: '2024-01-14',
+    deliveryDate: '2024-01-22',
+    remark: '已完成付款，仓库正在拣货。'
+  },
+  {
+    id: 'ORD20240115004',
+    customerName: '北京字节跳动科技有限公司',
+    contact: '赵六',
+    phone: '13600166000',
+    amount: 65000,
+    status: '已完成',
+    orderDate: '2024-01-13',
+    deliveryDate: '2024-01-16',
+    remark: '常规订单，按标准流程处理。'
+  }
+];
+
+const statusRender = value => {
+  const config = {
+    已完成: { color: 'success', text: '已完成' },
+    处理中: { color: 'processing', text: '处理中' },
+    待发货: { color: 'warning', text: '待发货' },
+    已取消: { color: 'default', text: '已取消' }
+  };
+  const { color, text } = config[value] || { color: 'default', text: value };
+  return <Badge status={color} text={text} />;
+};
+
+const columns = [
+  { name: 'id', title: '订单编号', width: 160, min: 120, max: 240, fixed: 'left' },
+  { name: 'customerName', title: '客户名称', width: 200, min: 140, max: 360 },
+  { name: 'contact', title: '联系人', width: 90, min: 70, max: 160 },
+  { name: 'phone', title: '联系电话', width: 130, min: 110, max: 180, render: value => value.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') },
+  { name: 'amount', title: '订单金额(元)', width: 130, min: 100, max: 200, render: value => <strong style={{ color: '#f5222d' }}>¥{value.toLocaleString()}</strong> },
+  { name: 'orderDate', title: '下单日期', width: 110, min: 90, max: 160, format: 'date' },
+  { name: 'deliveryDate', title: '预计送达', width: 110, min: 90, max: 160, format: 'date' },
+  { name: 'status', title: '订单状态', width: 100, min: 80, max: 140, render: statusRender },
+  { name: 'remark', title: '备注', width: 200, min: 120, max: 400, hidden: true, ellipsis: true }
+];
+
+const Tips = () => (
+  <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
+    <div>
+      <Tag color="blue">列宽拖动</Tag>
+      鼠标悬停表头列右侧，出现拖动手柄后可左右拖动调整列宽（受 <code>min</code> / <code>max</code> 约束）。仅 <code>Table</code> 组件支持。
+    </div>
+    <div>
+      <Tag color="green">显示/隐藏</Tag>
+      点击最后一列表头的 <strong>设置图标</strong>，可勾选显示或隐藏列、拖拽排序；配置通过 <code>name</code> 持久化到 localStorage。
+    </div>
+    <div>
+      <Tag color="orange">默认隐藏</Tag>
+      本示例中「备注」列设置了 <code>hidden: true</code>，可在列配置面板中重新显示。
+    </div>
+    <div>
+      <Tag color="purple">固定列</Tag>
+      「订单编号」设置了 <code>fixed: 'left'</code>，固定显示且不可隐藏。
+    </div>
+  </div>
+);
+
+const BaseExample = () => {
+  return (
+    <Flex vertical gap={24}>
+      <Tips />
+      <Table name="demo-table-column-config" controllerOpen dataSource={dataSource} columns={columns} />
+      <div>
+        <div style={{ marginBottom: 8, color: '#666' }}>关闭列配置（controllerOpen=false）</div>
+        <Table dataSource={dataSource.slice(0, 2)} columns={columns} controllerOpen={false} />
+      </div>
+    </Flex>
+  );
+};
+
+render(<BaseExample />);
+
+```
+
 ### API
 
 ### TableView
@@ -871,6 +987,9 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | render | function | - | 自定义渲染 `(props) => ReactNode`，`header` 为 `null`，`renderBody` 返回 antd Table |
 | sortRender | function | - | 排序按钮渲染，由 `useSort` 提供 |
 | pagination | boolean \| object | `false` | 分页配置，默认不显示；传入对象时使用 antd 分页 |
+| name | string | - | 表格唯一标识，用于持久化列配置 |
+| controllerOpen | boolean | `true` | 是否开启列宽拖动与列配置面板 |
+| tableServerApis | object | - | 自定义列配置存储 API，默认使用 `localStorage` |
 | ...antdTableProps | - | - | 其余属性透传给 antd `Table`（如 `scroll`、`bordered`） |
 
 #### 与 TableView 的差异
@@ -880,4 +999,37 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | 展示层 | Row/Col 自定义布局 | antd `Table` |
 | `columns.span` | 基于 24 栅格分配列宽 | 不生效，请使用 `width` |
 | 单选展示 | 右侧勾选图标 | antd 左侧 radio 列 |
+| 列宽拖动 / 字段显示隐藏 | 不支持 | 支持，见下方说明 |
 | 扩展能力 | 自定义 `render` 拆分表头/表体 | 支持 antd 原生 `scroll`、`pagination` 等 |
+
+#### columns 扩展（仅 Table）
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| hidden | boolean | `false` | 默认隐藏该列，可在列配置面板中重新显示 |
+| min | number | `80` | 列最小宽度（px），拖动调整列宽时的下限，无需手动配置 |
+| max | number | `600` | 列最大宽度（px），拖动调整列宽时的上限，无需手动配置 |
+| fixed | `'left'` \| `'right'` \| boolean | - | 固定列，固定列不可隐藏或拖动排序 |
+
+#### 列宽拖动与字段显示/隐藏
+
+设置 `name` 开启列配置持久化；`controllerOpen` 控制是否显示拖动手柄与设置面板（默认 `true`）。列只需配置 `width`，`min` / `max` 有默认值（80 / 600），一般无需手动指定。
+
+```jsx
+<Table
+  name="order-list"
+  dataSource={dataSource}
+  columns={[
+    { name: 'id', title: '订单编号', width: 160, min: 120, max: 240, fixed: 'left' },
+    { name: 'customerName', title: '客户名称', width: 200, min: 140, max: 360 },
+    { name: 'remark', title: '备注', width: 200, hidden: true }
+  ]}
+/>
+```
+
+- 悬停表头列右侧拖动手柄可调整列宽
+- 点击最后一列表头设置图标可显示/隐藏列、拖拽排序
+- `hidden: true` 的列默认隐藏，可在面板中重新显示
+- `fixed` 列固定显示且不可隐藏
+
+完整示例见文档 `column config`。

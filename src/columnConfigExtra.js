@@ -1,0 +1,1 @@
+export const TABLE_CONFIG_COLUMN_EXTRA_WIDTH = 48;
