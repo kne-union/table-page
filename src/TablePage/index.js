@@ -251,6 +251,13 @@ const TablePageInnerContent = withLocale(
       [data, fetchProps, requestParams, refresh, reload, loadMore, send, dataFormat, pagination]
     );
 
+    const tableContext = {
+      ...columnRenderProps,
+      requestParams,
+      fetchProps,
+      data
+    };
+
     const tableProps = {
       ...props,
       rowSelection,
@@ -261,12 +268,8 @@ const TablePageInnerContent = withLocale(
         [style['table-in-toolbar']]: hasToolbar
       }),
       columns: resolvedColumns,
-      columnRenderProps: {
-        ...columnRenderProps,
-        requestParams,
-        fetchProps,
-        data
-      },
+      context: tableContext,
+      columnRenderProps: tableContext,
       summary:
         typeof summary === 'function'
           ? (pageData, ...args) => {
