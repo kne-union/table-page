@@ -1,5 +1,7 @@
 const { default: TablePage, Table } = _TablePage;
-const { Table: AntTable, Flex, Badge, Tag, Button, Space } = antd;
+const { fields } = _ReactFilter;
+const { SuperSelectFilterItem } = fields;
+const { Table: AntTable, Flex, Badge, Tag, Button, Space, message } = antd;
 const { useMemo } = React;
 
 const TOTAL = 156;
@@ -26,6 +28,9 @@ const perfMap = {
   B: { color: 'warning', text: 'B' },
   C: { color: 'error', text: 'C' }
 };
+
+const departmentOptions = departments.map(item => ({ value: item, label: item }));
+const statusOptions = Object.entries(statusMap).map(([value, { text }]) => ({ value, label: text }));
 
 const buildEmployee = index => {
   const statusKeys = ['active', 'vacation', 'resigned', 'probation'];
@@ -58,7 +63,7 @@ const perfRender = value => {
 
 const columns = [
   { name: 'employeeNo', title: '工号', width: 180, min: 120, max: 240, fixed: 'left', sort: { single: true } },
-  { name: 'name', title: '姓名', width: 100, min: 80, max: 160, fixed: 'left', sort: true },
+  { name: 'name', title: '姓名', width: 100, min: 80, max: 160, sort: true },
   { name: 'department', title: '部门', width: 150, min: 120, max: 240, sort: true },
   { name: 'position', title: '职位', width: 120, min: 100, max: 200 },
   { name: 'status', title: '状态', width: 100, min: 80, max: 140, render: statusRender },
@@ -68,7 +73,29 @@ const columns = [
   { name: 'joinDate', title: '入职日期', width: 120, min: 100, max: 160, format: 'date', sort: true },
   { name: 'workYears', title: '工龄', width: 90, min: 70, max: 120, sort: true, render: value => `${value}年` },
   { name: 'salary', title: '薪资范围', width: 120, min: 100, max: 180, hidden: true },
-  { name: 'education', title: '学历', width: 90, min: 70, max: 120, hidden: true }
+  { name: 'education', title: '学历', width: 90, min: 70, max: 120, hidden: true },
+  {
+    name: 'options',
+    title: '操作',
+    renderType: 'options',
+    fixed: 'right',
+    width: 160,
+    min: 120,
+    max: 200,
+    getValueOf: item => {
+      const actions = [
+        { children: '查看', onClick: () => message.info(`查看 ${item.name}`) },
+        { children: '编辑', onClick: () => message.info(`编辑 ${item.name}`) }
+      ];
+      if (item.status !== 'resigned') {
+        actions.push({
+          children: '离职办理',
+          onClick: () => message.warning(`办理离职 ${item.name}`)
+        });
+      }
+      return actions;
+    }
+  }
 ];
 
 const sortFieldLabels = {
@@ -77,6 +104,35 @@ const sortFieldLabels = {
   department: '部门',
   joinDate: '入职日期',
   workYears: '工龄'
+};
+
+const normalizeFilterValue = value => {
+  if (value == null) {
+    return value;
+  }
+  return Array.isArray(value) ? value[0] : value;
+};
+
+const applyFilters = (employees, data, requestParams) => {
+  const params = Object.assign({}, requestParams?.data, data);
+  let result = employees;
+
+  if (params.keyword) {
+    const keyword = String(params.keyword).toLowerCase();
+    result = result.filter(item => item.employeeNo.toLowerCase().includes(keyword) || item.name.includes(params.keyword));
+  }
+
+  const department = normalizeFilterValue(params.department);
+  if (department) {
+    result = result.filter(item => item.department === department);
+  }
+
+  const status = normalizeFilterValue(params.status);
+  if (status) {
+    result = result.filter(item => item.status === status);
+  }
+
+  return result;
 };
 
 const SortState = ({ sort }) => (
@@ -105,8 +161,12 @@ const Tips = () => (
       分页器渲染在表格外侧，翻页时以 <code>reload</code> 方式请求；<code>pageSize</code> 会持久化到 localStorage。
     </div>
     <div>
+      <Tag color="gold">筛选</Tag>
+      顶部工具栏集成 <code>filter</code>、<code>search</code>、<code>batchActions</code>；筛选变化自动 <code>reload</code> 并回到第 1 页。
+    </div>
+    <div>
       <Tag color="orange">列配置</Tag>
-      设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏。
+      设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏；操作列使用 <code>renderType="options"</code> 且 <code>fixed="right"</code>。
     </div>
     <div>
       <Tag color="cyan">排序</Tag>
@@ -122,6 +182,7 @@ const Tips = () => (
 const BaseExample = () => {
   const tableRef = React.useRef();
   const allEmployees = useMemo(() => range(0, TOTAL).map(buildEmployee), []);
+  const { selectedRows, getRowSelection } = Table.useSelectedRow({ rowKey: 'id' });
   const { sort, sortRender } = Table.useSort({
     defaultSort: [{ name: 'joinDate', sort: 'DESC' }],
     onSortChange: newSort => {
@@ -158,6 +219,41 @@ const BaseExample = () => {
         name="demo-employee-table"
         sticky
         sortRender={sortRender}
+        scroll={{ x: 1600 }}
+        rowSelection={getRowSelection(allEmployees)}
+        selectedRows={selectedRows}
+        search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 220 } }}
+        filter={{
+          list: [
+            [
+              {
+                type: SuperSelectFilterItem,
+                props: { name: 'department', label: '部门', single: true, options: departmentOptions }
+              },
+              {
+                type: SuperSelectFilterItem,
+                props: { name: 'status', label: '状态', single: true, options: statusOptions }
+              }
+            ]
+          ],
+          displayLine: 1
+        }}
+        batchActions={[
+          {
+            key: 'export',
+            label: '批量导出',
+            onClick: ({ selectedRowKeys }) => {
+              message.info(`正在导出 ${selectedRowKeys.length} 名员工`);
+            }
+          },
+          {
+            key: 'notify',
+            label: '批量通知',
+            onClick: ({ selectedRowKeys }) => {
+              message.success(`已通知 ${selectedRowKeys.length} 名员工`);
+            }
+          }
+        ]}
         pagination={{
           open: true,
           pageSize: 10,
@@ -174,14 +270,15 @@ const BaseExample = () => {
           const currentPage = Number(data?.currentPage ?? requestParams?.data?.currentPage) || 1;
           const perPage = Number(data?.perPage ?? requestParams?.data?.perPage) || 20;
           const sortParams = data?.sort ?? requestParams?.data?.sort ?? [{ name: 'joinDate', sort: 'DESC' }];
-          const sortedEmployees = sortParams.length ? Table.sortDataSource(allEmployees, sortParams, columns) : allEmployees;
+          const filteredEmployees = applyFilters(allEmployees, data, requestParams);
+          const sortedEmployees = sortParams.length ? Table.sortDataSource(filteredEmployees, sortParams, columns) : filteredEmployees;
           const startIndex = (currentPage - 1) * perPage;
 
           return new Promise(resolve => {
             setTimeout(() => {
               resolve({
                 pageData: sortedEmployees.slice(startIndex, startIndex + perPage),
-                totalCount: TOTAL
+                totalCount: filteredEmployees.length
               });
             }, 400);
           });
@@ -198,7 +295,7 @@ const BaseExample = () => {
                 <AntTable.Summary.Cell index={5}>
                   <strong>{pageData.length} 人</strong>
                 </AntTable.Summary.Cell>
-                <AntTable.Summary.Cell index={6} colSpan={6}>
+                <AntTable.Summary.Cell index={6} colSpan={7}>
                   <strong>总员工数: {totalCount} 人</strong>
                 </AntTable.Summary.Cell>
               </AntTable.Summary.Row>

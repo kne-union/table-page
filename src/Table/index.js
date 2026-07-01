@@ -337,27 +337,11 @@ const Table = p => {
         });
       }}
       onRow={record => ({
-        onClick: e => {
-          if (e.target.closest('.ant-table-selection-column')) {
-            return;
-          }
+        onClick: () => {
           if (record.disabled) {
             return;
           }
           onRowSelect && onRowSelect(record, { columns: visibleColumns, dataSource });
-          if (!rowSelection || rowSelection.isSelectedAll) {
-            return;
-          }
-          const id = resolveRowKey(rowKey, record);
-          const isChecked = rowSelection.selectedRowKeys && rowSelection.selectedRowKeys.indexOf(id) > -1;
-          if (rowSelection.type === 'checkbox') {
-            const selectedRowKeys = (rowSelection.selectedRowKeys || []).slice(0);
-            isChecked ? selectedRowKeys.splice(rowSelection.selectedRowKeys.indexOf(id), 1) : selectedRowKeys.push(id);
-            rowSelection.onChange(selectedRowKeys, id, { context, checked: !isChecked });
-            return;
-          }
-          const selectedRowKeys = rowSelection.selectedRowKeys?.length && rowSelection.selectedRowKeys[0] === id ? [] : [id];
-          rowSelection.onChange(selectedRowKeys, id, { context, checked: !isChecked });
         }
       })}
     />

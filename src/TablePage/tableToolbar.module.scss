@@ -1,0 +1,193 @@
+.table-toolbar-section {
+  border-bottom: 1px solid #f0f0f0;
+
+  &.has-value-display {
+    .table-toolbar {
+      padding-bottom: 0;
+    }
+
+    .table-toolbar-value-display {
+      padding-top: 0;
+
+      :global(.filter-title),
+      :global(.filter-value-display),
+      > :global(.ant-space) {
+        border-bottom: none !important;
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+      }
+
+      :global(.filter-line) {
+        border-bottom: none !important;
+      }
+    }
+  }
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--bg-color-white, #ffffff);
+}
+
+.table-toolbar-batch,
+.table-toolbar-search {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.table-toolbar-batch-btn {
+  border: none !important;
+  box-shadow: none !important;
+  background: var(--bg-color-grey-1, #f5f5f5) !important;
+
+  &:not(:disabled):hover {
+    border: none !important;
+    background: var(--bg-color-grey-2, #f0f0f0) !important;
+    color: var(--font-color, rgba(0, 0, 0, 0.88)) !important;
+  }
+
+  &:disabled {
+    border: none !important;
+    background: var(--bg-color-grey-1, #f5f5f5) !important;
+    color: var(--font-color-grey-2, #cccccc) !important;
+  }
+}
+
+.table-toolbar-search {
+  :global(.ant-input-search) {
+    background: var(--bg-color-grey-1, #f5f5f5);
+    border-radius: var(--radius-default, 2px);
+    overflow: hidden;
+
+    :global(.ant-input-affix-wrapper),
+    :global(.ant-input) {
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+
+    :global(.ant-input-affix-wrapper:hover),
+    :global(.ant-input-affix-wrapper-focused),
+    :global(.ant-input-affix-wrapper-focused-within),
+    :global(.ant-input:hover),
+    :global(.ant-input:focus) {
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+
+    :global(.ant-input-search-btn),
+    :global(.ant-input-search-button),
+    :global(.ant-btn) {
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      color: var(--font-color-grey, #666) !important;
+
+      &:not(:disabled):hover {
+        border: none !important;
+        box-shadow: none !important;
+        background: var(--bg-color-grey-2, #f0f0f0) !important;
+        color: var(--font-color, rgba(0, 0, 0, 0.88)) !important;
+      }
+    }
+
+    :global(.ant-input-group-addon) {
+      border: none !important;
+      background: transparent !important;
+      padding: 0;
+    }
+  }
+}
+
+.table-toolbar-filter {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.table-toolbar-divider {
+  flex-shrink: 0;
+  width: 1px;
+  align-self: center;
+  height: 16px;
+  background: #f0f0f0;
+}
+
+.table-toolbar-filter-inner {
+  width: 100%;
+
+  :global(.filter-title) {
+    width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 24px !important;
+    border-bottom: none !important;
+  }
+
+  :global(.filter-title > .ant-space-item:first-child) {
+    display: none !important;
+  }
+
+  :global(.filter-label) {
+    display: none !important;
+  }
+
+  :global(.filter-list) {
+    width: 100%;
+  }
+
+  :global(.filter-line) {
+    min-height: 24px;
+    gap: 8px;
+  }
+
+  :global(.filter-item-wrap) {
+    height: 24px;
+  }
+
+  :global(.filter-item) {
+    height: 24px;
+    padding: 0 8px;
+
+    :global(.ant-space-item) {
+      line-height: 24px;
+    }
+  }
+
+  :global(.filter-item-label) {
+    line-height: 24px;
+  }
+}
+
+.table-toolbar-value-display {
+  background: var(--bg-color-white, #ffffff);
+
+  :global(.filter-value-display),
+  :global(.filter-title) {
+    padding: 0 16px 6px !important;
+    margin-top: 0 !important;
+    line-height: 22px !important;
+    border-bottom: none !important;
+    gap: 8px !important;
+  }
+
+  :global(.filter-value-display .filter-label) {
+    line-height: 22px;
+  }
+
+  :global(.filter-value-display .filter-line) {
+    min-height: 22px;
+    gap: 6px;
+  }
+
+  :global(.filter-value-tag) {
+    margin-inline-end: 0;
+  }
+}

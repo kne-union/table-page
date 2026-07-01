@@ -118,11 +118,13 @@ npm i --save @kne/table-page
 
 - TablePage
 - 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 useSort 服务端排序、列配置、总结栏等
-- _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd)
+- _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd),_ReactFilter(@kne/react-filter)[import * as _ReactFilter from "@kne/react-filter"],(@kne/react-filter/dist/index.css)
 
 ```jsx
 const { default: TablePage, Table } = _TablePage;
-const { Table: AntTable, Flex, Badge, Tag, Button, Space } = antd;
+const { fields } = _ReactFilter;
+const { SuperSelectFilterItem } = fields;
+const { Table: AntTable, Flex, Badge, Tag, Button, Space, message } = antd;
 const { useMemo } = React;
 
 const TOTAL = 156;
@@ -149,6 +151,9 @@ const perfMap = {
   B: { color: 'warning', text: 'B' },
   C: { color: 'error', text: 'C' }
 };
+
+const departmentOptions = departments.map(item => ({ value: item, label: item }));
+const statusOptions = Object.entries(statusMap).map(([value, { text }]) => ({ value, label: text }));
 
 const buildEmployee = index => {
   const statusKeys = ['active', 'vacation', 'resigned', 'probation'];
@@ -181,7 +186,7 @@ const perfRender = value => {
 
 const columns = [
   { name: 'employeeNo', title: '工号', width: 180, min: 120, max: 240, fixed: 'left', sort: { single: true } },
-  { name: 'name', title: '姓名', width: 100, min: 80, max: 160, fixed: 'left', sort: true },
+  { name: 'name', title: '姓名', width: 100, min: 80, max: 160, sort: true },
   { name: 'department', title: '部门', width: 150, min: 120, max: 240, sort: true },
   { name: 'position', title: '职位', width: 120, min: 100, max: 200 },
   { name: 'status', title: '状态', width: 100, min: 80, max: 140, render: statusRender },
@@ -191,7 +196,29 @@ const columns = [
   { name: 'joinDate', title: '入职日期', width: 120, min: 100, max: 160, format: 'date', sort: true },
   { name: 'workYears', title: '工龄', width: 90, min: 70, max: 120, sort: true, render: value => &#96;${value}年&#96; },
   { name: 'salary', title: '薪资范围', width: 120, min: 100, max: 180, hidden: true },
-  { name: 'education', title: '学历', width: 90, min: 70, max: 120, hidden: true }
+  { name: 'education', title: '学历', width: 90, min: 70, max: 120, hidden: true },
+  {
+    name: 'options',
+    title: '操作',
+    renderType: 'options',
+    fixed: 'right',
+    width: 160,
+    min: 120,
+    max: 200,
+    getValueOf: item => {
+      const actions = [
+        { children: '查看', onClick: () => message.info(&#96;查看 ${item.name}&#96;) },
+        { children: '编辑', onClick: () => message.info(&#96;编辑 ${item.name}&#96;) }
+      ];
+      if (item.status !== 'resigned') {
+        actions.push({
+          children: '离职办理',
+          onClick: () => message.warning(&#96;办理离职 ${item.name}&#96;)
+        });
+      }
+      return actions;
+    }
+  }
 ];
 
 const sortFieldLabels = {
@@ -200,6 +227,35 @@ const sortFieldLabels = {
   department: '部门',
   joinDate: '入职日期',
   workYears: '工龄'
+};
+
+const normalizeFilterValue = value => {
+  if (value == null) {
+    return value;
+  }
+  return Array.isArray(value) ? value[0] : value;
+};
+
+const applyFilters = (employees, data, requestParams) => {
+  const params = Object.assign({}, requestParams?.data, data);
+  let result = employees;
+
+  if (params.keyword) {
+    const keyword = String(params.keyword).toLowerCase();
+    result = result.filter(item => item.employeeNo.toLowerCase().includes(keyword) || item.name.includes(params.keyword));
+  }
+
+  const department = normalizeFilterValue(params.department);
+  if (department) {
+    result = result.filter(item => item.department === department);
+  }
+
+  const status = normalizeFilterValue(params.status);
+  if (status) {
+    result = result.filter(item => item.status === status);
+  }
+
+  return result;
 };
 
 const SortState = ({ sort }) => (
@@ -228,8 +284,12 @@ const Tips = () => (
       分页器渲染在表格外侧，翻页时以 <code>reload</code> 方式请求；<code>pageSize</code> 会持久化到 localStorage。
     </div>
     <div>
+      <Tag color="gold">筛选</Tag>
+      顶部工具栏集成 <code>filter</code>、<code>search</code>、<code>batchActions</code>；筛选变化自动 <code>reload</code> 并回到第 1 页。
+    </div>
+    <div>
       <Tag color="orange">列配置</Tag>
-      设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏。
+      设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏；操作列使用 <code>renderType="options"</code> 且 <code>fixed="right"</code>。
     </div>
     <div>
       <Tag color="cyan">排序</Tag>
@@ -245,6 +305,7 @@ const Tips = () => (
 const BaseExample = () => {
   const tableRef = React.useRef();
   const allEmployees = useMemo(() => range(0, TOTAL).map(buildEmployee), []);
+  const { selectedRows, getRowSelection } = Table.useSelectedRow({ rowKey: 'id' });
   const { sort, sortRender } = Table.useSort({
     defaultSort: [{ name: 'joinDate', sort: 'DESC' }],
     onSortChange: newSort => {
@@ -281,6 +342,41 @@ const BaseExample = () => {
         name="demo-employee-table"
         sticky
         sortRender={sortRender}
+        scroll={{ x: 1600 }}
+        rowSelection={getRowSelection(allEmployees)}
+        selectedRows={selectedRows}
+        search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 220 } }}
+        filter={{
+          list: [
+            [
+              {
+                type: SuperSelectFilterItem,
+                props: { name: 'department', label: '部门', single: true, options: departmentOptions }
+              },
+              {
+                type: SuperSelectFilterItem,
+                props: { name: 'status', label: '状态', single: true, options: statusOptions }
+              }
+            ]
+          ],
+          displayLine: 1
+        }}
+        batchActions={[
+          {
+            key: 'export',
+            label: '批量导出',
+            onClick: ({ selectedRowKeys }) => {
+              message.info(&#96;正在导出 ${selectedRowKeys.length} 名员工&#96;);
+            }
+          },
+          {
+            key: 'notify',
+            label: '批量通知',
+            onClick: ({ selectedRowKeys }) => {
+              message.success(&#96;已通知 ${selectedRowKeys.length} 名员工&#96;);
+            }
+          }
+        ]}
         pagination={{
           open: true,
           pageSize: 10,
@@ -297,14 +393,15 @@ const BaseExample = () => {
           const currentPage = Number(data?.currentPage ?? requestParams?.data?.currentPage) || 1;
           const perPage = Number(data?.perPage ?? requestParams?.data?.perPage) || 20;
           const sortParams = data?.sort ?? requestParams?.data?.sort ?? [{ name: 'joinDate', sort: 'DESC' }];
-          const sortedEmployees = sortParams.length ? Table.sortDataSource(allEmployees, sortParams, columns) : allEmployees;
+          const filteredEmployees = applyFilters(allEmployees, data, requestParams);
+          const sortedEmployees = sortParams.length ? Table.sortDataSource(filteredEmployees, sortParams, columns) : filteredEmployees;
           const startIndex = (currentPage - 1) * perPage;
 
           return new Promise(resolve => {
             setTimeout(() => {
               resolve({
                 pageData: sortedEmployees.slice(startIndex, startIndex + perPage),
-                totalCount: TOTAL
+                totalCount: filteredEmployees.length
               });
             }, 400);
           });
@@ -321,7 +418,7 @@ const BaseExample = () => {
                 <AntTable.Summary.Cell index={5}>
                   <strong>{pageData.length} 人</strong>
                 </AntTable.Summary.Cell>
-                <AntTable.Summary.Cell index={6} colSpan={6}>
+                <AntTable.Summary.Cell index={6} colSpan={7}>
                   <strong>总员工数: {totalCount} 人</strong>
                 </AntTable.Summary.Cell>
               </AntTable.Summary.Row>
@@ -1501,6 +1598,10 @@ render(<BaseExample />);
 | getScrollContainer | function | - | 浮动滚动条 portal 挂载容器，默认 `document.body` |
 | summary | function | - | 总结栏，回调参数包含 `data`、`requestParams`、`refresh`、`reload` 等 fetch 上下文 |
 | columnRenderProps | object | `{}` | 列渲染扩展属性，会合并进列 `render` 的 context |
+| filter | object | - | 顶部筛选器配置，基于 `@kne/react-filter` 的 `FilterLines`，见下方 |
+| search | object | - | 顶部搜索框配置，基于 `@kne/react-filter` 的 `SearchInput`，见下方 |
+| batchActions | array | - | 批量操作下拉菜单项，需配合 `rowSelection` 使用，见下方 |
+| selectedRows | array | - | 已选行数据，传给 `batchActions` 的 `onClick` 上下文 |
 | className | string | - | 自定义类名 |
 | ...fetchProps | - | - | 其余属性透传给 `@kne/react-fetch`（如 `url`、`params`、`auto` 等） |
 | ...tableProps | - | - | 其余属性透传给内部 `Table`（如 `rowKey`、`rowSelection`、`scroll`） |
@@ -1522,6 +1623,42 @@ render(<BaseExample />);
 | showTotal | function | - | 自定义总数展示 `(total) => ReactNode` |
 | onChange | function | - | 自定义翻页回调 `(page, size) => void`，传入后覆盖默认请求逻辑 |
 | onShowSizeChange | function | - | 每页条数变化回调，组件内部已处理持久化 |
+
+#### filter
+
+顶部筛选器配置，传入后会在表格上方渲染筛选行（中间区域宽度撑满）。筛选值变化时自动 `reload` 并回到第 1 页，参数通过 `getFilterValue` 合并进 `data`。
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| list | `Array<Array>` | - | 传给 `FilterLines` 的筛选项配置 |
+| displayLine | number | `1` | 默认展示行数 |
+| value | array | - | 受控筛选值 |
+| defaultValue | array | `[]` | 默认筛选值，会合并进首次请求参数 |
+| onChange | function | - | 筛选值变化回调 `(value) => void` |
+| mapFilterValue | function | - | 自定义参数转换，默认 `getFilterValue` |
+
+#### search
+
+顶部关键词搜索配置，基于 `SearchInput`，与 `filter` 共享筛选值状态。
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| name | string | - | 必填，写入筛选值的字段名 |
+| label | string | - | 已选展示标签 |
+| placeholder | string | - | 占位符 |
+| searchDelay | number | `500` | 自动提交防抖时间（毫秒） |
+
+#### batchActions
+
+批量操作下拉菜单，需配合 `rowSelection`（通常来自 `Table.useSelectedRow`）使用。
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| key | string | 菜单项 key |
+| label | string | 菜单文案 |
+| disabled | boolean | 是否禁用，默认无选中行时禁用 |
+| danger | boolean | 危险操作样式 |
+| onClick | function | `({ selectedRowKeys, selectedRows, reload, refresh, requestParams, ... }) => void` |
 
 #### ref 方法
 

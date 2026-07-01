@@ -18,6 +18,36 @@
   }
 }
 
+.table-with-toolbar {
+  border: 1px solid #f0f0f0;
+  border-radius: var(--radius-default, 2px);
+  overflow: hidden;
+
+  :global(.info-page-table) {
+    border: none;
+    border-radius: 0;
+  }
+
+  :global(.table-page-toolbar-section--has-value) + :global(.info-page-table) {
+    :global(.ant-table-thead > tr.info-page-table-header:first-child > .ant-table-cell) {
+      border-top: none !important;
+    }
+  }
+
+  :global(.ant-table-thead > tr.info-page-table-header:first-child > .ant-table-cell:first-child) {
+    border-start-start-radius: 0 !important;
+  }
+
+  :global(.ant-table-thead > tr.info-page-table-header:first-child > .ant-table-cell:last-child) {
+    border-start-end-radius: 0 !important;
+  }
+}
+
+.table-in-toolbar {
+  border: none !important;
+  border-radius: 0 !important;
+}
+
 .pagination {
   margin-top: 16px;
   display: flex;

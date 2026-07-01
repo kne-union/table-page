@@ -88,14 +88,14 @@ const TableView = p => {
         [style['is-selected']]: isChecked,
         [style['is-disabled']]: item.disabled
       });
-      const onCellClick = () => handleRowClick(item, { dataSource, context, id, isChecked });
+      const onSelectionChange = () => handleRowClick(item, { dataSource, context, id, isChecked });
       const cells = [];
 
       if (rowSelection?.type === 'checkbox') {
         cells.push(
-          <div key={`${id}__selection__`} className={classnames(style['col'], style['col-fixed'], 'info-page-table-col')} onClick={onCellClick}>
+          <div key={`${id}__selection__`} className={classnames(style['col'], style['col-fixed'], 'info-page-table-col')}>
             <span className={classnames(style['col-content'], 'info-page-table-col-content')}>
-              <Checkbox disabled={item.disabled || rowSelection.isSelectedAll} checked={(rowSelection.isSelectedAll && !item.disabled) || isChecked} />
+              <Checkbox disabled={item.disabled || rowSelection.isSelectedAll} checked={(rowSelection.isSelectedAll && !item.disabled) || isChecked} onChange={onSelectionChange} />
             </span>
           </div>
         );
@@ -115,7 +115,7 @@ const TableView = p => {
         });
 
         cells.push(
-          <div key={`${id}-${column.name}`} style={columnStyle} className={classnames(style['col'], fillRemaining ? style['col-width-fill'] : widthBased && style['col-width-based'], 'info-page-table-col')} onClick={onCellClick}>
+          <div key={`${id}-${column.name}`} style={columnStyle} className={classnames(style['col'], fillRemaining ? style['col-width-fill'] : widthBased && style['col-width-based'], 'info-page-table-col')}>
             {columnValue ? renderCellContent(computeDisplay({ column: columnValue, placeholder, dataSource: item, context }), columnValue, style['col-content']) : <span className={style['col-content']} />}
           </div>
         );
@@ -123,7 +123,7 @@ const TableView = p => {
 
       if (rowSelection?.type === 'radio') {
         cells.push(
-          <div key={`${id}__radio__`} className={classnames(style['col'], style['single-checked'], 'info-page-table-col')} onClick={onCellClick}>
+          <div key={`${id}__radio__`} className={classnames(style['col'], style['single-checked'], 'info-page-table-col')} onClick={onSelectionChange}>
             {isChecked && <CheckOutlined />}
           </div>
         );

@@ -7,6 +7,8 @@ const locale = {
   VisibleInfo: '显示的信息',
   HiddenInfo: '隐藏的信息',
   Search: '搜索',
+  BatchOperations: '批量操作',
+  BatchOperationsWithCount: '批量操作(已选:{count}条)',
   Cancel: '取消',
   Confirm: '确定'
 };

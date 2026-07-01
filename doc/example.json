@@ -17,6 +17,14 @@
         {
           "name": "antd",
           "packageName": "antd"
+        },
+        {
+          "name": "_ReactFilter",
+          "packageName": "@kne/react-filter",
+          "importStatement": "import * as _ReactFilter from \"@kne/react-filter\""
+        },
+        {
+          "packageName": "@kne/react-filter/dist/index.css"
         }
       ]
     },

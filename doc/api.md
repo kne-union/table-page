@@ -20,6 +20,10 @@
 | getScrollContainer | function | - | 浮动滚动条 portal 挂载容器，默认 `document.body` |
 | summary | function | - | 总结栏，回调参数包含 `data`、`requestParams`、`refresh`、`reload` 等 fetch 上下文 |
 | columnRenderProps | object | `{}` | 列渲染扩展属性，会合并进列 `render` 的 context |
+| filter | object | - | 顶部筛选器配置，基于 `@kne/react-filter` 的 `FilterLines`，见下方 |
+| search | object | - | 顶部搜索框配置，基于 `@kne/react-filter` 的 `SearchInput`，见下方 |
+| batchActions | array | - | 批量操作下拉菜单项，需配合 `rowSelection` 使用，见下方 |
+| selectedRows | array | - | 已选行数据，传给 `batchActions` 的 `onClick` 上下文 |
 | className | string | - | 自定义类名 |
 | ...fetchProps | - | - | 其余属性透传给 `@kne/react-fetch`（如 `url`、`params`、`auto` 等） |
 | ...tableProps | - | - | 其余属性透传给内部 `Table`（如 `rowKey`、`rowSelection`、`scroll`） |
@@ -41,6 +45,42 @@
 | showTotal | function | - | 自定义总数展示 `(total) => ReactNode` |
 | onChange | function | - | 自定义翻页回调 `(page, size) => void`，传入后覆盖默认请求逻辑 |
 | onShowSizeChange | function | - | 每页条数变化回调，组件内部已处理持久化 |
+
+#### filter
+
+顶部筛选器配置，传入后会在表格上方渲染筛选行（中间区域宽度撑满）。筛选值变化时自动 `reload` 并回到第 1 页，参数通过 `getFilterValue` 合并进 `data`。
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| list | `Array<Array>` | - | 传给 `FilterLines` 的筛选项配置 |
+| displayLine | number | `1` | 默认展示行数 |
+| value | array | - | 受控筛选值 |
+| defaultValue | array | `[]` | 默认筛选值，会合并进首次请求参数 |
+| onChange | function | - | 筛选值变化回调 `(value) => void` |
+| mapFilterValue | function | - | 自定义参数转换，默认 `getFilterValue` |
+
+#### search
+
+顶部关键词搜索配置，基于 `SearchInput`，与 `filter` 共享筛选值状态。
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| name | string | - | 必填，写入筛选值的字段名 |
+| label | string | - | 已选展示标签 |
+| placeholder | string | - | 占位符 |
+| searchDelay | number | `500` | 自动提交防抖时间（毫秒） |
+
+#### batchActions
+
+批量操作下拉菜单，需配合 `rowSelection`（通常来自 `Table.useSelectedRow`）使用。
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| key | string | 菜单项 key |
+| label | string | 菜单文案 |
+| disabled | boolean | 是否禁用，默认无选中行时禁用 |
+| danger | boolean | 危险操作样式 |
+| onClick | function | `({ selectedRowKeys, selectedRows, reload, refresh, requestParams, ... }) => void` |
 
 #### ref 方法
 

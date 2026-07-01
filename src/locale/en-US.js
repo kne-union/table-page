@@ -7,6 +7,8 @@ const locale = {
   VisibleInfo: 'Visible Columns',
   HiddenInfo: 'Hidden Columns',
   Search: 'Search',
+  BatchOperations: 'Batch Actions',
+  BatchOperationsWithCount: 'Batch Actions (Selected: {count})',
   Cancel: 'Cancel',
   Confirm: 'Confirm'
 };
