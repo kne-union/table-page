@@ -4,7 +4,11 @@ import Ellipsis from './Ellipsis';
 import ellipsisStyle from './ellipsis.module.scss';
 
 export const renderCellContent = (content, column, contentClassName) => {
-  return <span className={classnames(contentClassName, column.ellipsis && ellipsisStyle['cell-content'])}>{column.ellipsis ? <Ellipsis ellipsis={column.ellipsis}>{content}</Ellipsis> : content}</span>;
+  const wrapEllipsis = column.ellipsis && !column.ellipsisHandledByRender;
+  const needsWidthConstraint = Boolean(column.ellipsis || column.cellFullWidth);
+  const inner = wrapEllipsis ? <Ellipsis ellipsis={column.ellipsis}>{content}</Ellipsis> : content;
+
+  return <span className={contentClassName}>{needsWidthConstraint ? <span className={classnames(ellipsisStyle['cell-content'], column.cellFullWidth && ellipsisStyle['cell-full-width'])}>{inner}</span> : inner}</span>;
 };
 
 export const getColumnEllipsis = column => {

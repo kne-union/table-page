@@ -1,0 +1,26 @@
+.text {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: bottom;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hover {
+  cursor: pointer;
+  border-radius: var(--radius-default, 2px);
+  padding: 0 8px;
+
+  &:hover {
+    color: var(--primary-color, #1677ff);
+    background: var(--primary-color-1);
+  }
+}
+
+.primary {
+  color: var(--primary-color, #1677ff);
+}

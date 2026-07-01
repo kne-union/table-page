@@ -116,6 +116,25 @@
       ]
     },
     {
+      "title": "renderType",
+      "description": "列 renderType 配置，预设 main / options / enum / description 类型与 short / small / large 尺寸修饰",
+      "code": "./render-type.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    },
+    {
       "title": "column config",
       "description": "列宽拖动调整、显示/隐藏字段、列排序与 localStorage 持久化（仅 Table）",
       "code": "./column-config.js",

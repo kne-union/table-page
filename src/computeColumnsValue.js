@@ -1,5 +1,6 @@
 import get from 'lodash/get';
 import formatView from './formatView';
+import { getColumnRender } from './columnRenderType';
 
 const computeColumnsValue = ({ columns, emptyIsPlaceholder, valueIsEmpty, removeEmpty = true, dataSource, context }) => {
   return (output => (removeEmpty ? output.filter(item => !!item) : output))(
@@ -42,22 +43,26 @@ const computeColumnsValue = ({ columns, emptyIsPlaceholder, valueIsEmpty, remove
 };
 
 export const computeDisplay = ({ column, dataSource, placeholder, context }) => {
-  return column.isEmpty
-    ? typeof column.renderPlaceholder === 'function'
+  if (column.isEmpty) {
+    return typeof column.renderPlaceholder === 'function'
       ? column.renderPlaceholder({
           column: column,
           dataSource,
           placeholder,
           context
         })
-      : column.placeholder || placeholder
-    : typeof column.render === 'function'
-      ? column.render(column.value, {
-          column,
-          dataSource,
-          context
-        })
-      : column.value;
+      : column.placeholder || placeholder;
+  }
+
+  const render = getColumnRender(column);
+
+  return typeof render === 'function'
+    ? render(column.value, {
+        column,
+        dataSource,
+        context
+      })
+    : column.value;
 };
 
 export const computeColumnsDisplay = ({ columns, emptyIsPlaceholder, valueIsEmpty, removeEmpty, dataSource, placeholder, context }) => {

@@ -88,6 +88,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
+    "@kne/button-group": "^0.1.24",
     "@kne/is-empty": "^1.1.0",
     "@kne/react-fetch": "^1.5.5",
     "@kne/react-intl": "^0.1.9",

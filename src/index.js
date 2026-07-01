@@ -1,8 +1,11 @@
 export { default } from './TablePage';
-
+export { default as preset } from './preset';
+export { getTagColor, renderTagItem, renderTagList } from './renderType';
 export { default as TableView } from './TableView';
 export { default as Table } from './Table';
 export { default as useSelectedRow } from './useSelectedRow';
 export { default as useSort, sortDataSource } from './useSort';
 export { default as useTableConfig } from './useTableConfig';
 export { default as tableLocalApis } from './tableLocalApis';
+export { getColumnRender, parseRenderType, resolveRenderType, getRenderTypeNames, getRenderTypeDimensions, resolveColumnDimensions, resolveColumn, resolveColumns, isOptionsColumn, RENDER_TYPE_NAMES, SIZE_NAMES } from './columnRenderType';
+export { globalParams } from './globalParams';

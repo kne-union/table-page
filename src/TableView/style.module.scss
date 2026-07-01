@@ -5,82 +5,100 @@
   overflow: hidden;
 }
 
-.header,
-.body {
-  &:last-child {
-    .col {
-      border-color: transparent;
-    }
-  }
+.tableView {
+  overflow-x: auto;
 }
 
-.header {
+.grid {
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+}
+
+.header-cell {
+  background: var(--bg-color-grey-1);
+
   &.sticky {
     position: sticky;
     top: 0;
     z-index: 1;
   }
-
-  background: var(--bg-color-grey-1);
 }
 
-.body {
-  .col {
-    cursor: pointer;
-    word-break: break-all;
-  }
+.body-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
 
-  &.is-selected-all {
-    cursor: not-allowed;
+.body-cell {
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.body.is-selected-all {
+  cursor: not-allowed;
+  pointer-events: none;
+  color: var(--font-color-grey-2);
+
+  > .col {
     background: var(--bg-color-grey-3);
-
-    .col {
-      pointer-events: none;
-      color: var(--font-color-grey-2);
-    }
   }
+}
 
-  &.is-selected {
+.body.is-selected {
+  color: var(--primary-color);
+
+  > .col {
     background: var(--primary-color-1);
-    color: var(--primary-color);
   }
+}
 
-  &.is-disabled {
-    cursor: not-allowed;
+.body.is-disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+  color: var(--font-color-grey-2);
+}
 
-    .col {
-      pointer-events: none;
-      color: var(--font-color-grey-2);
-    }
-  }
-
-  &:hover:not(.is-selected-all):not(.is-selected):not(.is-disabled) .col {
-    background: var(--bg-color-grey-1);
-  }
+.body:hover:not(.is-selected-all):not(.is-selected):not(.is-disabled) > .col {
+  background: var(--bg-color-grey-1);
 }
 
 .col {
   border-bottom: 1px solid #f0f0f0;
   transition: background-color 300ms;
-  flex: var(--col-span) calc(1 / var(--col-span)) var(--col-width);
   overflow: hidden;
   display: flex;
-  align-items: var(--col-align);
-  justify-content: var(--col-justify);
+  align-items: var(--col-align, flex-start);
+  justify-content: var(--col-justify, flex-start);
+
+  &.col-width-based {
+    width: var(--col-width);
+    min-width: var(--col-width);
+    max-width: var(--col-width);
+  }
 }
 
 .col-content {
   padding: 8px;
-  display: inline-block;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .single-checked {
-  flex: 0 0 30px;
+  width: 30px;
+  min-width: 30px;
+  max-width: 30px;
   align-content: center;
+  justify-content: center;
 }
 
 .col-fixed {
-  flex: 0 0 auto;
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
 }
 
 .empty {

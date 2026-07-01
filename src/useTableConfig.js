@@ -14,6 +14,7 @@ import tableLocalApis from './tableLocalApis';
 import { parseColumnWidth } from './TableView/columnWidth';
 import configStyle from './columnConfig.module.scss';
 import { TABLE_CONFIG_COLUMN_EXTRA_WIDTH } from './columnConfigExtra';
+import { isOptionsColumn } from './columnRenderType';
 
 const DEFAULT_WIDTH = 160;
 const DEFAULT_MIN = 80;
@@ -127,7 +128,7 @@ const useTableConfig = ({ columns, name, controllerOpen = true, tableWidth = 0, 
   const hasFixedColumn = useMemo(() => visibleColumns.some(col => col.fixed === 'right' || col.fixed === 'left' || col.fixed === true), [visibleColumns]);
 
   const lastNotFixedColumnIndex = useMemo(() => {
-    return findLastIndex(visibleColumns, col => col.fixed !== 'right' && col.type !== 'options');
+    return findLastIndex(visibleColumns, col => col.fixed !== 'right' && !isOptionsColumn(col));
   }, [visibleColumns]);
 
   const totalWidth = useMemo(() => {

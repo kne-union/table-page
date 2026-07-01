@@ -13,6 +13,7 @@ import useTableConfig from '../useTableConfig';
 import useGroupHeader from '../useGroupHeader';
 import useElementWidth from '../useElementWidth';
 import { getColumnEllipsis, renderCellContent } from '../renderCellContent';
+import { resolveColumns } from '../columnRenderType';
 
 const mapJustifyToAlign = justify => {
   if (justify === 'center') {
@@ -76,7 +77,7 @@ const Table = p => {
   const {
     className,
     dataSource,
-    columns,
+    columns: columnsProp,
     rowKey,
     rowSelection,
     valueIsEmpty,
@@ -97,6 +98,8 @@ const Table = p => {
     summary,
     ...others
   } = props;
+
+  const columns = useMemo(() => resolveColumns(columnsProp), [columnsProp]);
 
   useEffect(() => {
     if (tableWidth) {

@@ -20,3 +20,9 @@
   width: 100%;
   min-width: 0;
 }
+
+.cell-full-width {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
