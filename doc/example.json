@@ -2,9 +2,9 @@
   "isFull": false,
   "list": [
     {
-      "title": "这里填写示例标题",
-      "description": "这里填写示例说明",
-      "code": "./base.js",
+      "title": "TablePage",
+      "description": "表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 useSort 服务端排序、列配置、总结栏等",
+      "code": "./table-page.js",
       "scope": [
         {
           "name": "_TablePage",
@@ -13,6 +13,10 @@
         },
         {
           "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
         }
       ]
     },

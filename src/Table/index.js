@@ -94,6 +94,7 @@ const Table = p => {
     controllerOpen,
     tableServerApis,
     scroll,
+    summary,
     ...others
   } = props;
 
@@ -312,6 +313,7 @@ const Table = p => {
       rowKey={typeof rowKey === 'function' ? rowKey : record => get(record, rowKey)}
       rowSelection={antdRowSelection}
       pagination={pagination}
+      summary={typeof summary === 'function' ? (pageData, ...args) => summary(pageData, ...args) : undefined}
       sticky={sticky ? { offsetHeader: 0 } : undefined}
       tableLayout={controllerOpen || hasFixedColumn ? 'fixed' : undefined}
       scroll={tableScroll}
@@ -364,7 +366,8 @@ const Table = p => {
       className={classnames(viewStyle['table'], style['table'], 'info-page-table', className, {
         [style['is-resize']]: currentMoveColumnIndex !== null,
         [style['is-computed']]: isLayout,
-        [style['has-group-header']]: hasGroupHeader
+        [style['has-group-header']]: hasGroupHeader,
+        [style['has-summary']]: typeof summary === 'function'
       })}
     >
       <div className="info-page-table-body">{!isLayout && tableElement}</div>

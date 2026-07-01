@@ -103,6 +103,21 @@
     border-bottom-color: transparent !important;
   }
 
+  &.has-summary {
+    :global(.ant-table-tbody > tr:last-child > .ant-table-cell) {
+      border-bottom-color: transparent !important;
+    }
+
+    :global(.ant-table-summary) {
+      :global(.ant-table-cell) {
+        background: var(--bg-color-grey-1, #fafafa) !important;
+        font-weight: 500;
+        border-top: none !important;
+        border-bottom-color: transparent !important;
+      }
+    }
+  }
+
   :global(.ant-table-placeholder > .ant-table-cell) {
     border: none !important;
   }

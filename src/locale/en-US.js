@@ -1,4 +1,6 @@
 const locale = {
+  TotalText: 'Total',
+  ItemText: 'items',
   UnnamedColumn: 'Unnamed',
   EditTable: 'Edit Table',
   RestoreDefault: 'Restore Default',

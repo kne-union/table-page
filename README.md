@@ -14,17 +14,221 @@ npm i --save @kne/table-page
 
 #### 示例代码
 
-- 这里填写示例标题
-- 这里填写示例说明
-- _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css)
+- TablePage
+- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 useSort 服务端排序、列配置、总结栏等
+- _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd)
 
 ```jsx
-const {default:TablePage} = _TablePage;
+const { default: TablePage, Table } = _TablePage;
+const { Table: AntTable, Flex, Badge, Tag, Button, Space } = antd;
+const { useMemo } = React;
 
-const BaseExample = ()=>{
-    return <div>
-        <TablePage />
-    </div>;
+const TOTAL = 156;
+
+const range = (start, end) => Array.from({ length: end - start }, (_, i) => start + i);
+
+const surnames = ['张', '李', '王', '刘', '陈'];
+const givenNames = ['伟', '强', '敏', '磊', '杰', '婷', '娜', '静', '丽', '娟'];
+const departments = ['技术研发部', '产品设计部', '市场营销部', '人力资源部', '财务部'];
+const positions = ['工程师', '高级工程师', '经理', '总监', '专员'];
+const educations = ['本科', '硕士', '博士', '大专'];
+const performances = ['A', 'B', 'C', 'S'];
+
+const statusMap = {
+  active: { color: 'success', text: '在职' },
+  vacation: { color: 'warning', text: '休假' },
+  resigned: { color: 'default', text: '离职' },
+  probation: { color: 'processing', text: '试用期' }
+};
+
+const perfMap = {
+  S: { color: 'success', text: 'S' },
+  A: { color: 'processing', text: 'A' },
+  B: { color: 'warning', text: 'B' },
+  C: { color: 'error', text: 'C' }
+};
+
+const buildEmployee = index => {
+  const statusKeys = ['active', 'vacation', 'resigned', 'probation'];
+  return {
+    id: &#96;EMP${String(index + 1).padStart(4, '0')}&#96;,
+    employeeNo: &#96;EMP-2024-${String(index + 1).padStart(4, '0')}&#96;,
+    name: &#96;${surnames[index % surnames.length]}${givenNames[index % givenNames.length]}&#96;,
+    department: departments[index % departments.length],
+    position: positions[index % positions.length],
+    status: statusKeys[index % statusKeys.length],
+    email: &#96;employee${index + 1}@company.com&#96;,
+    phone: &#96;138${String(index).padStart(8, '0')}&#96;,
+    joinDate: &#96;2023-${String((index % 12) + 1).padStart(2, '0')}-${String((index % 28) + 1).padStart(2, '0')}&#96;,
+    workYears: Math.floor(index / 12) + 1,
+    salary: &#96;${15 + (index % 20)}K-${20 + (index % 20)}K&#96;,
+    education: educations[index % educations.length],
+    performance: performances[index % performances.length]
+  };
+};
+
+const statusRender = value => {
+  const { color, text } = statusMap[value] || { color: 'default', text: value };
+  return <Badge status={color} text={text} />;
+};
+
+const perfRender = value => {
+  const { color, text } = perfMap[value] || { color: 'default', text: value };
+  return <Tag color={color === 'processing' ? 'blue' : color === 'success' ? 'green' : color === 'warning' ? 'orange' : color === 'error' ? 'red' : 'default'}>{text}</Tag>;
+};
+
+const columns = [
+  { name: 'employeeNo', title: '工号', width: 180, min: 120, max: 240, fixed: 'left', sort: { single: true } },
+  { name: 'name', title: '姓名', width: 100, min: 80, max: 160, fixed: 'left', sort: true },
+  { name: 'department', title: '部门', width: 150, min: 120, max: 240, sort: true },
+  { name: 'position', title: '职位', width: 120, min: 100, max: 200 },
+  { name: 'status', title: '状态', width: 100, min: 80, max: 140, render: statusRender },
+  { name: 'performance', title: '绩效', width: 80, min: 70, max: 120, render: perfRender },
+  { name: 'phone', title: '手机号', width: 140, min: 120, max: 180, render: value => value.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') },
+  { name: 'email', title: '邮箱', width: 200, min: 160, max: 320, ellipsis: true },
+  { name: 'joinDate', title: '入职日期', width: 120, min: 100, max: 160, format: 'date', sort: true },
+  { name: 'workYears', title: '工龄', width: 90, min: 70, max: 120, sort: true, render: value => &#96;${value}年&#96; },
+  { name: 'salary', title: '薪资范围', width: 120, min: 100, max: 180, hidden: true },
+  { name: 'education', title: '学历', width: 90, min: 70, max: 120, hidden: true }
+];
+
+const sortFieldLabels = {
+  employeeNo: '工号',
+  name: '姓名',
+  department: '部门',
+  joinDate: '入职日期',
+  workYears: '工龄'
+};
+
+const SortState = ({ sort }) => (
+  <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: 8, fontSize: 13 }}>
+    当前排序：
+    {sort.length ? (
+      sort.map(item => (
+        <Tag key={item.name} color="blue" style={{ marginLeft: 8 }}>
+          {sortFieldLabels[item.name] || item.name} {item.sort}
+        </Tag>
+      ))
+    ) : (
+      <span style={{ marginLeft: 8, color: '#999' }}>无</span>
+    )}
+  </div>
+);
+
+const Tips = () => (
+  <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
+    <div>
+      <Tag color="blue">数据加载</Tag>
+      通过 <code>loader</code> 模拟分页接口，请求参数为 <code>data.currentPage</code>、<code>data.perPage</code>。
+    </div>
+    <div>
+      <Tag color="green">分页</Tag>
+      分页器渲染在表格外侧，翻页时以 <code>reload</code> 方式请求；<code>pageSize</code> 会持久化到 localStorage。
+    </div>
+    <div>
+      <Tag color="orange">列配置</Tag>
+      设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏。
+    </div>
+    <div>
+      <Tag color="cyan">排序</Tag>
+      配合 <code>Table.useSort</code> 与 <code>sortRender</code>，在 <code>onSortChange</code> 中调用 <code>reload</code> 传排序参数，与翻页一样不闪烁。
+    </div>
+    <div>
+      <Tag color="purple">总结栏</Tag>
+      <code>summary</code> 回调可拿到 <code>data</code>、<code>requestParams</code> 等 fetch 上下文。
+    </div>
+  </div>
+);
+
+const BaseExample = () => {
+  const tableRef = React.useRef();
+  const allEmployees = useMemo(() => range(0, TOTAL).map(buildEmployee), []);
+  const { sort, sortRender } = Table.useSort({
+    defaultSort: [{ name: 'joinDate', sort: 'DESC' }],
+    onSortChange: newSort => {
+      tableRef.current?.reload({
+        data: { currentPage: 1, sort: newSort }
+      });
+    }
+  });
+
+  return (
+    <Flex vertical gap={16}>
+      <Tips />
+      <SortState sort={sort} />
+      <Space>
+        <Button
+          onClick={() => {
+            tableRef.current?.reload({
+              data: { currentPage: 1 }
+            });
+          }}
+        >
+          重新加载（回到第 1 页）
+        </Button>
+        <Button
+          onClick={() => {
+            tableRef.current?.refresh();
+          }}
+        >
+          刷新当前页
+        </Button>
+      </Space>
+      <TablePage
+        ref={tableRef}
+        name="demo-employee-table"
+        sticky
+        sortRender={sortRender}
+        pagination={{
+          open: true,
+          pageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          pageSizeOptions: ['10', '20', '50', '100']
+        }}
+        dataFormat={data => ({
+          list: data.pageData,
+          total: data.totalCount,
+          data
+        })}
+        loader={({ data, requestParams }) => {
+          const currentPage = Number(data?.currentPage ?? requestParams?.data?.currentPage) || 1;
+          const perPage = Number(data?.perPage ?? requestParams?.data?.perPage) || 20;
+          const sortParams = data?.sort ?? requestParams?.data?.sort ?? [{ name: 'joinDate', sort: 'DESC' }];
+          const sortedEmployees = sortParams.length ? Table.sortDataSource(allEmployees, sortParams, columns) : allEmployees;
+          const startIndex = (currentPage - 1) * perPage;
+
+          return new Promise(resolve => {
+            setTimeout(() => {
+              resolve({
+                pageData: sortedEmployees.slice(startIndex, startIndex + perPage),
+                totalCount: TOTAL
+              });
+            }, 400);
+          });
+        }}
+        columns={columns}
+        summary={({ pageData, data }) => {
+          const totalCount = data?.totalCount || 0;
+          return (
+            <AntTable.Summary fixed>
+              <AntTable.Summary.Row>
+                <AntTable.Summary.Cell index={0} colSpan={5}>
+                  <strong>当前页统计</strong>
+                </AntTable.Summary.Cell>
+                <AntTable.Summary.Cell index={5}>
+                  <strong>{pageData.length} 人</strong>
+                </AntTable.Summary.Cell>
+                <AntTable.Summary.Cell index={6} colSpan={6}>
+                  <strong>总员工数: {totalCount} 人</strong>
+                </AntTable.Summary.Cell>
+              </AntTable.Summary.Row>
+            </AntTable.Summary>
+          );
+        }}
+      />
+    </Flex>
+  );
 };
 
 render(<BaseExample />);
@@ -1042,6 +1246,97 @@ render(<BaseExample />);
 ```
 
 ### API
+
+### TablePage
+
+表格页面组件，基于 `@kne/react-fetch` 的 `withFetch` 封装数据请求逻辑，内部使用 `Table` 渲染列表，并内置分页能力。
+
+#### 属性
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| loader | function | - | 数据加载函数，参数为 fetch 请求上下文，需返回 `{ pageData, totalCount }` 或自定义结构（配合 `dataFormat`） |
+| url | string | - | 请求地址，与 `loader` 二选一，透传给 `@kne/react-fetch` |
+| data | object | - | POST 请求体，默认分页参数挂在 `data.currentPage`、`data.perPage` |
+| dataFormat | function | `(data) => ({ list: data.pageData, total: data.totalCount })` | 将接口数据转为 `{ list, total }` 供表格使用 |
+| pagination | object | 见下方 | 分页配置 |
+| name | string | - | 表格唯一标识，用于列配置持久化，同 `Table` 的 `name` |
+| columns | array \| function | - | 列配置，见 TableView 的 columns 说明；也可传入函数 `(data) => columns` |
+| getColumns | function | - | 根据接口数据动态生成列配置 |
+| sticky | boolean | - | 是否启用粘性表头，与 `Table` 一致，默认不开启 |
+| renderType | `'Table'` \| `'TableView'` | `'Table'` | 表格渲染类型 |
+| summary | function | - | 总结栏，回调参数包含 `data`、`requestParams`、`refresh`、`reload` 等 fetch 上下文 |
+| columnRenderProps | object | `{}` | 列渲染扩展属性，会合并进列 `render` 的 context |
+| className | string | - | 自定义类名 |
+| ...fetchProps | - | - | 其余属性透传给 `@kne/react-fetch`（如 `url`、`params`、`auto` 等） |
+| ...tableProps | - | - | 其余属性透传给内部 `Table`（如 `rowKey`、`rowSelection`、`scroll`） |
+
+#### pagination
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| open | boolean | `true` | 是否开启分页 |
+| paramsType | string | `'data'` | 分页参数挂载的请求参数类型 |
+| currentName | string | `'currentPage'` | 当前页参数字段名 |
+| pageSizeName | string | `'perPage'` | 每页条数字段名 |
+| requestType | `'reload'` \| `'refresh'` | `'reload'` | 翻页时的请求方式，`reload` 不切换 loading，`refresh` 会重新 loading |
+| showSizeChanger | boolean | `true` | 是否展示每页条数切换 |
+| showQuickJumper | boolean | `true` | 是否展示快速跳转 |
+| hideOnSinglePage | boolean | `false` | 仅一页时是否隐藏分页器 |
+| pageSizeOptions | array | - | 每页条数选项 |
+| pageSize | number | `20` | 默认每页条数，会持久化到 localStorage |
+| showTotal | function | - | 自定义总数展示 `(total) => ReactNode` |
+| onChange | function | - | 自定义翻页回调 `(page, size) => void`，传入后覆盖默认请求逻辑 |
+| onShowSizeChange | function | - | 每页条数变化回调，组件内部已处理持久化 |
+
+#### ref 方法
+
+通过 `ref` 可调用 `@kne/react-fetch` 暴露的方法：
+
+| 方法 | 说明 |
+|------|------|
+| reload | 重新请求，请求完成前保留当前内容 |
+| refresh | 重新请求，请求期间显示 loading |
+| setData | 直接修改当前数据 |
+| send | 发送自定义请求 |
+
+#### 与 Table 分页的差异
+
+`TablePage` 的分页器渲染在表格外侧（`antd Pagination`），不会出现在 `Table` 边框内部。表格本身始终设置 `pagination={false}`。
+
+#### renderType
+
+通过 `renderType` 选择内部使用的表格组件，默认为 `Table`：
+
+```jsx
+<TablePage renderType="TableView" loader={...} columns={...} />
+```
+
+#### 示例
+
+```jsx
+<TablePage
+  name="order-list"
+  loader={({ data }) => {
+    const { currentPage = 1, perPage = 20 } = data || {};
+    return fetchOrders({ currentPage, perPage });
+  }}
+  dataFormat={data => ({
+    list: data.pageData,
+    total: data.totalCount
+  })}
+  columns={[
+    { name: 'id', title: '订单编号', width: 160 },
+    { name: 'customerName', title: '客户名称', width: 200 }
+  ]}
+  pagination={{
+    open: true,
+    pageSizeOptions: ['10', '20', '50', '100']
+  }}
+/>
+```
+
+完整示例见文档 `TablePage`。
 
 ### TableView
 
