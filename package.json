@@ -1,7 +1,7 @@
 {
   "name": "@kne/table-page",
   "version": "0.1.0",
-  "description": "实现一个Table页面，支持列配置，筛选器，排序，批量操作等",
+  "description": "A React table page component based on Ant Design 5, supporting column config, filter, sort and batch operations.",
   "syntax": {
     "esmodules": true
   },
@@ -46,7 +46,23 @@
     "type": "git",
     "url": "git+https://github.com/kne-union/table-page.git"
   },
-  "keywords": [],
+  "keywords": [
+    "react",
+    "table",
+    "ant-design",
+    "antd",
+    "table-page",
+    "data-table",
+    "column-config",
+    "filter",
+    "sorting",
+    "pagination",
+    "batch-operations",
+    "admin",
+    "row-selection",
+    "render-type",
+    "i18n"
+  ],
   "author": "linzp",
   "license": "ISC",
   "bugs": {
