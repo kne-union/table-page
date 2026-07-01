@@ -2,7 +2,7 @@
 
 ### 描述
 
-实现一个Table页面，支持列配置，筛选器，排序，批量操作等
+A React table page component based on Ant Design 5, supporting column config, filter, sort and batch operations.
 
 ### 安装
 
