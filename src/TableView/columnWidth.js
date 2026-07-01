@@ -2,6 +2,7 @@ import { resolveColumnDimensions } from '../columnRenderType';
 
 export const SELECTION_CHECKBOX_WIDTH = 48;
 export const SELECTION_RADIO_WIDTH = 30;
+export const DEFAULT_COLUMN_WIDTH = 300;
 
 export const parseColumnWidth = width => {
   if (width == null) {
@@ -26,22 +27,58 @@ export const parseColumnWidth = width => {
 
 export const getResolvedColumnWidth = column => resolveColumnDimensions(column).width;
 
-export const hasColumnWidth = column => parseColumnWidth(getResolvedColumnWidth(column)) > 0;
+export const hasColumnSpan = column => column.span != null;
 
-export const getColumnWidthPx = (column, colsSize = {}) => {
-  const configured = parseColumnWidth(getResolvedColumnWidth(column));
+export const getConfiguredColumnWidthPx = column => parseColumnWidth(column.width != null ? column.width : getResolvedColumnWidth(column));
+
+export const usesDefaultColumnWidth = (column, columns) => {
+  if (hasColumnSpan(column)) {
+    return false;
+  }
+  if (column.width != null) {
+    return false;
+  }
+  if (getConfiguredColumnWidthPx(column) > 0) {
+    return false;
+  }
+  return !columns.some(hasColumnSpan);
+};
+
+export const hasColumnWidth = (column, columns) => {
+  if (hasColumnSpan(column)) {
+    return false;
+  }
+  if (getConfiguredColumnWidthPx(column) > 0) {
+    return true;
+  }
+  return usesDefaultColumnWidth(column, columns);
+};
+
+export const shouldLastColumnFillRemaining = columns => !columns.some(hasColumnSpan);
+
+export const getColumnWidthPx = (column, colsSize = {}, columns = []) => {
+  if (hasColumnSpan(column)) {
+    return colsSize[column.name] || 0;
+  }
+  const configured = getConfiguredColumnWidthPx(column);
   if (configured > 0) {
     return configured;
   }
-  const measured = colsSize[column.name] || 0;
-  return measured;
+  if (usesDefaultColumnWidth(column, columns)) {
+    const measured = colsSize[column.name] || 0;
+    return Math.max(DEFAULT_COLUMN_WIDTH, measured);
+  }
+  return colsSize[column.name] || 0;
 };
 
 export const formatColumnWidthPx = px => `${px}px`;
 
-export const getColumnTrackSize = (column, { defaultSpan, colsSize } = {}) => {
-  const widthPx = getColumnWidthPx(column, colsSize);
-  if (hasColumnWidth(column)) {
+export const getColumnTrackSize = (column, { defaultSpan, colsSize, isLastColumn, columns } = {}) => {
+  const widthPx = getColumnWidthPx(column, colsSize, columns);
+  if (hasColumnWidth(column, columns)) {
+    if (isLastColumn && shouldLastColumnFillRemaining(columns)) {
+      return `minmax(${widthPx}px, 1fr)`;
+    }
     return `${widthPx}px`;
   }
   if (widthPx > 0) {
@@ -53,13 +90,21 @@ export const getColumnTrackSize = (column, { defaultSpan, colsSize } = {}) => {
 
 export const getGridTemplateColumns = (columns, { defaultSpan, colsSize, rowSelection } = {}) => {
   const tracks = [];
+  const lastColumnIndex = columns.length - 1;
 
   if (rowSelection?.type === 'checkbox') {
     tracks.push(`${SELECTION_CHECKBOX_WIDTH}px`);
   }
 
-  columns.forEach(column => {
-    tracks.push(getColumnTrackSize(column, { defaultSpan, colsSize }));
+  columns.forEach((column, index) => {
+    tracks.push(
+      getColumnTrackSize(column, {
+        defaultSpan,
+        colsSize,
+        isLastColumn: index === lastColumnIndex,
+        columns
+      })
+    );
   });
 
   if (rowSelection?.type === 'radio') {
@@ -69,12 +114,14 @@ export const getGridTemplateColumns = (columns, { defaultSpan, colsSize, rowSele
   return tracks.join(' ');
 };
 
-export const getColumnLayout = (column, { defaultSpan, colsSize } = {}) => {
-  const widthBased = hasColumnWidth(column);
-  const widthPx = getColumnWidthPx(column, colsSize);
+export const getColumnLayout = (column, { defaultSpan, colsSize, isLastColumn, columns } = {}) => {
+  const widthBased = hasColumnWidth(column, columns);
+  const widthPx = getColumnWidthPx(column, colsSize, columns);
+  const fillRemaining = isLastColumn && widthBased && shouldLastColumnFillRemaining(columns);
 
   return {
     widthBased,
+    fillRemaining,
     style: {
       '--col-width': formatColumnWidthPx(widthPx),
       '--col-align': column.align || 'top',

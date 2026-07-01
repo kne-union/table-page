@@ -14,7 +14,7 @@
 | name | string | - | 表格唯一标识，用于列配置持久化，同 `Table` 的 `name` |
 | columns | array \| function | - | 列配置，见 TableView 的 columns 说明；也可传入函数 `(data) => columns` |
 | getColumns | function | - | 根据接口数据动态生成列配置 |
-| sticky | boolean | - | 是否启用粘性表头，与 `Table` 一致，默认不开启 |
+| sticky | boolean | - | 是否启用粘性表头，仅 `renderType="Table"` 时生效 |
 | renderType | `'Table'` \| `'TableView'` | `'Table'` | 表格渲染类型 |
 | horizontalScroller | boolean | `true` | 是否启用底部浮动横向滚动条（仅 `renderType="Table"` 且表格存在横向滚动时生效） |
 | getScrollContainer | function | - | 浮动滚动条 portal 挂载容器，默认 `document.body` |
@@ -93,7 +93,7 @@
 
 ### TableView
 
-表格视图组件，基于 Ant Design 的 Row/Col 布局实现，支持列配置、行选择、粘性表头等能力。
+表格视图组件，基于 Ant Design 的 Row/Col 布局实现，支持列配置、行选择等能力。
 
 #### 属性
 
@@ -106,8 +106,7 @@
 | placeholder | string | `'-'` | 空值占位符 |
 | emptyIsPlaceholder | boolean | `true` | 空值是否显示占位符 |
 | empty | ReactNode | `<Empty />` | 无数据时的展示内容 |
-| sticky | boolean | - | 是否启用粘性表头 |
-| headerStyle | object | - | 表头自定义样式 |
+| headerStyle | object | - | 表头自定义样式，仅在 `render` 自定义渲染时作用于 `header` |
 | onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
 | render | function | - | 自定义渲染 `(props) => ReactNode`，可获取 `header` 和 `renderBody` |
 | sortRender | function | - | 排序按钮渲染，由 `useSort` 提供 |

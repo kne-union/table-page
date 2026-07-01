@@ -32,12 +32,12 @@ const renderHeaderCellContent = (column, { sortRender, widthBased, setColsSize, 
   );
 };
 
-export const renderHeaderGridCells = ({ dataSource, columns, rowKey, rowSelection, colsSize, setColsSize, sticky, sortRender, defaultSpan }) => {
+export const renderHeaderGridCells = ({ dataSource, columns, rowKey, rowSelection, colsSize, setColsSize, sortRender, defaultSpan }) => {
   const cells = [];
 
   if (rowSelection?.type === 'checkbox') {
     cells.push(
-      <div key="__selection__" className={classnames(style['col'], style['col-fixed'], style['header-cell'], sticky && style['sticky'], 'info-page-table-col')}>
+      <div key="__selection__" className={classnames(style['col'], style['col-fixed'], style['header-cell'], 'info-page-table-col')}>
         <span className={classnames(style['col-content'], 'info-page-table-col-content')}>
           {rowSelection.allowSelectedAll ? (
             (() => {
@@ -74,24 +74,33 @@ export const renderHeaderGridCells = ({ dataSource, columns, rowKey, rowSelectio
     );
   }
 
-  columns.forEach(column => {
-    const { widthBased, style: columnStyle } = getColumnLayout(column, { defaultSpan, colsSize });
+  columns.forEach((column, index) => {
+    const {
+      widthBased,
+      fillRemaining,
+      style: columnStyle
+    } = getColumnLayout(column, {
+      defaultSpan,
+      colsSize,
+      isLastColumn: index === columns.length - 1,
+      columns
+    });
     cells.push(
-      <div key={column.name} style={columnStyle} className={classnames(style['col'], widthBased && style['col-width-based'], style['header-cell'], sticky && style['sticky'], 'info-page-table-col')}>
+      <div key={column.name} style={columnStyle} className={classnames(style['col'], fillRemaining ? style['col-width-fill'] : widthBased && style['col-width-based'], style['header-cell'], 'info-page-table-col')}>
         {renderHeaderCellContent(column, { sortRender, widthBased, setColsSize, defaultSpan, colsSize })}
       </div>
     );
   });
 
   if (rowSelection?.type === 'radio') {
-    cells.push(<div key="__radio__" className={classnames(style['col'], style['single-checked'], style['header-cell'], sticky && style['sticky'], 'info-page-table-col')} />);
+    cells.push(<div key="__radio__" className={classnames(style['col'], style['single-checked'], style['header-cell'], 'info-page-table-col')} />);
   }
 
   return cells;
 };
 
 const Header = p => {
-  const { dataSource, columns, rowKey, rowSelection, colsSize, setColsSize, sticky, headerStyle, sortRender, defaultSpan } = Object.assign(
+  const { dataSource, columns, rowKey, rowSelection, colsSize, setColsSize, headerStyle, sortRender, defaultSpan } = Object.assign(
     {},
     {
       rowKey: 'id'
@@ -101,7 +110,7 @@ const Header = p => {
 
   return (
     <div style={headerStyle} className={classnames(style['header'], 'info-page-table-header')}>
-      {renderHeaderGridCells({ dataSource, columns, rowKey, rowSelection, colsSize, setColsSize, sticky, sortRender, defaultSpan })}
+      {renderHeaderGridCells({ dataSource, columns, rowKey, rowSelection, colsSize, setColsSize, sortRender, defaultSpan })}
     </div>
   );
 };

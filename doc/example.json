@@ -22,7 +22,7 @@
     },
     {
       "title": "TableView",
-      "description": "表格视图组件，支持行选择、列宽设置、粘性表头等",
+      "description": "表格视图组件，支持行选择、列宽设置等",
       "code": "./table-view.js",
       "scope": [
         {

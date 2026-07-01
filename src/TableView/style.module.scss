@@ -7,6 +7,29 @@
 
 .tableView {
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 100px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.45);
+    }
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 .grid {
@@ -17,18 +40,16 @@
 
 .header-cell {
   background: var(--bg-color-grey-1);
-
-  &.sticky {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
 }
 
 .body-row {
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
+
+  &:last-child > .col {
+    border-bottom: none;
+  }
 }
 
 .body-cell {
@@ -76,6 +97,10 @@
     width: var(--col-width);
     min-width: var(--col-width);
     max-width: var(--col-width);
+  }
+
+  &.col-width-fill {
+    min-width: var(--col-width);
   }
 }
 

@@ -61,6 +61,11 @@ const SIZE_CONFIG = {
     min: 70,
     max: 400
   },
+  default: {
+    width: 300,
+    min: 160,
+    max: 500
+  },
   large: {
     width: 300,
     min: 120,

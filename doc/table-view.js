@@ -145,13 +145,6 @@ const BaseExample = () => {
       <div style={{ padding: '16px', background: '#fafafa', border: '1px dashed #d9d9d9', borderRadius: '8px' }}>
         暂无订单数据
       </div>
-      <TableView
-        style={{ height: '250px', overflowY: 'scroll' }}
-        dataSource={dataSource}
-        columns={columns}
-        sticky
-        headerStyle={{ position: 'sticky', top: 0, zIndex: 1, background: '#fafafa' }}
-      />
     </Flex>
   );
 };

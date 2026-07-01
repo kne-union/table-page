@@ -6,7 +6,7 @@ import classnames from 'classnames';
 import get from 'lodash/get';
 import computeColumnsValue, { computeDisplay } from '../computeColumnsValue';
 import { isEmpty } from '@kne/is-empty';
-import { getColumnLayout, getGridTemplateColumns } from './columnWidth';
+import { getColumnLayout, getGridTemplateColumns, hasColumnSpan, hasColumnWidth } from './columnWidth';
 import style from './style.module.scss';
 import useSelectedRow from '../useSelectedRow';
 import useSort from '../useSort';
@@ -33,9 +33,9 @@ const TableView = p => {
   const layoutColumns = useMemo(() => getLayoutColumns(columns), [columns]);
   const defaultSpan = useMemo(() => {
     const assignedSpan = layoutColumns.reduce((a, b) => a + (b.span || 0), 0);
-    const undistributedColCount = layoutColumns.filter(item => !item.span).length;
+    const undistributedColCount = layoutColumns.filter(item => !hasColumnSpan(item) && !hasColumnWidth(item, layoutColumns)).length;
 
-    return Math.round(Math.max(24 - assignedSpan, 0) / undistributedColCount);
+    return undistributedColCount > 0 ? Math.round(Math.max(24 - assignedSpan, 0) / undistributedColCount) : 1;
   }, [layoutColumns]);
 
   const gridTemplateColumns = useMemo(() => getGridTemplateColumns(layoutColumns, { defaultSpan, colsSize, rowSelection }), [layoutColumns, defaultSpan, colsSize, rowSelection]);
@@ -47,7 +47,6 @@ const TableView = p => {
     rowSelection,
     colsSize,
     setColsSize,
-    sticky,
     sortRender,
     defaultSpan
   };
@@ -102,12 +101,21 @@ const TableView = p => {
         );
       }
 
-      layoutColumns.forEach(column => {
+      layoutColumns.forEach((column, index) => {
         const columnValue = columnMap[column.name];
-        const { widthBased, style: columnStyle } = getColumnLayout(column, { defaultSpan, colsSize });
+        const {
+          widthBased,
+          fillRemaining,
+          style: columnStyle
+        } = getColumnLayout(column, {
+          defaultSpan,
+          colsSize,
+          isLastColumn: index === layoutColumns.length - 1,
+          columns: layoutColumns
+        });
 
         cells.push(
-          <div key={`${id}-${column.name}`} style={columnStyle} className={classnames(style['col'], widthBased && style['col-width-based'], 'info-page-table-col')} onClick={onCellClick}>
+          <div key={`${id}-${column.name}`} style={columnStyle} className={classnames(style['col'], fillRemaining ? style['col-width-fill'] : widthBased && style['col-width-based'], 'info-page-table-col')} onClick={onCellClick}>
             {columnValue ? renderCellContent(computeDisplay({ column: columnValue, placeholder, dataSource: item, context }), columnValue, style['col-content']) : <span className={style['col-content']} />}
           </div>
         );
