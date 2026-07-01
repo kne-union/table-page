@@ -1265,6 +1265,8 @@ render(<BaseExample />);
 | getColumns | function | - | 根据接口数据动态生成列配置 |
 | sticky | boolean | - | 是否启用粘性表头，与 `Table` 一致，默认不开启 |
 | renderType | `'Table'` \| `'TableView'` | `'Table'` | 表格渲染类型 |
+| horizontalScroller | boolean | `true` | 是否启用底部浮动横向滚动条（仅 `renderType="Table"` 且表格存在横向滚动时生效） |
+| getScrollContainer | function | - | 浮动滚动条 portal 挂载容器，默认 `document.body` |
 | summary | function | - | 总结栏，回调参数包含 `data`、`requestParams`、`refresh`、`reload` 等 fetch 上下文 |
 | columnRenderProps | object | `{}` | 列渲染扩展属性，会合并进列 `render` 的 context |
 | className | string | - | 自定义类名 |

@@ -214,7 +214,7 @@ const TablePageInnerContent = withLocale(
 
 const TablePageInner = withFetch(TablePageInnerContent);
 
-const TablePage = forwardRef(({ pagination, ...props }, ref) => {
+const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScrollContainer, ...props }, ref) => {
   pagination = Object.assign(
     {},
     {
@@ -244,6 +244,8 @@ const TablePage = forwardRef(({ pagination, ...props }, ref) => {
     <TablePageInner
       {...props}
       {...fetchParams}
+      horizontalScroller={horizontalScroller}
+      getScrollContainer={getScrollContainer}
       pagination={Object.assign({}, pagination, {
         pageSize,
         onShowSizeChange: (current, size) => {
