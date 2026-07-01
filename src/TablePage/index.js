@@ -9,6 +9,8 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from '@kne/react-intl';
 import style from './style.module.scss';
 import withLocale from '../withLocale';
+import HorizontalScroller from './HorizontalScroller';
+import { getTableElement, isTopEdgeInViewport, parsePixelValue } from './scrollUtils';
 
 const readPageSize = key => {
   try {
@@ -31,37 +33,9 @@ const writePageSize = (key, size) => {
   }
 };
 
-const getTableElement = root => {
-  if (!root) {
-    return null;
-  }
-  return root.querySelector('.info-page-table') || root;
-};
-
-const parsePixelValue = value => {
-  const num = parseFloat(value);
-  return Number.isNaN(num) ? 0 : num;
-};
-
-const findScrollableParent = element => {
-  let parent = element?.parentElement;
-  while (parent) {
-    const { overflowY } = getComputedStyle(parent);
-    if (/(auto|scroll|overlay)/.test(overflowY) && parent.scrollHeight > parent.clientHeight + 1) {
-      return parent;
-    }
-    parent = parent.parentElement;
-  }
-  return null;
-};
-
 const isTableTopInViewport = target => {
-  const rect = target.getBoundingClientRect();
   const scrollMarginTop = parsePixelValue(getComputedStyle(target).scrollMarginTop);
-  const scrollContainer = findScrollableParent(target);
-  const viewportTop = scrollContainer ? scrollContainer.getBoundingClientRect().top + scrollMarginTop : scrollMarginTop;
-  const viewportBottom = scrollContainer ? scrollContainer.getBoundingClientRect().bottom : window.innerHeight;
-  return rect.top >= viewportTop && rect.top < viewportBottom;
+  return isTopEdgeInViewport(target, scrollMarginTop);
 };
 
 const scrollTableIntoView = root => {
@@ -110,6 +84,8 @@ const TablePageInnerContent = withLocale(
     summary,
     sticky,
     renderType = 'Table',
+    horizontalScroller = true,
+    getScrollContainer,
     ...props
   }) => {
     const { formatMessage } = useIntl();
@@ -220,14 +196,16 @@ const TablePageInnerContent = withLocale(
 
     return (
       <div className={style['table-page']}>
-        <div
+        <HorizontalScroller
           ref={tableContentRef}
+          enabled={horizontalScroller && renderType === 'Table'}
+          getPortalContainer={getScrollContainer}
           className={classnames(style['table-content'], 'loading-container', {
             'is-loading': !isComplete && !data
           })}
         >
           <TableComponent {...tableProps} />
-        </div>
+        </HorizontalScroller>
         {paginationConfig ? <Pagination className={style['pagination']} {...paginationConfig} /> : null}
       </div>
     );

@@ -1,0 +1,209 @@
+import { createPortal } from 'react-dom';
+import { forwardRef, useEffect, useRef, useState } from 'react';
+import useRefCallback from '@kne/use-ref-callback';
+import classnames from 'classnames';
+import style from './style.module.scss';
+import { getTableScrollElement, getViewportRect, observeViewportIntersection, shouldShowFloatingScrollbar } from './scrollUtils';
+
+const BAR_HEIGHT = 15;
+const THUMB_MARGIN = 2;
+
+const computeBarMetrics = (scrollEl, viewportState) => {
+  const rect = scrollEl.getBoundingClientRect();
+  const viewport = getViewportRect();
+  const trackWidth = rect.width;
+  const thumbWidth = Math.max((trackWidth * scrollEl.clientWidth) / scrollEl.scrollWidth - THUMB_MARGIN * 2, 24);
+  const maxThumbOffset = trackWidth - thumbWidth - THUMB_MARGIN * 2;
+  const scrollRatio = scrollEl.scrollWidth > scrollEl.clientWidth ? scrollEl.scrollLeft / (scrollEl.scrollWidth - scrollEl.clientWidth) : 0;
+
+  return {
+    left: rect.left,
+    width: trackWidth,
+    bottom: window.innerHeight - viewport.bottom,
+    thumbWidth,
+    thumbLeft: THUMB_MARGIN + maxThumbOffset * scrollRatio,
+    visible: shouldShowFloatingScrollbar(scrollEl, viewportState)
+  };
+};
+
+const FloatingScrollBar = ({ metrics, onThumbDrag, getPortalContainer }) => {
+  const startRef = useRef(0);
+  const [moving, setMoving] = useState(false);
+  const movingRef = useRef(false);
+  const onThumbDragRef = useRef(onThumbDrag);
+  onThumbDragRef.current = onThumbDrag;
+
+  useEffect(() => {
+    movingRef.current = moving;
+  }, [moving]);
+
+  useEffect(() => {
+    const moveHandler = event => {
+      if (!movingRef.current) {
+        return;
+      }
+      onThumbDragRef.current(event.clientX - startRef.current);
+      startRef.current = event.clientX;
+    };
+    const upHandler = () => {
+      setMoving(false);
+    };
+    document.addEventListener('mousemove', moveHandler, true);
+    document.addEventListener('mouseup', upHandler, true);
+    return () => {
+      document.removeEventListener('mousemove', moveHandler, true);
+      document.removeEventListener('mouseup', upHandler, true);
+    };
+  }, []);
+
+  if (!metrics?.visible) {
+    return null;
+  }
+
+  const portalTarget = getPortalContainer?.() || document.body;
+
+  return createPortal(
+    <div
+      className={classnames(style['floating-scrollbar'], 'table-page-floating-scrollbar')}
+      style={{
+        left: metrics.left,
+        width: metrics.width,
+        height: BAR_HEIGHT,
+        bottom: metrics.bottom
+      }}
+    >
+      <div
+        className={classnames(style['floating-scrollbar-thumb'], {
+          [style['is-moving']]: moving
+        })}
+        style={{
+          width: metrics.thumbWidth,
+          left: metrics.thumbLeft
+        }}
+        onMouseDown={event => {
+          event.preventDefault();
+          startRef.current = event.clientX;
+          setMoving(true);
+        }}
+      />
+    </div>,
+    portalTarget
+  );
+};
+
+const HorizontalScroller = forwardRef(({ className, enabled = true, getPortalContainer, children }, forwardedRef) => {
+  const [metrics, setMetrics] = useState(null);
+  const containerRef = useRef(null);
+  const scrollElRef = useRef(null);
+  const viewportStateRef = useRef(null);
+
+  const setContainerRef = useRefCallback(node => {
+    containerRef.current = node;
+    if (typeof forwardedRef === 'function') {
+      forwardedRef(node);
+    } else if (forwardedRef) {
+      forwardedRef.current = node;
+    }
+  });
+
+  const updateMetrics = useRefCallback(() => {
+    const scrollEl = scrollElRef.current;
+    if (!scrollEl) {
+      setMetrics(null);
+      return;
+    }
+    setMetrics(computeBarMetrics(scrollEl, viewportStateRef.current));
+  });
+
+  const handleThumbDrag = useRefCallback(deltaX => {
+    const scrollEl = scrollElRef.current;
+    if (!scrollEl) {
+      return;
+    }
+    const trackWidth = scrollEl.clientWidth;
+    const scrollableWidth = scrollEl.scrollWidth - scrollEl.clientWidth;
+    const thumbWidth = Math.max((trackWidth * scrollEl.clientWidth) / scrollEl.scrollWidth - THUMB_MARGIN * 2, 24);
+    const thumbTravel = trackWidth - thumbWidth - THUMB_MARGIN * 2;
+    if (thumbTravel <= 0) {
+      return;
+    }
+    scrollEl.scrollLeft += (deltaX / thumbTravel) * scrollableWidth;
+    updateMetrics();
+  });
+
+  useEffect(() => {
+    if (!enabled) {
+      scrollElRef.current = null;
+      viewportStateRef.current = null;
+      setMetrics(null);
+      return undefined;
+    }
+
+    const root = containerRef.current;
+    if (!root) {
+      return undefined;
+    }
+
+    let scrollEl = null;
+    let unobserveViewport = null;
+    let contentResizeObserver = null;
+
+    const detachScrollEl = () => {
+      unobserveViewport?.();
+      unobserveViewport = null;
+      if (!scrollEl) {
+        return;
+      }
+      scrollEl.removeEventListener('scroll', updateMetrics);
+      contentResizeObserver?.disconnect();
+      contentResizeObserver = null;
+      scrollElRef.current = null;
+      viewportStateRef.current = null;
+      scrollEl = null;
+    };
+
+    const attachScrollEl = nextScrollEl => {
+      if (!nextScrollEl || nextScrollEl === scrollEl) {
+        return;
+      }
+      detachScrollEl();
+      scrollEl = nextScrollEl;
+      scrollElRef.current = scrollEl;
+      unobserveViewport = observeViewportIntersection(scrollEl, state => {
+        viewportStateRef.current = state;
+        updateMetrics();
+      });
+      scrollEl.addEventListener('scroll', updateMetrics, { passive: true });
+      contentResizeObserver = new ResizeObserver(updateMetrics);
+      contentResizeObserver.observe(scrollEl);
+      Array.from(scrollEl.children).forEach(child => {
+        contentResizeObserver.observe(child);
+      });
+    };
+
+    const onLayoutChange = () => {
+      attachScrollEl(getTableScrollElement(root));
+      updateMetrics();
+    };
+
+    const containerResizeObserver = new ResizeObserver(onLayoutChange);
+    containerResizeObserver.observe(root);
+    onLayoutChange();
+
+    return () => {
+      detachScrollEl();
+      containerResizeObserver.disconnect();
+    };
+  }, [enabled, updateMetrics]);
+
+  return (
+    <>
+      <div ref={setContainerRef} className={className}>
+        {children}
+      </div>
+      {enabled ? <FloatingScrollBar metrics={metrics} onThumbDrag={handleThumbDrag} getPortalContainer={getPortalContainer} /> : null}
+    </>
+  );
+});
+
+export default HorizontalScroller;
