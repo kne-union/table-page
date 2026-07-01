@@ -12,9 +12,7 @@ npm i --save @kne/table-page
 
 ### 概述
 
-### 概述
-
-`@kne/table-page` 是一个基于 React 和 Ant Design 的表格页面组件库，提供开箱即用的数据表格解决方案。组件库围绕表格的常见业务场景，封装了数据加载、分页、排序、行选择、列配置等能力，帮助开发者快速构建功能完善的表格管理页面。
+`@kne/table-page` 是一个基于 React 和 Ant Design 的表格页面组件库，提供开箱即用的数据表格解决方案。组件库围绕表格的常见业务场景，封装了数据加载、分页、排序、行选择、列配置、筛选搜索、批量操作等能力，帮助开发者快速构建功能完善的表格管理页面。
 
 ### 核心组件
 
@@ -26,6 +24,13 @@ npm i --save @kne/table-page
 - **`TableView` 模式**：基于 antd Row/Col 栅格布局，适合移动端或卡片式表格场景
 
 通过 `loader` 或 `url` 配置数据源，通过 `dataFormat` 适配不同的接口数据结构。分页器渲染在表格外侧，翻页默认采用 `reload` 方式（不显示全屏 loading）。
+
+同时内置了顶部工具栏（`TableToolbar`），整合筛选、搜索、批量操作三大能力：
+
+- **筛选（filter）**：基于 `@kne/react-filter` 的 `FilterLines`，支持多行多字段组合筛选，筛选值变化时自动 `reload` 并回到第 1 页
+- **搜索（search）**：基于 `@kne/react-filter` 的 `SearchInput`，支持关键词搜索与防抖自动提交，与筛选器共享筛选值状态
+- **批量操作（batchActions）**：配合 `rowSelection` 和 `useSelectedRow`，提供下拉菜单形式的批量操作（如批量导出、批量通知），未选中时自动禁用
+- **已选筛选值展示**：工具栏下方展示当前生效的筛选条件标签，支持快速清除
 
 #### Table
 
@@ -45,6 +50,7 @@ npm i --save @kne/table-page
 - CSS Grid 自动布局，内容超出时自动撑开
 - 行选择（checkbox 多选 / radio 单选）
 - 行点击事件
+- 通过 `render` 属性自定义渲染，可拆分表头和表体
 
 ### 核心 Hooks
 
