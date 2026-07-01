@@ -106,6 +106,14 @@
   :global(.ant-table-placeholder > .ant-table-cell) {
     border: none !important;
   }
+
+  &.has-group-header {
+    :global(.ant-table-thead > tr > .ant-table-cell) {
+      border-bottom: 1px solid #f0f0f0 !important;
+      border-inline-end: 1px solid #f0f0f0 !important;
+      border-right: 1px solid #f0f0f0 !important;
+    }
+  }
 }
 
 .table-cell {

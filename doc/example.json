@@ -129,6 +129,25 @@
           "packageName": "antd"
         }
       ]
+    },
+    {
+      "title": "group header",
+      "description": "分组表头（groupHeader），实现多级表头结构，可与 useSort 配合使用（仅 Table）",
+      "code": "./group-header.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
     }
   ]
 }

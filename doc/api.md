@@ -170,6 +170,18 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | min | number | `80` | 列最小宽度（px），拖动调整列宽时的下限，无需手动配置 |
 | max | number | `600` | 列最大宽度（px），拖动调整列宽时的上限，无需手动配置 |
 | fixed | `'left'` \| `'right'` \| boolean | - | 固定列，固定列不可隐藏或拖动排序 |
+| groupHeader | array | - | 分组表头配置，见下方 groupHeader 说明 |
+
+#### groupHeader
+
+在列配置中通过 `groupHeader` 声明该列所属的分组表头，支持多级嵌套。相同分组路径的列会自动合并为 antd 嵌套表头（仅 `Table` 支持，`TableView` 不生效）。
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| name | string | 分组唯一标识 |
+| title | ReactNode | 分组标题 |
+
+完整示例见文档 `group header`。
 
 #### 列宽拖动与字段显示/隐藏
 

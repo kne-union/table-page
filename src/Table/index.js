@@ -10,6 +10,7 @@ import style from './style.module.scss';
 import useSelectedRow from '../useSelectedRow';
 import useSort, { renderColumnTitle } from '../useSort';
 import useTableConfig from '../useTableConfig';
+import useGroupHeader from '../useGroupHeader';
 import useElementWidth from '../useElementWidth';
 import { getColumnEllipsis, renderCellContent } from '../renderCellContent';
 
@@ -160,8 +161,12 @@ const Table = p => {
     };
   }, [currentMoveColumnIndex, updateResizeGuide]);
 
+  const targetColumns = useMemo(() => visibleColumns.map((column, index) => Object.assign({}, column, { __index: index })), [visibleColumns]);
+
+  const { columns: groupedColumns, hasGroupHeader } = useGroupHeader(targetColumns);
+
   const antdColumns = useMemo(() => {
-    return visibleColumns.map((column, index) => {
+    const buildLeafColumn = (column, index) => {
       const { name: colName, title, width, align, justify, fixed } = column;
       const baseColumn = {
         key: colName,
@@ -217,8 +222,25 @@ const Table = p => {
           style: getColCellStyle(column)
         })
       });
-    });
-  }, [visibleColumns, columnsConfig, context, emptyIsPlaceholder, placeholder, sortRender, valueIsEmpty, controllerOpen, computedColumnProps, currentMoveColumnIndex]);
+    };
+
+    const mapColumn = column => {
+      if (column.children && column.children.length > 0) {
+        return {
+          key: column.name,
+          title: <span className={viewStyle['col-content']}>{column.title}</span>,
+          onHeaderCell: () => ({
+            className: getAntCellClassName(),
+            style: { textAlign: 'center', verticalAlign: 'middle' }
+          }),
+          children: column.children.map(mapColumn)
+        };
+      }
+      return buildLeafColumn(column, column.__index);
+    };
+
+    return groupedColumns.map(mapColumn);
+  }, [groupedColumns, context, emptyIsPlaceholder, placeholder, sortRender, valueIsEmpty, controllerOpen, computedColumnProps, currentMoveColumnIndex]);
 
   const antdRowSelection = useMemo(() => {
     if (!rowSelection) {
@@ -341,7 +363,8 @@ const Table = p => {
       ref={tableRef}
       className={classnames(viewStyle['table'], style['table'], 'info-page-table', className, {
         [style['is-resize']]: currentMoveColumnIndex !== null,
-        [style['is-computed']]: isLayout
+        [style['is-computed']]: isLayout,
+        [style['has-group-header']]: hasGroupHeader
       })}
     >
       <div className="info-page-table-body">{!isLayout && tableElement}</div>
