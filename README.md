@@ -2,7 +2,7 @@
 
 ### 描述
 
-A React table page component based on Ant Design 5, supporting column config, filter, sort and batch operations.
+A React table page component based on Ant Design, supporting column config, filter, sort and batch operations.
 
 ### 安装
 
