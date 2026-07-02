@@ -3,14 +3,17 @@ import { forwardRef, useEffect, useRef, useState } from 'react';
 import useRefCallback from '@kne/use-ref-callback';
 import classnames from 'classnames';
 import style from './style.module.scss';
-import { getTableScrollElement, getViewportRect, observeViewportIntersection, shouldShowFloatingScrollbar } from './scrollUtils';
+import { getTableScrollElement, getViewportRect, isDocumentScrollContainer, observeViewportIntersection, shouldShowFloatingScrollbar } from './scrollUtils';
 
 const BAR_HEIGHT = 15;
 const THUMB_MARGIN = 2;
 
-const computeBarMetrics = (scrollEl, viewportState) => {
+const computeBarMetrics = (scrollEl, viewportState, getPortalContainer) => {
   const rect = scrollEl.getBoundingClientRect();
+  const portalContainer = typeof getPortalContainer === 'function' ? getPortalContainer() : null;
+  const useContainerScroll = !isDocumentScrollContainer(portalContainer);
   const viewport = getViewportRect();
+  const anchorRect = useContainerScroll ? portalContainer.getBoundingClientRect() : viewport;
   const trackWidth = rect.width;
   const thumbWidth = Math.max((trackWidth * scrollEl.clientWidth) / scrollEl.scrollWidth - THUMB_MARGIN * 2, 24);
   const maxThumbOffset = trackWidth - thumbWidth - THUMB_MARGIN * 2;
@@ -19,10 +22,10 @@ const computeBarMetrics = (scrollEl, viewportState) => {
   return {
     left: rect.left,
     width: trackWidth,
-    bottom: window.innerHeight - viewport.bottom,
+    bottom: window.innerHeight - anchorRect.bottom,
     thumbWidth,
     thumbLeft: THUMB_MARGIN + maxThumbOffset * scrollRatio,
-    visible: shouldShowFloatingScrollbar(scrollEl, viewportState)
+    visible: shouldShowFloatingScrollbar(scrollEl, viewportState, getPortalContainer)
   };
 };
 
@@ -60,7 +63,7 @@ const FloatingScrollBar = ({ metrics, onThumbDrag, getPortalContainer }) => {
     return null;
   }
 
-  const portalTarget = getPortalContainer?.() || document.body;
+  const portalTarget = document.body;
 
   return createPortal(
     <div
@@ -112,7 +115,7 @@ const HorizontalScroller = forwardRef(({ className, enabled = true, getPortalCon
       setMetrics(null);
       return;
     }
-    setMetrics(computeBarMetrics(scrollEl, viewportStateRef.current));
+    setMetrics(computeBarMetrics(scrollEl, viewportStateRef.current, getPortalContainer));
   });
 
   const handleThumbDrag = useRefCallback(deltaX => {
@@ -190,11 +193,17 @@ const HorizontalScroller = forwardRef(({ className, enabled = true, getPortalCon
     containerResizeObserver.observe(root);
     onLayoutChange();
 
+    const portalContainer = typeof getPortalContainer === 'function' ? getPortalContainer() : null;
+    if (!isDocumentScrollContainer(portalContainer)) {
+      portalContainer.addEventListener('scroll', updateMetrics, { passive: true });
+    }
+
     return () => {
       detachScrollEl();
       containerResizeObserver.disconnect();
+      portalContainer?.removeEventListener('scroll', updateMetrics);
     };
-  }, [enabled, updateMetrics]);
+  }, [enabled, updateMetrics, getPortalContainer]);
 
   return (
     <>

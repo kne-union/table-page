@@ -12,7 +12,7 @@ import style from './style.module.scss';
 import withLocale from '../withLocale';
 import HorizontalScroller from './HorizontalScroller';
 import TableToolbar from './TableToolbar';
-import { getTableElement, isTopEdgeInViewport, parsePixelValue } from './scrollUtils';
+import { scrollAnchorIntoView, normalizeScrollTopInsetCSSValue, resolveScrollTopInset } from './scrollUtils';
 
 const readPageSize = key => {
   try {
@@ -33,27 +33,6 @@ const writePageSize = (key, size) => {
   } catch {
     // ignore quota errors
   }
-};
-
-const isTableTopInViewport = target => {
-  const scrollMarginTop = parsePixelValue(getComputedStyle(target).scrollMarginTop);
-  return isTopEdgeInViewport(target, scrollMarginTop);
-};
-
-const scrollTableIntoView = root => {
-  const target = getTableElement(root);
-  if (!target) {
-    return;
-  }
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if (isTableTopInViewport(target)) {
-        return;
-      }
-      target.scrollIntoView({ block: 'start', inline: 'nearest' });
-    });
-  });
 };
 
 const TABLE_COMPONENTS = {
@@ -114,6 +93,8 @@ const TablePageInnerContent = withLocale(
     columnRenderProps = {},
     summary,
     sticky,
+    scrollTopInset,
+    stickyOffset,
     renderType = 'Table',
     horizontalScroller = true,
     getScrollContainer,
@@ -164,8 +145,21 @@ const TablePageInnerContent = withLocale(
       [data, fetchProps, requestParams, refresh, reload, loadMore, send, dataFormat, pagination]
     );
 
+    const hasToolbar = !!(filter?.list?.length || (search && search.name) || (batchActions && batchActions.length));
+    const resolvedScrollTopInset = resolveScrollTopInset(scrollTopInset, stickyOffset);
+    const scrollTopInsetStyle = useMemo(() => {
+      const cssValue = normalizeScrollTopInsetCSSValue(resolvedScrollTopInset);
+      if (!cssValue) {
+        return undefined;
+      }
+      return { '--scroll-top-inset': cssValue };
+    }, [resolvedScrollTopInset]);
+
     const scrollTable = useRefCallback(() => {
-      scrollTableIntoView(tableContentRef.current);
+      scrollAnchorIntoView(tableContentRef.current, {
+        getScrollContainer,
+        preferToolbar: hasToolbar
+      });
     });
 
     const handleFilterChange = useRefCallback(value => {
@@ -224,7 +218,7 @@ const TablePageInnerContent = withLocale(
                 </>
               ),
         current: get(requestParams, [pagination.paramsType, pagination.currentName], 1),
-        pageSize: Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 20,
+        pageSize: Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 50,
         onChange: handlePaginationChange,
         size: pagination.size,
         hideOnSinglePage: pagination.hideOnSinglePage,
@@ -233,8 +227,6 @@ const TablePageInnerContent = withLocale(
         pageSizeOptions: pagination.pageSizeOptions
       };
     }, [pagination, formatData.total, requestParams, formatMessage, handlePaginationChange]);
-
-    const hasToolbar = !!(filter?.list?.length || (search && search.name) || (batchActions && batchActions.length));
 
     const batchContext = useMemo(
       () => ({
@@ -264,6 +256,7 @@ const TablePageInnerContent = withLocale(
       dataSource: formatData.list,
       pagination: false,
       sticky,
+      scrollTopInset: resolvedScrollTopInset,
       getStickyContainer: getScrollContainer,
       className: classnames(className, {
         [style['table-in-toolbar']]: hasToolbar
@@ -284,7 +277,7 @@ const TablePageInnerContent = withLocale(
     const tableElement = <TableComponent {...tableProps} />;
 
     return (
-      <div className={style['table-page']}>
+      <div className={style['table-page']} style={scrollTopInsetStyle}>
         <HorizontalScroller
           ref={tableContentRef}
           enabled={horizontalScroller && renderType === 'Table'}
@@ -322,12 +315,13 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
       requestType: 'reload',
       currentName: 'currentPage',
       pageSizeName: 'perPage',
-      pageSize: 20
+      pageSize: 50
     },
     pagination
   );
   const pageSizeKey = `${(props.name || 'common').toUpperCase()}_TABLE_PAGE_SIZE`;
-  const [pageSize, setPageSize] = useState(() => readPageSize(pageSizeKey) ?? pagination.pageSize);
+  const cachePageSize = pagination.cachePageSize !== false;
+  const [pageSize, setPageSize] = useState(() => (cachePageSize ? readPageSize(pageSizeKey) : null) ?? pagination.pageSize);
   const params = props[pagination.paramsType];
   const filterDefaultParams = useMemo(() => {
     if (!props.filter?.defaultValue?.length) {
@@ -353,7 +347,9 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
         pageSize,
         onShowSizeChange: (current, size) => {
           const nextSize = Number(size);
-          writePageSize(pageSizeKey, nextSize);
+          if (cachePageSize) {
+            writePageSize(pageSizeKey, nextSize);
+          }
           setPageSize(nextSize);
         }
       })}

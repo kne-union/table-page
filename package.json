@@ -1,6 +1,6 @@
 {
   "name": "@kne/table-page",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A React table page component based on Ant Design 5, supporting column config, filter, sort and batch operations.",
   "syntax": {
     "esmodules": true

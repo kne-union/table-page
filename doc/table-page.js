@@ -175,38 +175,40 @@ const SortState = ({ sort }) => (
   </div>
 );
 
+const TIP_TAG_STYLE = { marginRight: 8 };
+
 const Tips = () => (
   <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
     <div>
-      <Tag color="blue">数据加载</Tag>
+      <Tag style={TIP_TAG_STYLE} color="blue">数据加载</Tag>
       通过 <code>loader</code> 模拟分页接口，请求参数为 <code>data.currentPage</code>、<code>data.perPage</code>。
     </div>
     <div>
-      <Tag color="green">分页</Tag>
+      <Tag style={TIP_TAG_STYLE} color="green">分页</Tag>
       分页器渲染在表格外侧，翻页时以 <code>reload</code> 方式请求；<code>pageSize</code> 会持久化到 localStorage。
     </div>
     <div>
-      <Tag color="gold">筛选</Tag>
+      <Tag style={TIP_TAG_STYLE} color="gold">筛选</Tag>
       顶部工具栏集成 <code>filter</code>、<code>search</code>、<code>batchActions</code>；筛选变化自动 <code>reload</code> 并回到第 1 页。
     </div>
     <div>
-      <Tag color="orange">列配置</Tag>
+      <Tag style={TIP_TAG_STYLE} color="orange">列配置</Tag>
       设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏；状态列使用 <code>renderType="status"</code>，绩效列使用 <code>renderType="tag"</code>，操作列使用 <code>renderType="options"</code> 且 <code>fixed="right"</code>。
     </div>
     <div>
-      <Tag color="cyan">排序</Tag>
+      <Tag style={TIP_TAG_STYLE} color="cyan">排序</Tag>
       配合 <code>Table.useSort</code> 与 <code>sortRender</code>，在 <code>onSortChange</code> 中调用 <code>reload</code> 传排序参数，与翻页一样不闪烁。
     </div>
     <div>
-      <Tag color="geekblue">固定表头</Tag>
+      <Tag style={TIP_TAG_STYLE} color="geekblue">固定表头</Tag>
       设置 <code>sticky</code> 与 <code>scroll.y</code>，表体在固定高度内滚动时表头保持可见；横向滚动配合 <code>scroll.x</code>。
     </div>
     <div>
-      <Tag color="magenta">单元格点击</Tag>
+      <Tag style={TIP_TAG_STYLE} color="magenta">单元格点击</Tag>
       列配置 <code>onClick</code>（配合 <code>renderType="main"</code>、<code>primary</code> / <code>hover</code>），仅可点击单元格 hover 时显示手型；工号列同步演示异步点击 loading。
     </div>
     <div>
-      <Tag color="purple">总结栏</Tag>
+      <Tag style={TIP_TAG_STYLE} color="purple">总结栏</Tag>
       <code>summary</code> 回调可拿到 <code>data</code>、<code>requestParams</code> 等 fetch 上下文。
     </div>
   </div>

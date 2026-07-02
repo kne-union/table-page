@@ -29,6 +29,33 @@
       ]
     },
     {
+      "title": "TablePage sticky scroll",
+      "description": "自包含演示区：sticky + getScrollContainer 由区内页面滚动触发表头吸顶（非 scroll.y）；模拟导航在区内 sticky，不遮挡文档站顶栏",
+      "code": "./table-page-sticky-scroll.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        },
+        {
+          "name": "_ReactFilter",
+          "packageName": "@kne/react-filter",
+          "importStatement": "import * as _ReactFilter from \"@kne/react-filter\""
+        },
+        {
+          "packageName": "@kne/react-filter/dist/index.css"
+        }
+      ]
+    },
+    {
       "title": "TableView",
       "description": "表格视图组件，支持行选择、列宽设置等",
       "code": "./table-view.js",

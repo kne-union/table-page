@@ -15,6 +15,7 @@ import useGroupHeader from '../useGroupHeader';
 import useElementWidth from '../useElementWidth';
 import { getColumnEllipsis, renderCellContent } from '../renderCellContent';
 import { resolveColumns } from '../columnRenderType';
+import { normalizeScrollTopInsetCSSValue, parseInsetPixels, resolveScrollTopInset } from '../TablePage/scrollUtils';
 
 const mapJustifyToAlign = justify => {
   if (justify === 'center') {
@@ -89,6 +90,7 @@ const Table = p => {
     render,
     context,
     sticky,
+    scrollTopInset,
     stickyOffset,
     getStickyContainer,
     headerStyle,
@@ -311,6 +313,22 @@ const Table = p => {
   }, [hasFixedColumn, controllerOpen, totalWidth, tableWidth, scroll]);
 
   const hasScrollY = scroll?.y != null && scroll?.y !== false;
+  const isStickyViewport = !!sticky && !hasScrollY;
+  const resolvedScrollTopInset = resolveScrollTopInset(scrollTopInset, stickyOffset);
+
+  const stickyGetContainer = useMemo(() => {
+    if (!getStickyContainer || hasScrollY) {
+      return undefined;
+    }
+    return () => getStickyContainer() || window;
+  }, [getStickyContainer, hasScrollY]);
+
+  const parsedScrollTopInset = useMemo(() => {
+    if (!sticky || hasScrollY) {
+      return 0;
+    }
+    return parseInsetPixels(resolvedScrollTopInset, tableRef.current);
+  }, [sticky, hasScrollY, resolvedScrollTopInset, isLayout, dataSource]);
 
   const antdSticky = useMemo(() => {
     if (!sticky) {
@@ -321,15 +339,16 @@ const Table = p => {
       const { getContainer, ...scrollSticky } = config;
       return Object.assign({ offsetHeader: 0 }, scrollSticky);
     }
-    return Object.assign({ offsetHeader: 0 }, config, getStickyContainer ? { getContainer: getStickyContainer } : null);
-  }, [sticky, getStickyContainer, hasScrollY]);
+    return Object.assign({ offsetHeader: parsedScrollTopInset }, config, stickyGetContainer ? { getContainer: stickyGetContainer } : null);
+  }, [sticky, stickyGetContainer, hasScrollY, parsedScrollTopInset]);
 
   const tableWrapperStyle = useMemo(() => {
-    if (!sticky || stickyOffset == null || hasScrollY) {
+    const cssValue = normalizeScrollTopInsetCSSValue(resolvedScrollTopInset);
+    if (!cssValue) {
       return undefined;
     }
-    return { '--sticky-offset': stickyOffset };
-  }, [sticky, stickyOffset, hasScrollY]);
+    return { '--scroll-top-inset': cssValue };
+  }, [resolvedScrollTopInset]);
 
   const tableElement = (
     <AntTable
@@ -376,14 +395,14 @@ const Table = p => {
   const wrappedTable = (
     <div
       ref={tableRef}
-      className={classnames(viewStyle['table'], style['table'], 'info-page-table', className, {
+      className={classnames(style['table'], 'info-page-table', className, {
         [style['is-resize']]: currentMoveColumnIndex !== null,
         [style['is-computed']]: isLayout,
         [style['has-group-header']]: hasGroupHeader,
         [style['has-summary']]: typeof summary === 'function',
         [style['is-sticky']]: !!sticky,
         [style['is-sticky-scroll-y']]: !!sticky && hasScrollY,
-        [style['is-sticky-viewport']]: !!sticky && !hasScrollY
+        [style['is-sticky-viewport']]: isStickyViewport
       })}
       style={tableWrapperStyle}
     >
