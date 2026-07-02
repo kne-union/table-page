@@ -11,22 +11,49 @@ const THUMB_MARGIN = 2;
 const computeBarMetrics = (scrollEl, viewportState, getPortalContainer) => {
   const rect = scrollEl.getBoundingClientRect();
   const portalContainer = typeof getPortalContainer === 'function' ? getPortalContainer() : null;
-  const useContainerScroll = !isDocumentScrollContainer(portalContainer);
-  const viewport = getViewportRect();
-  const anchorRect = useContainerScroll ? portalContainer.getBoundingClientRect() : viewport;
+  const useEmbeddedPlacement = !isDocumentScrollContainer(portalContainer);
   const trackWidth = rect.width;
   const thumbWidth = Math.max((trackWidth * scrollEl.clientWidth) / scrollEl.scrollWidth - THUMB_MARGIN * 2, 24);
   const maxThumbOffset = trackWidth - thumbWidth - THUMB_MARGIN * 2;
   const scrollRatio = scrollEl.scrollWidth > scrollEl.clientWidth ? scrollEl.scrollLeft / (scrollEl.scrollWidth - scrollEl.clientWidth) : 0;
+  const visible = shouldShowFloatingScrollbar(scrollEl, viewportState, getPortalContainer);
 
+  if (useEmbeddedPlacement) {
+    const containerRect = portalContainer.getBoundingClientRect();
+    return {
+      placement: 'embedded',
+      offsetLeft: Math.round(rect.left - containerRect.left),
+      width: Math.round(trackWidth),
+      thumbWidth,
+      thumbLeft: THUMB_MARGIN + maxThumbOffset * scrollRatio,
+      visible
+    };
+  }
+
+  const viewport = getViewportRect();
   return {
-    left: rect.left,
-    width: trackWidth,
-    bottom: window.innerHeight - anchorRect.bottom,
+    placement: 'fixed',
+    left: Math.round(rect.left),
+    width: Math.round(trackWidth),
+    bottom: window.innerHeight - viewport.bottom,
     thumbWidth,
     thumbLeft: THUMB_MARGIN + maxThumbOffset * scrollRatio,
-    visible: shouldShowFloatingScrollbar(scrollEl, viewportState, getPortalContainer)
+    visible
   };
+};
+
+const metricsEqual = (prev, next) => {
+  if (!prev || !next) {
+    return prev === next;
+  }
+  return (
+    prev.placement === next.placement &&
+    prev.visible === next.visible &&
+    prev.width === next.width &&
+    prev.thumbWidth === next.thumbWidth &&
+    prev.thumbLeft === next.thumbLeft &&
+    (prev.placement === 'embedded' ? prev.offsetLeft === next.offsetLeft : prev.left === next.left && prev.bottom === next.bottom)
+  );
 };
 
 const FloatingScrollBar = ({ metrics, onThumbDrag, getPortalContainer }) => {
@@ -63,17 +90,29 @@ const FloatingScrollBar = ({ metrics, onThumbDrag, getPortalContainer }) => {
     return null;
   }
 
-  const portalTarget = document.body;
+  const portalContainer = typeof getPortalContainer === 'function' ? getPortalContainer() : null;
+  const useEmbeddedPlacement = metrics.placement === 'embedded';
+  const portalTarget = useEmbeddedPlacement && portalContainer ? portalContainer : document.body;
 
   return createPortal(
     <div
-      className={classnames(style['floating-scrollbar'], 'table-page-floating-scrollbar')}
-      style={{
-        left: metrics.left,
-        width: metrics.width,
-        height: BAR_HEIGHT,
-        bottom: metrics.bottom
-      }}
+      className={classnames(style['floating-scrollbar'], 'table-page-floating-scrollbar', {
+        [style['floating-scrollbar-embedded']]: useEmbeddedPlacement
+      })}
+      style={
+        useEmbeddedPlacement
+          ? {
+              marginLeft: metrics.offsetLeft,
+              width: metrics.width,
+              height: BAR_HEIGHT
+            }
+          : {
+              left: metrics.left,
+              width: metrics.width,
+              height: BAR_HEIGHT,
+              bottom: metrics.bottom
+            }
+      }
     >
       <div
         className={classnames(style['floating-scrollbar-thumb'], {
@@ -99,6 +138,7 @@ const HorizontalScroller = forwardRef(({ className, enabled = true, getPortalCon
   const containerRef = useRef(null);
   const scrollElRef = useRef(null);
   const viewportStateRef = useRef(null);
+  const metricsRef = useRef(null);
 
   const setContainerRef = useRefCallback(node => {
     containerRef.current = node;
@@ -112,10 +152,16 @@ const HorizontalScroller = forwardRef(({ className, enabled = true, getPortalCon
   const updateMetrics = useRefCallback(() => {
     const scrollEl = scrollElRef.current;
     if (!scrollEl) {
+      metricsRef.current = null;
       setMetrics(null);
       return;
     }
-    setMetrics(computeBarMetrics(scrollEl, viewportStateRef.current, getPortalContainer));
+    const nextMetrics = computeBarMetrics(scrollEl, viewportStateRef.current, getPortalContainer);
+    if (metricsEqual(metricsRef.current, nextMetrics)) {
+      return;
+    }
+    metricsRef.current = nextMetrics;
+    setMetrics(nextMetrics);
   });
 
   const handleThumbDrag = useRefCallback(deltaX => {
@@ -138,6 +184,7 @@ const HorizontalScroller = forwardRef(({ className, enabled = true, getPortalCon
     if (!enabled) {
       scrollElRef.current = null;
       viewportStateRef.current = null;
+      metricsRef.current = null;
       setMetrics(null);
       return undefined;
     }
@@ -150,6 +197,8 @@ const HorizontalScroller = forwardRef(({ className, enabled = true, getPortalCon
     let scrollEl = null;
     let unobserveViewport = null;
     let contentResizeObserver = null;
+    const portalContainer = typeof getPortalContainer === 'function' ? getPortalContainer() : null;
+    const useEmbeddedPlacement = !isDocumentScrollContainer(portalContainer);
 
     const detachScrollEl = () => {
       unobserveViewport?.();
@@ -172,10 +221,12 @@ const HorizontalScroller = forwardRef(({ className, enabled = true, getPortalCon
       detachScrollEl();
       scrollEl = nextScrollEl;
       scrollElRef.current = scrollEl;
-      unobserveViewport = observeViewportIntersection(scrollEl, state => {
-        viewportStateRef.current = state;
-        updateMetrics();
-      });
+      if (!useEmbeddedPlacement) {
+        unobserveViewport = observeViewportIntersection(scrollEl, state => {
+          viewportStateRef.current = state;
+          updateMetrics();
+        });
+      }
       scrollEl.addEventListener('scroll', updateMetrics, { passive: true });
       contentResizeObserver = new ResizeObserver(updateMetrics);
       contentResizeObserver.observe(scrollEl);
@@ -193,15 +244,37 @@ const HorizontalScroller = forwardRef(({ className, enabled = true, getPortalCon
     containerResizeObserver.observe(root);
     onLayoutChange();
 
-    const portalContainer = typeof getPortalContainer === 'function' ? getPortalContainer() : null;
-    if (!isDocumentScrollContainer(portalContainer)) {
+    const onWindowChange = () => {
+      if (!useEmbeddedPlacement) {
+        updateMetrics();
+      }
+    };
+
+    if (!useEmbeddedPlacement) {
+      window.addEventListener('scroll', onWindowChange, true);
+      window.addEventListener('resize', onWindowChange);
+      window.visualViewport?.addEventListener('resize', onWindowChange);
+      window.visualViewport?.addEventListener('scroll', onWindowChange);
+    }
+
+    if (useEmbeddedPlacement && portalContainer) {
       portalContainer.addEventListener('scroll', updateMetrics, { passive: true });
+      window.addEventListener('resize', updateMetrics);
     }
 
     return () => {
       detachScrollEl();
       containerResizeObserver.disconnect();
-      portalContainer?.removeEventListener('scroll', updateMetrics);
+      if (!useEmbeddedPlacement) {
+        window.removeEventListener('scroll', onWindowChange, true);
+        window.removeEventListener('resize', onWindowChange);
+        window.visualViewport?.removeEventListener('resize', onWindowChange);
+        window.visualViewport?.removeEventListener('scroll', onWindowChange);
+      }
+      if (useEmbeddedPlacement && portalContainer) {
+        portalContainer.removeEventListener('scroll', updateMetrics);
+        window.removeEventListener('resize', updateMetrics);
+      }
     };
   }, [enabled, updateMetrics, getPortalContainer]);
 
