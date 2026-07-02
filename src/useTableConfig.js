@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useRefCallback from '@kne/use-ref-callback';
 import classnames from 'classnames';
-import get from 'lodash/get';
 import transform from 'lodash/transform';
+import { getColumnConfig } from './columnConfigUtils';
 import pick from 'lodash/pick';
 import findLastIndex from 'lodash/findLastIndex';
 import isEqual from 'lodash/isEqual';
@@ -116,9 +116,9 @@ const useTableConfig = ({ columns, name, controllerOpen = true, tableWidth = 0, 
 
   const visibleColumns = useMemo(() => {
     return columns
-      .filter(col => !(get(config, `${col.name}.visible`) === false || (get(config, `${col.name}.visible`) !== true && col.hidden === true)))
+      .filter(col => !(getColumnConfig(config, col.name, 'visible') === false || (getColumnConfig(config, col.name, 'visible') !== true && col.hidden === true)))
       .sort((a, b) => {
-        const computedIndex = item => get(config, `${item.name}.rank`, 0) + (item.fixed === 'left' || item.fixed === true ? -10000 : 0) + (item.fixed === 'right' ? 10000 : 0);
+        const computedIndex = item => getColumnConfig(config, item.name, 'rank', 0) + (item.fixed === 'left' || item.fixed === true ? -10000 : 0) + (item.fixed === 'right' ? 10000 : 0);
         return computedIndex(a) - computedIndex(b);
       });
   }, [columns, config]);
@@ -134,7 +134,7 @@ const useTableConfig = ({ columns, name, controllerOpen = true, tableWidth = 0, 
   const totalWidth = useMemo(() => {
     return visibleColumns.reduce((sum, col, index) => {
       const { width } = getColumnSize(col);
-      const contentWidth = get(config, `${col.name}.width`) || width;
+      const contentWidth = getColumnConfig(config, col.name, 'width') || width;
       return sum + withConfigColumnExtra(contentWidth, index, columnCount, controllerOpen);
     }, 0);
   }, [visibleColumns, config, columnCount, controllerOpen]);
@@ -156,7 +156,7 @@ const useTableConfig = ({ columns, name, controllerOpen = true, tableWidth = 0, 
   const getConfigWidth = useCallback(
     column => {
       const { width, min, max } = getColumnSize(column);
-      const currentWidth = Math.min(Math.max(get(config, `${column.name}.width`) || width, min), max);
+      const currentWidth = Math.min(Math.max(getColumnConfig(config, column.name, 'width') || width, min), max);
       return { currentWidth, min, max };
     },
     [config]

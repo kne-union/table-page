@@ -6,9 +6,8 @@ import { Button, Checkbox, Col, Collapse, Input, List, Row, Tooltip } from 'antd
 import { ReactSortable } from 'react-sortablejs';
 import classnames from 'classnames';
 import transform from 'lodash/transform';
-import get from 'lodash/get';
-import set from 'lodash/set';
 import cloneDeep from 'lodash/cloneDeep';
+import { getColumnConfig, setColumnConfig } from './columnConfigUtils';
 import { useIntl } from '@kne/react-intl';
 import withLocale from './withLocale';
 
@@ -35,11 +34,11 @@ const ColumnsControlContent = withLocale(({ close, onConfirm, columns, config: d
           if (item.fixed === true || item.fixed === 'left') {
             return 'leftFixedColumns';
           }
-          return (get(config, `${item.name}.visible`) !== true && item.hidden) || get(config, `${item.name}.visible`) === false ? 'hiddenColumns' : 'visibleColumns';
+          return (getColumnConfig(config, item.name, 'visible') !== true && item.hidden) || getColumnConfig(config, item.name, 'visible') === false ? 'hiddenColumns' : 'visibleColumns';
         })
       ),
       (result, value, key) => {
-        result[key] = value.sort((a, b) => get(config, `${a.name}.rank`, 0) - get(config, `${b.name}.rank`, 0));
+        result[key] = value.sort((a, b) => getColumnConfig(config, a.name, 'rank', 0) - getColumnConfig(config, b.name, 'rank', 0));
       },
       {}
     );
@@ -53,10 +52,10 @@ const ColumnsControlContent = withLocale(({ close, onConfirm, columns, config: d
     const newConfig = cloneDeep(config);
     const columnsList = [].concat(columnsState.leftFixedColumns, columnsState.visibleColumns, columnsState.rightFixedColumns);
     (columnsState.hiddenColumns || []).forEach(col => {
-      set(newConfig, `${col.name}.visible`, false);
+      Object.assign(newConfig, setColumnConfig(newConfig, col.name, { visible: false }));
     });
     columnsList.forEach((col, index) => {
-      set(newConfig, `${col.name}.rank`, index + 1);
+      Object.assign(newConfig, setColumnConfig(newConfig, col.name, { rank: index + 1 }));
     });
     onChange(newConfig);
   };
