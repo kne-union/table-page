@@ -1,2 +1,0 @@
-"use strict";(self.webpackChunk_table_page_0_1_4=self.webpackChunk_table_page_0_1_4||[]).push([[8151],{8151(e,a,n){n.r(a);const t={TablePage:n(58872).A};n.d(a,["default",0,t,"manifest",0,{name:"table-page",version:"0.1.4","open-version":!0,"public-url":"/table-page",modules:[{name:"table-page",baseDir:"/home/runner/work/table-page/table-page",description:"A React table page component based on Ant Design 5, supporting column config, filter, sort and batch operations.",packageName:"@kne/table-page"}]}])}}]);
-//# sourceMappingURL=8151.e500844b.chunk.js.map
