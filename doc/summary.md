@@ -70,6 +70,7 @@
 | `options` | 操作列，铺满单元格 |
 | `enum` | 枚举值渲染，自动映射 color/text |
 | `tag` | 标签渲染，单个 Tag 组件 |
+| `status` | 状态渲染，antd Badge 组件 |
 | `tagList` | 标签列表渲染，多个 Tag 组件 |
 | `amount` | 金额列，右对齐，自动省略号 |
 | `list` | 列表渲染，自动省略号 |
@@ -83,7 +84,7 @@
 
 例如 `renderType: "enum-small"` 表示枚举值 + 小尺寸列。维度（width、min、max、ellipsis）可通过 `globalParams.renderTypeSize` 全局定制。
 
-默认导出 `getTagColor`、`renderTagItem`、`renderTagList` 工具函数，用于 Tag 相关渲染。
+默认导出 `getTagColor`、`renderTagItem`、`renderTagList`、`getStatusType`、`renderStatusItem` 工具函数，用于 Tag / Status 相关渲染。
 
 ### 其他导出
 

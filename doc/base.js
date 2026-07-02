@@ -1,5 +1,11 @@
 const { default: TablePage } = _TablePage;
 
+const orderStatusMap = {
+  已完成: { type: 'success', text: '已完成' },
+  处理中: { type: 'processing', text: '处理中' },
+  待发货: { type: 'warning', text: '待发货' }
+};
+
 const BaseExample = () => {
   return (
     <TablePage
@@ -25,15 +31,22 @@ const BaseExample = () => {
         total: data.totalCount
       })}
       columns={[
-        { name: 'orderNo', title: '订单编号', width: 160 },
-        { name: 'customerName', title: '客户名称', width: 140 },
+        { name: 'orderNo', title: '订单编号', width: 160, renderType: 'small' },
+        { name: 'customerName', title: '客户名称', width: 140, renderType: 'main' },
         {
           name: 'amount',
           title: '金额(元)',
           width: 120,
-          render: value => `¥${value.toLocaleString()}`
+          renderType: 'amount',
+          format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
         },
-        { name: 'status', title: '状态', width: 100 }
+        {
+          name: 'status',
+          title: '状态',
+          width: 100,
+          renderType: 'status',
+          getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
+        }
       ]}
     />
   );

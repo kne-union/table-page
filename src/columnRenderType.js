@@ -31,6 +31,11 @@ const typeSize = {
     min: 100,
     max: 400
   },
+  status: {
+    width: 100,
+    min: 80,
+    max: 140
+  },
   tagList: {
     width: 300,
     min: 160,

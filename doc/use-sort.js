@@ -1,6 +1,13 @@
 const { Table, TableView } = _TablePage;
-const { Flex, Badge, Tag } = antd;
+const { Flex, Tag } = antd;
 const { useMemo } = React;
+
+const orderStatusMap = {
+  已完成: { type: 'success', text: '已完成' },
+  处理中: { type: 'processing', text: '处理中' },
+  待发货: { type: 'warning', text: '待发货' },
+  已取消: { type: 'default', text: '已取消' }
+};
 
 const dataSource = [
   { id: 'ORD001', customerName: '深圳市腾讯计算机系统有限公司', amount: 42500, status: '已完成', orderDate: '2024-01-15' },
@@ -10,23 +17,25 @@ const dataSource = [
   { id: 'ORD005', customerName: '百度在线网络技术（北京）有限公司', amount: 95000, status: '已取消', orderDate: '2024-01-12' }
 ];
 
-const statusRender = value => {
-  const config = {
-    已完成: { color: 'success', text: '已完成' },
-    处理中: { color: 'processing', text: '处理中' },
-    待发货: { color: 'warning', text: '待发货' },
-    已取消: { color: 'default', text: '已取消' }
-  };
-  const { color, text } = config[value] || { color: 'default', text: value };
-  return <Badge status={color} text={text} />;
-};
-
 const columns = [
-  { name: 'id', title: '订单编号', width: 140, sort: { single: true } },
-  { name: 'customerName', title: '客户名称', width: 240, sort: true },
-  { name: 'amount', title: '订单金额(元)', width: 130, sort: true, render: value => <strong style={{ color: '#f5222d' }}>¥{value.toLocaleString()}</strong> },
+  { name: 'id', title: '订单编号', width: 140, sort: { single: true }, renderType: 'small' },
+  { name: 'customerName', title: '客户名称', width: 240, sort: true, renderType: 'main' },
+  {
+    name: 'amount',
+    title: '订单金额(元)',
+    width: 130,
+    sort: true,
+    renderType: 'amount',
+    format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
+  },
   { name: 'orderDate', title: '下单日期', width: 120, sort: true, format: 'date' },
-  { name: 'status', title: '订单状态', width: 100, render: statusRender }
+  {
+    name: 'status',
+    title: '订单状态',
+    width: 100,
+    renderType: 'status',
+    getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
+  }
 ];
 
 const SortState = ({ sort }) => (

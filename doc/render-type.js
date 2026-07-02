@@ -81,7 +81,7 @@ const columns = [
   {
     name: 'status',
     title: '状态',
-    renderType: 'tag',
+    renderType: 'status',
     getValueOf: item => statusMap[item.status]
   },
   {
@@ -110,9 +110,25 @@ const columns = [
 const BaseExample = () => {
   return (
     <Flex vertical gap={24}>
-      <div style={{ color: '#666', fontSize: 13 }}>
-        列配置 <code>renderType</code> 支持 <code>main</code> / <code>amount</code> / <code>tag</code> / <code>tagList</code> / <code>list</code> / <code>options</code> / <code>description</code> 等类型，可与尺寸修饰词组合（如 <code>tag-short</code>、<code>main-small</code>）。
-        通过 <code>getValueOf</code> 返回 render 所需的数据结构，通过 <code>format</code> 做展示格式化（如金额）。
+      <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
+        <p>
+          列配置 <code>renderType</code> 声明列的渲染方式，无需手写 <code>render</code>。内置类型：
+        </p>
+        <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
+          <li><code>main</code> — 主信息列，支持 <code>primary</code> / <code>hover</code> / <code>onClick</code></li>
+          <li><code>amount</code> — 金额列，右对齐，配合 <code>format</code> 格式化</li>
+          <li><code>tag</code> — 单个 Tag，<code>getValueOf</code> 返回 <code>{'{ type, text }'}</code></li>
+          <li><code>status</code> — 状态 Badge，<code>getValueOf</code> 返回 <code>{'{ type, text }'}</code></li>
+          <li><code>tagList</code> — 多个 Tag 列表</li>
+          <li><code>list</code> — 文本列表，可用 <code>split</code> 指定分隔符</li>
+          <li><code>options</code> — 操作列，<code>getValueOf</code> 返回按钮配置数组</li>
+          <li><code>description</code> — 长文本描述列</li>
+          <li><code>enum</code> — 枚举值映射渲染</li>
+        </ul>
+        <p>
+          可与尺寸修饰词组合：<code>short</code> / <code>small</code> / <code>large</code>（如 <code>tag-short</code>、<code>status-small</code>、<code>main-large</code>）。
+          通过 <code>getValueOf</code> 传入 render 所需数据结构，通过 <code>format</code> 做日期、金额等展示格式化。
+        </p>
       </div>
       <div>
         <div style={{ marginBottom: 8, color: '#666' }}>Table</div>

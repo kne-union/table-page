@@ -264,6 +264,7 @@ const TablePageInnerContent = withLocale(
       dataSource: formatData.list,
       pagination: false,
       sticky,
+      getStickyContainer: getScrollContainer,
       className: classnames(className, {
         [style['table-in-toolbar']]: hasToolbar
       }),

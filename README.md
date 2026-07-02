@@ -84,6 +84,7 @@ npm i --save @kne/table-page
 | `options` | 操作列，铺满单元格 |
 | `enum` | 枚举值渲染，自动映射 color/text |
 | `tag` | 标签渲染，单个 Tag 组件 |
+| `status` | 状态渲染，antd Badge 组件 |
 | `tagList` | 标签列表渲染，多个 Tag 组件 |
 | `amount` | 金额列，右对齐，自动省略号 |
 | `list` | 列表渲染，自动省略号 |
@@ -97,7 +98,7 @@ npm i --save @kne/table-page
 
 例如 `renderType: "enum-small"` 表示枚举值 + 小尺寸列。维度（width、min、max、ellipsis）可通过 `globalParams.renderTypeSize` 全局定制。
 
-默认导出 `getTagColor`、`renderTagItem`、`renderTagList` 工具函数，用于 Tag 相关渲染。
+默认导出 `getTagColor`、`renderTagItem`、`renderTagList`、`getStatusType`、`renderStatusItem` 工具函数，用于 Tag / Status 相关渲染。
 
 ### 其他导出
 
@@ -123,14 +124,14 @@ npm i --save @kne/table-page
 #### 示例代码
 
 - TablePage
-- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 useSort 服务端排序、列配置、总结栏等
+- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、列配置、总结栏等
 - _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd),_ReactFilter(@kne/react-filter)[import * as _ReactFilter from "@kne/react-filter"],(@kne/react-filter/dist/index.css)
 
 ```jsx
 const { default: TablePage, Table } = _TablePage;
 const { fields } = _ReactFilter;
 const { SuperSelectFilterItem } = fields;
-const { Table: AntTable, Flex, Badge, Tag, Button, Space, message } = antd;
+const { Table: AntTable, Flex, Tag, Button, Space, message } = antd;
 const { useMemo } = React;
 
 const TOTAL = 156;
@@ -145,17 +146,17 @@ const educations = ['本科', '硕士', '博士', '大专'];
 const performances = ['A', 'B', 'C', 'S'];
 
 const statusMap = {
-  active: { color: 'success', text: '在职' },
-  vacation: { color: 'warning', text: '休假' },
-  resigned: { color: 'default', text: '离职' },
-  probation: { color: 'processing', text: '试用期' }
+  active: { type: 'success', text: '在职' },
+  vacation: { type: 'warning', text: '休假' },
+  resigned: { type: 'default', text: '离职' },
+  probation: { type: 'processing', text: '试用期' }
 };
 
 const perfMap = {
-  S: { color: 'success', text: 'S' },
-  A: { color: 'processing', text: 'A' },
-  B: { color: 'warning', text: 'B' },
-  C: { color: 'error', text: 'C' }
+  S: { type: 'success', text: 'S' },
+  A: { type: 'processing', text: 'A' },
+  B: { type: 'warning', text: 'B' },
+  C: { type: 'error', text: 'C' }
 };
 
 const departmentOptions = departments.map(item => ({ value: item, label: item }));
@@ -180,23 +181,48 @@ const buildEmployee = index => {
   };
 };
 
-const statusRender = value => {
-  const { color, text } = statusMap[value] || { color: 'default', text: value };
-  return <Badge status={color} text={text} />;
-};
-
-const perfRender = value => {
-  const { color, text } = perfMap[value] || { color: 'default', text: value };
-  return <Tag color={color === 'processing' ? 'blue' : color === 'success' ? 'green' : color === 'warning' ? 'orange' : color === 'error' ? 'red' : 'default'}>{text}</Tag>;
-};
-
 const columns = [
-  { name: 'employeeNo', title: '工号', width: 180, min: 120, max: 240, fixed: 'left', sort: { single: true } },
-  { name: 'name', title: '姓名', width: 100, min: 80, max: 160, sort: true },
+  {
+    name: 'employeeNo',
+    title: '工号',
+    width: 180,
+    min: 120,
+    max: 240,
+    fixed: 'left',
+    sort: { single: true },
+    renderType: 'main',
+    primary: true,
+    onClick: ({ item, colItem }) => {
+      message.info(&#96;查看员工：${colItem.name}（${item}）&#96;);
+    }
+  },
+  {
+    name: 'name',
+    title: '姓名',
+    width: 100,
+    min: 80,
+    max: 160,
+    sort: true,
+    renderType: 'main',
+    onClick: ({ item, colItem }) =>
+      new Promise(resolve => {
+        const hide = message.loading(&#96;正在加载 ${item} 的详情…&#96;, 0);
+        setTimeout(() => {
+          hide();
+          message.success(&#96;${colItem.department} · ${colItem.position}&#96;);
+          resolve();
+        }, 600);
+      })
+  },
   { name: 'department', title: '部门', width: 150, min: 120, max: 240, sort: true },
   { name: 'position', title: '职位', width: 120, min: 100, max: 200 },
-  { name: 'status', title: '状态', width: 100, min: 80, max: 140, render: statusRender },
-  { name: 'performance', title: '绩效', width: 80, min: 70, max: 120, render: perfRender },
+  {
+    name: 'status',
+    title: '状态',
+    renderType: 'status',
+    getValueOf: item => statusMap[item.status] || { type: 'default', text: item.status }
+  },
+  { name: 'performance', title: '绩效', width: 80, min: 70, max: 120, renderType: 'tag', getValueOf: item => perfMap[item.performance] || { type: 'default', text: item.performance } },
   { name: 'phone', title: '手机号', width: 140, min: 120, max: 180, render: value => value.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') },
   { name: 'email', title: '邮箱', width: 200, min: 160, max: 320, ellipsis: true },
   { name: 'joinDate', title: '入职日期', width: 120, min: 100, max: 160, format: 'date', sort: true },
@@ -295,11 +321,19 @@ const Tips = () => (
     </div>
     <div>
       <Tag color="orange">列配置</Tag>
-      设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏；操作列使用 <code>renderType="options"</code> 且 <code>fixed="right"</code>。
+      设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏；状态列使用 <code>renderType="status"</code>，绩效列使用 <code>renderType="tag"</code>，操作列使用 <code>renderType="options"</code> 且 <code>fixed="right"</code>。
     </div>
     <div>
       <Tag color="cyan">排序</Tag>
       配合 <code>Table.useSort</code> 与 <code>sortRender</code>，在 <code>onSortChange</code> 中调用 <code>reload</code> 传排序参数，与翻页一样不闪烁。
+    </div>
+    <div>
+      <Tag color="geekblue">固定表头</Tag>
+      设置 <code>sticky</code> 与 <code>scroll.y</code>，表体在固定高度内滚动时表头保持可见；横向滚动配合 <code>scroll.x</code>。
+    </div>
+    <div>
+      <Tag color="magenta">单元格点击</Tag>
+      列配置 <code>onClick</code>（配合 <code>renderType="main"</code>、<code>primary</code> / <code>hover</code>），仅可点击单元格 hover 时显示手型；工号列同步演示异步点击 loading。
     </div>
     <div>
       <Tag color="purple">总结栏</Tag>
@@ -347,8 +381,8 @@ const BaseExample = () => {
         ref={tableRef}
         name="demo-employee-table"
         sticky
+        scroll={{ x: 1600, y: 400 }}
         sortRender={sortRender}
-        scroll={{ x: 1600 }}
         rowSelection={getRowSelection(allEmployees)}
         selectedRows={selectedRows}
         search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 220 } }}
@@ -446,8 +480,15 @@ render(<BaseExample />);
 
 ```jsx
 const { TableView } = _TablePage;
-const { Flex, Tag, Badge } = antd;
+const { Flex, Tag } = antd;
 const { useState } = React;
+
+const orderStatusMap = {
+  已完成: { type: 'success', text: '已完成' },
+  处理中: { type: 'processing', text: '处理中' },
+  待发货: { type: 'warning', text: '待发货' },
+  已取消: { type: 'default', text: '已取消' }
+};
 
 const dataSource = [
   {
@@ -503,23 +544,25 @@ const dataSource = [
 ];
 
 const columns = [
-  { name: 'id', title: '订单编号', width: 180 },
-  { name: 'customerName', title: '客户名称', span: 10 },
+  { name: 'id', title: '订单编号', width: 180, renderType: 'small' },
+  { name: 'customerName', title: '客户名称', span: 10, renderType: 'main' },
   { name: 'contact', title: '联系人', width: 80 },
-  { name: 'phone', title: '联系电话', width: '130px', render: (value) => value.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') },
-  { name: 'amount', title: '订单金额(元)', render: (value) => <strong style={{ color: '#f5222d' }}>¥{value.toLocaleString()}</strong> },
+  { name: 'phone', title: '联系电话', width: '130px', render: value => value.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') },
+  {
+    name: 'amount',
+    title: '订单金额(元)',
+    renderType: 'amount',
+    format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
+  },
   { name: 'orderDate', title: '下单日期', format: 'date' },
   { name: 'deliveryDate', title: '预计送达', format: 'date' },
-  { name: 'status', title: '订单状态', width: 100, render: (value) => {
-      const config = {
-        '已完成': { color: 'success', text: '已完成' },
-        '处理中': { color: 'processing', text: '处理中' },
-        '待发货': { color: 'warning', text: '待发货' },
-        '已取消': { color: 'default', text: '已取消' }
-      };
-      const { color, text } = config[value] || { color: 'default', text: value };
-      return <Badge status={color} text={text} />;
-    }}
+  {
+    name: 'status',
+    title: '订单状态',
+    width: 100,
+    renderType: 'status',
+    getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
+  }
 ];
 
 const WithCheckbox = () => {
@@ -555,19 +598,22 @@ const WithSelected = () => {
 
 const WithColumnWidth = () => {
   const widthColumns = [
-    { name: 'id', title: '订单编号', width: 180 },
-    { name: 'customerName', title: '客户名称', width: '200px' },
-    { name: 'amount', title: '订单金额(元)', width: 120, render: (value) => <strong style={{ color: '#f5222d' }}>¥{value.toLocaleString()}</strong> },
-    { name: 'status', title: '订单状态', width: '100px', render: (value) => {
-      const config = {
-        '已完成': { color: 'success', text: '已完成' },
-        '处理中': { color: 'processing', text: '处理中' },
-        '待发货': { color: 'warning', text: '待发货' },
-        '已取消': { color: 'default', text: '已取消' }
-      };
-      const { color, text } = config[value] || { color: 'default', text: value };
-      return <Badge status={color} text={text} />;
-    }}
+    { name: 'id', title: '订单编号', width: 180, renderType: 'small' },
+    { name: 'customerName', title: '客户名称', width: '200px', renderType: 'main' },
+    {
+      name: 'amount',
+      title: '订单金额(元)',
+      width: 120,
+      renderType: 'amount',
+      format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
+    },
+    {
+      name: 'status',
+      title: '订单状态',
+      width: '100px',
+      renderType: 'status',
+      getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
+    }
   ];
   return (
     <div>
@@ -606,8 +652,15 @@ render(<BaseExample />);
 
 ```jsx
 const { Table } = _TablePage;
-const { Flex, Tag, Badge } = antd;
+const { Flex, Tag } = antd;
 const { useState } = React;
+
+const orderStatusMap = {
+  已完成: { type: 'success', text: '已完成' },
+  处理中: { type: 'processing', text: '处理中' },
+  待发货: { type: 'warning', text: '待发货' },
+  已取消: { type: 'default', text: '已取消' }
+};
 
 const dataSource = [
   {
@@ -663,27 +716,25 @@ const dataSource = [
 ];
 
 const columns = [
-  { name: 'id', title: '订单编号', width: 180 },
-  { name: 'customerName', title: '客户名称', width: 200 },
+  { name: 'id', title: '订单编号', width: 180, renderType: 'small' },
+  { name: 'customerName', title: '客户名称', width: 200, renderType: 'main' },
   { name: 'contact', title: '联系人', width: 80 },
   { name: 'phone', title: '联系电话', width: 130, render: value => value.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') },
-  { name: 'amount', title: '订单金额(元)', width: 120, render: value => <strong style={{ color: '#f5222d' }}>¥{value.toLocaleString()}</strong> },
+  {
+    name: 'amount',
+    title: '订单金额(元)',
+    width: 120,
+    renderType: 'amount',
+    format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
+  },
   { name: 'orderDate', title: '下单日期', width: 110, format: 'date' },
   { name: 'deliveryDate', title: '预计送达', width: 110, format: 'date' },
   {
     name: 'status',
     title: '订单状态',
     width: 100,
-    render: value => {
-      const config = {
-        已完成: { color: 'success', text: '已完成' },
-        处理中: { color: 'processing', text: '处理中' },
-        待发货: { color: 'warning', text: '待发货' },
-        已取消: { color: 'default', text: '已取消' }
-      };
-      const { color, text } = config[value] || { color: 'default', text: value };
-      return <Badge status={color} text={text} />;
-    }
+    renderType: 'status',
+    getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
   }
 ];
 
@@ -774,7 +825,14 @@ render(<BaseExample />);
 
 ```jsx
 const { Table, TableView } = _TablePage;
-const { Button, Flex, Space, Badge, message } = antd;
+const { Button, Flex, Space, message } = antd;
+
+const orderStatusMap = {
+  已完成: { type: 'success', text: '已完成' },
+  处理中: { type: 'processing', text: '处理中' },
+  待发货: { type: 'warning', text: '待发货' },
+  已取消: { type: 'default', text: '已取消' }
+};
 
 const dataSource = [
   {
@@ -820,25 +878,23 @@ const dataSource = [
 ];
 
 const columns = [
-  { name: 'id', title: '订单编号', width: 180 },
-  { name: 'customerName', title: '客户名称', width: 220 },
+  { name: 'id', title: '订单编号', width: 180, renderType: 'small' },
+  { name: 'customerName', title: '客户名称', width: 220, renderType: 'main' },
   { name: 'contact', title: '联系人', width: 100 },
-  { name: 'amount', title: '订单金额(元)', width: 130, render: value => <strong style={{ color: '#f5222d' }}>¥{value.toLocaleString()}</strong> },
+  {
+    name: 'amount',
+    title: '订单金额(元)',
+    width: 130,
+    renderType: 'amount',
+    format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
+  },
   { name: 'orderDate', title: '下单日期', width: 120, format: 'date' },
   {
     name: 'status',
     title: '订单状态',
     width: 100,
-    render: value => {
-      const config = {
-        已完成: { color: 'success', text: '已完成' },
-        处理中: { color: 'processing', text: '处理中' },
-        待发货: { color: 'warning', text: '待发货' },
-        已取消: { color: 'default', text: '已取消' }
-      };
-      const { color, text } = config[value] || { color: 'default', text: value };
-      return <Badge status={color} text={text} />;
-    }
+    renderType: 'status',
+    getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
   }
 ];
 
@@ -941,8 +997,15 @@ render(<BaseExample />);
 
 ```jsx
 const { Table, TableView } = _TablePage;
-const { Flex, Badge, Tag } = antd;
+const { Flex, Tag } = antd;
 const { useMemo } = React;
+
+const orderStatusMap = {
+  已完成: { type: 'success', text: '已完成' },
+  处理中: { type: 'processing', text: '处理中' },
+  待发货: { type: 'warning', text: '待发货' },
+  已取消: { type: 'default', text: '已取消' }
+};
 
 const dataSource = [
   { id: 'ORD001', customerName: '深圳市腾讯计算机系统有限公司', amount: 42500, status: '已完成', orderDate: '2024-01-15' },
@@ -952,23 +1015,25 @@ const dataSource = [
   { id: 'ORD005', customerName: '百度在线网络技术（北京）有限公司', amount: 95000, status: '已取消', orderDate: '2024-01-12' }
 ];
 
-const statusRender = value => {
-  const config = {
-    已完成: { color: 'success', text: '已完成' },
-    处理中: { color: 'processing', text: '处理中' },
-    待发货: { color: 'warning', text: '待发货' },
-    已取消: { color: 'default', text: '已取消' }
-  };
-  const { color, text } = config[value] || { color: 'default', text: value };
-  return <Badge status={color} text={text} />;
-};
-
 const columns = [
-  { name: 'id', title: '订单编号', width: 140, sort: { single: true } },
-  { name: 'customerName', title: '客户名称', width: 240, sort: true },
-  { name: 'amount', title: '订单金额(元)', width: 130, sort: true, render: value => <strong style={{ color: '#f5222d' }}>¥{value.toLocaleString()}</strong> },
+  { name: 'id', title: '订单编号', width: 140, sort: { single: true }, renderType: 'small' },
+  { name: 'customerName', title: '客户名称', width: 240, sort: true, renderType: 'main' },
+  {
+    name: 'amount',
+    title: '订单金额(元)',
+    width: 130,
+    sort: true,
+    renderType: 'amount',
+    format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
+  },
   { name: 'orderDate', title: '下单日期', width: 120, sort: true, format: 'date' },
-  { name: 'status', title: '订单状态', width: 100, render: statusRender }
+  {
+    name: 'status',
+    title: '订单状态',
+    width: 100,
+    renderType: 'status',
+    getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
+  }
 ];
 
 const SortState = ({ sort }) => (
@@ -1036,12 +1101,19 @@ render(<BaseExample />);
 ```
 
 - column ellipsis
-- 列 ellipsis 配置，基于 antd Typography 实现超出省略与 tooltip 展示
+- 表头 title 超出列宽自动省略、悬停 tooltip；单元格 ellipsis 配置基于 antd Typography 实现内容省略
 - _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd)
 
 ```jsx
 const { Table, TableView } = _TablePage;
-const { Flex, Badge } = antd;
+const { Flex, Tag } = antd;
+const { useMemo } = React;
+
+const orderStatusMap = {
+  已完成: { type: 'success', text: '已完成' },
+  处理中: { type: 'processing', text: '处理中' },
+  待发货: { type: 'warning', text: '待发货' }
+};
 
 const dataSource = [
   {
@@ -1067,53 +1139,85 @@ const dataSource = [
   }
 ];
 
-const statusRender = value => {
-  const config = {
-    已完成: { color: 'success', text: '已完成' },
-    处理中: { color: 'processing', text: '处理中' },
-    待发货: { color: 'warning', text: '待发货' }
-  };
-  const { color, text } = config[value] || { color: 'default', text: value };
-  return <Badge status={color} text={text} />;
-};
-
 const columns = [
-  { name: 'id', title: '订单编号', width: 120 },
+  { name: 'id', title: '订单编号（系统流水号）', width: 110, renderType: 'small' },
   {
     name: 'customerName',
-    title: '客户名称',
-    width: 180,
+    title: '客户名称（签约主体全称）',
+    width: 140,
+    renderType: 'main',
     ellipsis: true
   },
   {
     name: 'remark',
-    title: '备注',
-    width: 220,
+    title: '备注说明（内部流转备注）',
+    width: 160,
+    renderType: 'description',
     ellipsis: { showTitle: true }
   },
   {
     name: 'amount',
-    title: '金额',
-    width: 100,
-    render: value => &#96;¥${value.toLocaleString()}&#96;
+    title: '订单应付金额（含税，单位：元）',
+    width: 120,
+    sort: true,
+    renderType: 'amount',
+    format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
   },
-  { name: 'status', title: '状态', width: 90, render: statusRender }
+  {
+    name: 'status',
+    title: '订单履约状态（业务状态）',
+    width: 100,
+    renderType: 'status',
+    getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
+  }
 ];
+
+const Tips = () => (
+  <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
+    <div>
+      <Tag color="blue">表头省略</Tag>
+      列 <code>title</code> 超出列宽时自动单行省略，悬停 tooltip 显示完整标题；带排序的列同样生效（<code>Table</code> / <code>TableView</code> 均支持，无需额外配置）。
+    </div>
+    <div>
+      <Tag color="green">单元格省略</Tag>
+      列配置 <code>ellipsis: true</code> 或 <code>ellipsis: {'{ showTitle: true }'}</code>，单元格内容超出时省略，悬停显示完整内容（基于 antd Typography）。
+    </div>
+    <div style={{ color: '#999' }}>
+      本示例刻意使用较长表头与较窄列宽，便于观察省略与 tooltip 效果；可将鼠标悬停在表头或单元格上查看。
+    </div>
+  </div>
+);
+
+const TableExample = () => {
+  const { sort, sortRender } = Table.useSort({});
+  const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns), [sort]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 8, color: '#666' }}>Table（含排序表头省略）</div>
+      <Table dataSource={sortedData} columns={columns} sortRender={sortRender} scroll={{ x: 700 }} />
+    </div>
+  );
+};
+
+const TableViewExample = () => {
+  const { sort, sortRender } = TableView.useSort({});
+  const sortedData = useMemo(() => TableView.sortDataSource(dataSource, sort, columns), [sort]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 8, color: '#666' }}>TableView（含排序表头省略）</div>
+      <TableView dataSource={sortedData} columns={columns} sortRender={sortRender} />
+    </div>
+  );
+};
 
 const BaseExample = () => {
   return (
     <Flex vertical gap={24}>
-      <div style={{ color: '#666', fontSize: 13 }}>
-        列配置 <code>ellipsis: true</code> 或 <code>ellipsis: {'{ showTitle: true }'}</code>，超出宽度自动省略，悬停显示完整内容（基于 antd Typography）。
-      </div>
-      <div>
-        <div style={{ marginBottom: 8, color: '#666' }}>Table</div>
-        <Table dataSource={dataSource} columns={columns} />
-      </div>
-      <div>
-        <div style={{ marginBottom: 8, color: '#666' }}>TableView</div>
-        <TableView dataSource={dataSource} columns={columns} />
-      </div>
+      <Tips />
+      <TableExample />
+      <TableViewExample />
     </Flex>
   );
 };
@@ -1123,7 +1227,7 @@ render(<BaseExample />);
 ```
 
 - renderType
-- 列 renderType 配置，预设 main / options / enum / description 类型与 short / small / large 尺寸修饰
+- 列 renderType 配置：main / amount / tag / status / tagList / list / options / description / enum，支持与 short / small / large 尺寸修饰组合；配合 getValueOf、format、onClick 等列属性
 - _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd)
 
 ```jsx
@@ -1210,7 +1314,7 @@ const columns = [
   {
     name: 'status',
     title: '状态',
-    renderType: 'tag',
+    renderType: 'status',
     getValueOf: item => statusMap[item.status]
   },
   {
@@ -1239,9 +1343,25 @@ const columns = [
 const BaseExample = () => {
   return (
     <Flex vertical gap={24}>
-      <div style={{ color: '#666', fontSize: 13 }}>
-        列配置 <code>renderType</code> 支持 <code>main</code> / <code>amount</code> / <code>tag</code> / <code>tagList</code> / <code>list</code> / <code>options</code> / <code>description</code> 等类型，可与尺寸修饰词组合（如 <code>tag-short</code>、<code>main-small</code>）。
-        通过 <code>getValueOf</code> 返回 render 所需的数据结构，通过 <code>format</code> 做展示格式化（如金额）。
+      <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
+        <p>
+          列配置 <code>renderType</code> 声明列的渲染方式，无需手写 <code>render</code>。内置类型：
+        </p>
+        <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
+          <li><code>main</code> — 主信息列，支持 <code>primary</code> / <code>hover</code> / <code>onClick</code></li>
+          <li><code>amount</code> — 金额列，右对齐，配合 <code>format</code> 格式化</li>
+          <li><code>tag</code> — 单个 Tag，<code>getValueOf</code> 返回 <code>{'{ type, text }'}</code></li>
+          <li><code>status</code> — 状态 Badge，<code>getValueOf</code> 返回 <code>{'{ type, text }'}</code></li>
+          <li><code>tagList</code> — 多个 Tag 列表</li>
+          <li><code>list</code> — 文本列表，可用 <code>split</code> 指定分隔符</li>
+          <li><code>options</code> — 操作列，<code>getValueOf</code> 返回按钮配置数组</li>
+          <li><code>description</code> — 长文本描述列</li>
+          <li><code>enum</code> — 枚举值映射渲染</li>
+        </ul>
+        <p>
+          可与尺寸修饰词组合：<code>short</code> / <code>small</code> / <code>large</code>（如 <code>tag-short</code>、<code>status-small</code>、<code>main-large</code>）。
+          通过 <code>getValueOf</code> 传入 render 所需数据结构，通过 <code>format</code> 做日期、金额等展示格式化。
+        </p>
       </div>
       <div>
         <div style={{ marginBottom: 8, color: '#666' }}>Table</div>
@@ -1265,7 +1385,14 @@ render(<BaseExample />);
 
 ```jsx
 const { Table } = _TablePage;
-const { Flex, Badge, Tag } = antd;
+const { Flex, Tag } = antd;
+
+const orderStatusMap = {
+  已完成: { type: 'success', text: '已完成' },
+  处理中: { type: 'processing', text: '处理中' },
+  待发货: { type: 'warning', text: '待发货' },
+  已取消: { type: 'default', text: '已取消' }
+};
 
 const dataSource = [
   {
@@ -1314,27 +1441,32 @@ const dataSource = [
   }
 ];
 
-const statusRender = value => {
-  const config = {
-    已完成: { color: 'success', text: '已完成' },
-    处理中: { color: 'processing', text: '处理中' },
-    待发货: { color: 'warning', text: '待发货' },
-    已取消: { color: 'default', text: '已取消' }
-  };
-  const { color, text } = config[value] || { color: 'default', text: value };
-  return <Badge status={color} text={text} />;
-};
-
 const columns = [
-  { name: 'id', title: '订单编号', width: 160, min: 120, max: 240, fixed: 'left' },
-  { name: 'customerName', title: '客户名称', width: 200, min: 140, max: 360 },
+  { name: 'id', title: '订单编号', width: 160, min: 120, max: 240, fixed: 'left', renderType: 'small' },
+  { name: 'customerName', title: '客户名称', width: 200, min: 140, max: 360, renderType: 'main' },
   { name: 'contact', title: '联系人', width: 90, min: 70, max: 160 },
   { name: 'phone', title: '联系电话', width: 130, min: 110, max: 180, render: value => value.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') },
-  { name: 'amount', title: '订单金额(元)', width: 130, min: 100, max: 200, render: value => <strong style={{ color: '#f5222d' }}>¥{value.toLocaleString()}</strong> },
+  {
+    name: 'amount',
+    title: '订单金额(元)',
+    width: 130,
+    min: 100,
+    max: 200,
+    renderType: 'amount',
+    format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
+  },
   { name: 'orderDate', title: '下单日期', width: 110, min: 90, max: 160, format: 'date' },
   { name: 'deliveryDate', title: '预计送达', width: 110, min: 90, max: 160, format: 'date' },
-  { name: 'status', title: '订单状态', width: 100, min: 80, max: 140, render: statusRender },
-  { name: 'remark', title: '备注', width: 200, min: 120, max: 400, hidden: true, ellipsis: true }
+  {
+    name: 'status',
+    title: '订单状态',
+    width: 100,
+    min: 80,
+    max: 140,
+    renderType: 'status',
+    getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
+  },
+  { name: 'remark', title: '备注', width: 200, min: 120, max: 400, hidden: true, renderType: 'description' }
 ];
 
 const Tips = () => (
@@ -1465,6 +1597,7 @@ const columns = [
     name: 'productName',
     title: '产品名称',
     width: 150,
+    renderType: 'main',
     groupHeader: [{ name: 'product', title: '产品信息' }]
   },
   {

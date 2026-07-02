@@ -1,6 +1,13 @@
 const { Table } = _TablePage;
-const { Flex, Tag, Badge } = antd;
+const { Flex, Tag } = antd;
 const { useState } = React;
+
+const orderStatusMap = {
+  已完成: { type: 'success', text: '已完成' },
+  处理中: { type: 'processing', text: '处理中' },
+  待发货: { type: 'warning', text: '待发货' },
+  已取消: { type: 'default', text: '已取消' }
+};
 
 const dataSource = [
   {
@@ -56,27 +63,25 @@ const dataSource = [
 ];
 
 const columns = [
-  { name: 'id', title: '订单编号', width: 180 },
-  { name: 'customerName', title: '客户名称', width: 200 },
+  { name: 'id', title: '订单编号', width: 180, renderType: 'small' },
+  { name: 'customerName', title: '客户名称', width: 200, renderType: 'main' },
   { name: 'contact', title: '联系人', width: 80 },
   { name: 'phone', title: '联系电话', width: 130, render: value => value.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') },
-  { name: 'amount', title: '订单金额(元)', width: 120, render: value => <strong style={{ color: '#f5222d' }}>¥{value.toLocaleString()}</strong> },
+  {
+    name: 'amount',
+    title: '订单金额(元)',
+    width: 120,
+    renderType: 'amount',
+    format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
+  },
   { name: 'orderDate', title: '下单日期', width: 110, format: 'date' },
   { name: 'deliveryDate', title: '预计送达', width: 110, format: 'date' },
   {
     name: 'status',
     title: '订单状态',
     width: 100,
-    render: value => {
-      const config = {
-        已完成: { color: 'success', text: '已完成' },
-        处理中: { color: 'processing', text: '处理中' },
-        待发货: { color: 'warning', text: '待发货' },
-        已取消: { color: 'default', text: '已取消' }
-      };
-      const { color, text } = config[value] || { color: 'default', text: value };
-      return <Badge status={color} text={text} />;
-    }
+    renderType: 'status',
+    getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
   }
 ];
 
