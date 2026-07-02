@@ -2,7 +2,16 @@
   position: relative;
   border: 1px solid #f0f0f0;
   border-radius: var(--radius-default, 2px);
-  overflow: hidden;
+}
+
+.header {
+  > .col:first-child {
+    border-start-start-radius: var(--radius-default, 2px);
+  }
+
+  > .col:last-child {
+    border-start-end-radius: var(--radius-default, 2px);
+  }
 }
 
 .tableView {
@@ -54,6 +63,14 @@
 
   &:last-child > .col {
     border-bottom: none;
+
+    &:first-child {
+      border-end-start-radius: var(--radius-default, 2px);
+    }
+
+    &:last-child {
+      border-end-end-radius: var(--radius-default, 2px);
+    }
   }
 }
 
@@ -138,4 +155,6 @@
 
 .empty {
   padding: 8px;
+  border-end-start-radius: var(--radius-default, 2px);
+  border-end-end-radius: var(--radius-default, 2px);
 }

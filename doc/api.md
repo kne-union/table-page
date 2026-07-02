@@ -15,9 +15,10 @@
 | columns | array \| function | - | 列配置，见 TableView 的 columns 说明；也可传入函数 `(data) => columns` |
 | getColumns | function | - | 根据接口数据动态生成列配置 |
 | sticky | boolean | - | 是否启用粘性表头，仅 `renderType="Table"` 时生效 |
+| scrollTopInset | number \| string | - | 滚动容器顶部占位高度（如固定导航高度），用于吸顶表头 `top` 偏移、`scroll-margin-top` 与翻页滚回；支持 `56` / `'56px'` |
+| getScrollContainer | function | - | 页面级滚动容器；用于吸顶表头 `getContainer`、浮动横向滚动条定位与翻页滚回 |
 | renderType | `'Table'` \| `'TableView'` | `'Table'` | 表格渲染类型 |
 | horizontalScroller | boolean | `true` | 是否启用底部浮动横向滚动条（仅 `renderType="Table"` 且表格存在横向滚动时生效） |
-| getScrollContainer | function | - | 浮动滚动条 portal 挂载容器，默认 `document.body` |
 | summary | function | - | 总结栏，回调参数包含 `data`、`requestParams`、`refresh`、`reload` 等 fetch 上下文 |
 | columnRenderProps | object | `{}` | 列渲染扩展属性，会合并进列 `render` 的 context |
 | filter | object | - | 顶部筛选器配置，基于 `@kne/react-filter` 的 `FilterLines`，见下方 |
@@ -41,7 +42,7 @@
 | showQuickJumper | boolean | `true` | 是否展示快速跳转 |
 | hideOnSinglePage | boolean | `false` | 仅一页时是否隐藏分页器 |
 | pageSizeOptions | array | - | 每页条数选项 |
-| pageSize | number | `20` | 默认每页条数，会持久化到 localStorage |
+| pageSize | number | `50` | 默认每页条数，会持久化到 localStorage |
 | showTotal | function | - | 自定义总数展示 `(total) => ReactNode` |
 | onChange | function | - | 自定义翻页回调 `(page, size) => void`，传入后覆盖默认请求逻辑 |
 | onShowSizeChange | function | - | 每页条数变化回调，组件内部已处理持久化 |
@@ -274,6 +275,9 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | emptyIsPlaceholder | boolean | `true` | 空值是否显示占位符 |
 | empty | ReactNode | `<Empty />` | 无数据时的展示内容 |
 | sticky | boolean | - | 是否启用粘性表头 |
+| scrollTopInset | number \| string | - | 滚动容器顶部占位高度，用于吸顶表头偏移与滚回定位；`stickyOffset` 为兼容别名 |
+| stickyOffset | number \| string | - | **已废弃**，请使用 `scrollTopInset` |
+| getStickyContainer | function | - | 页面级滚动容器，等同 TablePage 的 `getScrollContainer` |
 | headerStyle | object | - | 表头自定义样式 |
 | onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
 | render | function | - | 自定义渲染 `(props) => ReactNode`，`header` 为 `null`，`renderBody` 返回 antd Table |

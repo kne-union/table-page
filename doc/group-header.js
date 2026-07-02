@@ -163,19 +163,21 @@ const columns = [
   }
 ];
 
+const TIP_TAG_STYLE = { marginRight: 8 };
+
 const Tips = () => (
   <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
     <div>
-      <Tag color="blue">groupHeader</Tag>
+      <Tag style={TIP_TAG_STYLE} color="blue">groupHeader</Tag>
       在列配置中通过 <code>groupHeader</code> 声明所属分组，相同 <code>name</code> 的列会自动合并为多级表头（仅 <code>Table</code> 支持）。
     </div>
     <div>
-      <Tag color="green">多级分组</Tag>
+      <Tag style={TIP_TAG_STYLE} color="green">多级分组</Tag>
       <code>groupHeader</code> 为数组，按层级嵌套，例如{' '}
       <code>{`[{ name: 'sales', title: '销售业绩' }, { name: 'detail', title: '明细' }]`}</code>。
     </div>
     <div>
-      <Tag color="orange">排序</Tag>
+      <Tag style={TIP_TAG_STYLE} color="orange">排序</Tag>
       分组表头可与 <code>useSort</code> 配合，排序按钮显示在叶子列表头。
     </div>
   </div>

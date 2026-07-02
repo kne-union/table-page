@@ -1,6 +1,9 @@
 // Table 复用 TableView 视觉风格，但不覆盖 antd fixed / sticky / shadow 行为
 .table {
   box-sizing: border-box;
+  position: relative;
+  border: 1px solid #f0f0f0;
+  border-radius: var(--radius-default, 2px);
 
   :global(.info-page-table-body) {
     width: 100%;
@@ -37,6 +40,8 @@
 
   :global(.ant-table-header) {
     background: var(--bg-color-grey-1) !important;
+    border-start-start-radius: var(--radius-default, 2px);
+    border-start-end-radius: var(--radius-default, 2px);
   }
 
   :global(.ant-table-thead > tr > .ant-table-cell) {
@@ -105,9 +110,27 @@
     border-bottom-color: transparent !important;
   }
 
+  &:not(.has-summary) {
+    :global(.ant-table-tbody > tr:last-child > .ant-table-cell:first-child) {
+      border-end-start-radius: var(--radius-default, 2px) !important;
+    }
+
+    :global(.ant-table-tbody > tr:last-child > .ant-table-cell:last-child) {
+      border-end-end-radius: var(--radius-default, 2px) !important;
+    }
+  }
+
   &.has-summary {
     :global(.ant-table-tbody > tr:last-child > .ant-table-cell) {
       border-bottom-color: transparent !important;
+    }
+
+    :global(.ant-table-summary > tr > .ant-table-cell:first-child) {
+      border-end-start-radius: var(--radius-default, 2px) !important;
+    }
+
+    :global(.ant-table-summary > tr > .ant-table-cell:last-child) {
+      border-end-end-radius: var(--radius-default, 2px) !important;
     }
 
     :global(.ant-table-summary) {
@@ -122,6 +145,8 @@
 
   :global(.ant-table-placeholder > .ant-table-cell) {
     border: none !important;
+    border-end-start-radius: var(--radius-default, 2px) !important;
+    border-end-end-radius: var(--radius-default, 2px) !important;
   }
 
   &.has-group-header {
@@ -155,7 +180,7 @@
       :global(.ant-table-header),
       :global(.ant-table-thead) {
         &:global(.ant-table-sticky-holder) {
-          top: var(--sticky-offset, var(--nav-height, 0px)) !important;
+          top: var(--scroll-top-inset, var(--sticky-offset, var(--nav-height, 0px))) !important;
         }
       }
     }

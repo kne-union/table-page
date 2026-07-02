@@ -60,7 +60,7 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, batchAction
           'table-page-toolbar-section--has-value': hasValueDisplay
         })}
       >
-        <div className={style['table-toolbar']}>
+        <div className={classnames(style['table-toolbar'], 'table-page-toolbar')}>
           {showBatch ? (
             <>
               <div className={style['table-toolbar-batch']}>

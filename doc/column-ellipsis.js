@@ -65,14 +65,16 @@ const columns = [
   }
 ];
 
+const TIP_TAG_STYLE = { marginRight: 8 };
+
 const Tips = () => (
   <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
     <div>
-      <Tag color="blue">表头省略</Tag>
+      <Tag style={TIP_TAG_STYLE} color="blue">表头省略</Tag>
       列 <code>title</code> 超出列宽时自动单行省略，悬停 tooltip 显示完整标题；带排序的列同样生效（<code>Table</code> / <code>TableView</code> 均支持，无需额外配置）。
     </div>
     <div>
-      <Tag color="green">单元格省略</Tag>
+      <Tag style={TIP_TAG_STYLE} color="green">单元格省略</Tag>
       列配置 <code>ellipsis: true</code> 或 <code>ellipsis: {'{ showTitle: true }'}</code>，单元格内容超出时省略，悬停显示完整内容（基于 antd Typography）。
     </div>
     <div style={{ color: '#999' }}>

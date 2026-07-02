@@ -83,22 +83,24 @@ const columns = [
   { name: 'remark', title: '备注', width: 200, min: 120, max: 400, hidden: true, renderType: 'description' }
 ];
 
+const TIP_TAG_STYLE = { marginRight: 8 };
+
 const Tips = () => (
   <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
     <div>
-      <Tag color="blue">列宽拖动</Tag>
+      <Tag style={TIP_TAG_STYLE} color="blue">列宽拖动</Tag>
       鼠标悬停表头列右侧，出现拖动手柄后可左右拖动调整列宽（受 <code>min</code> / <code>max</code> 约束）。仅 <code>Table</code> 组件支持。
     </div>
     <div>
-      <Tag color="green">显示/隐藏</Tag>
+      <Tag style={TIP_TAG_STYLE} color="green">显示/隐藏</Tag>
       点击最后一列表头的 <strong>设置图标</strong>，可勾选显示或隐藏列、拖拽排序；配置通过 <code>name</code> 持久化到 localStorage。
     </div>
     <div>
-      <Tag color="orange">默认隐藏</Tag>
+      <Tag style={TIP_TAG_STYLE} color="orange">默认隐藏</Tag>
       本示例中「备注」列设置了 <code>hidden: true</code>，可在列配置面板中重新显示。
     </div>
     <div>
-      <Tag color="purple">固定列</Tag>
+      <Tag style={TIP_TAG_STYLE} color="purple">固定列</Tag>
       「订单编号」设置了 <code>fixed: 'left'</code>，固定显示且不可隐藏。
     </div>
   </div>

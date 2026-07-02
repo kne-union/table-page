@@ -305,38 +305,40 @@ const SortState = ({ sort }) => (
   </div>
 );
 
+const TIP_TAG_STYLE = { marginRight: 8 };
+
 const Tips = () => (
   <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
     <div>
-      <Tag color="blue">数据加载</Tag>
+      <Tag style={TIP_TAG_STYLE} color="blue">数据加载</Tag>
       通过 <code>loader</code> 模拟分页接口，请求参数为 <code>data.currentPage</code>、<code>data.perPage</code>。
     </div>
     <div>
-      <Tag color="green">分页</Tag>
+      <Tag style={TIP_TAG_STYLE} color="green">分页</Tag>
       分页器渲染在表格外侧，翻页时以 <code>reload</code> 方式请求；<code>pageSize</code> 会持久化到 localStorage。
     </div>
     <div>
-      <Tag color="gold">筛选</Tag>
+      <Tag style={TIP_TAG_STYLE} color="gold">筛选</Tag>
       顶部工具栏集成 <code>filter</code>、<code>search</code>、<code>batchActions</code>；筛选变化自动 <code>reload</code> 并回到第 1 页。
     </div>
     <div>
-      <Tag color="orange">列配置</Tag>
+      <Tag style={TIP_TAG_STYLE} color="orange">列配置</Tag>
       设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏；状态列使用 <code>renderType="status"</code>，绩效列使用 <code>renderType="tag"</code>，操作列使用 <code>renderType="options"</code> 且 <code>fixed="right"</code>。
     </div>
     <div>
-      <Tag color="cyan">排序</Tag>
+      <Tag style={TIP_TAG_STYLE} color="cyan">排序</Tag>
       配合 <code>Table.useSort</code> 与 <code>sortRender</code>，在 <code>onSortChange</code> 中调用 <code>reload</code> 传排序参数，与翻页一样不闪烁。
     </div>
     <div>
-      <Tag color="geekblue">固定表头</Tag>
+      <Tag style={TIP_TAG_STYLE} color="geekblue">固定表头</Tag>
       设置 <code>sticky</code> 与 <code>scroll.y</code>，表体在固定高度内滚动时表头保持可见；横向滚动配合 <code>scroll.x</code>。
     </div>
     <div>
-      <Tag color="magenta">单元格点击</Tag>
+      <Tag style={TIP_TAG_STYLE} color="magenta">单元格点击</Tag>
       列配置 <code>onClick</code>（配合 <code>renderType="main"</code>、<code>primary</code> / <code>hover</code>），仅可点击单元格 hover 时显示手型；工号列同步演示异步点击 loading。
     </div>
     <div>
-      <Tag color="purple">总结栏</Tag>
+      <Tag style={TIP_TAG_STYLE} color="purple">总结栏</Tag>
       <code>summary</code> 回调可拿到 <code>data</code>、<code>requestParams</code> 等 fetch 上下文。
     </div>
   </div>
@@ -466,6 +468,251 @@ const BaseExample = () => {
           );
         }}
       />
+    </Flex>
+  );
+};
+
+render(<BaseExample />);
+
+```
+
+- TablePage sticky scroll
+- 自包含演示区：sticky + getScrollContainer 由区内页面滚动触发表头吸顶（非 scroll.y）；模拟导航在区内 sticky，不遮挡文档站顶栏
+- _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd),_ReactFilter(@kne/react-filter)[import * as _ReactFilter from "@kne/react-filter"],(@kne/react-filter/dist/index.css)
+
+```jsx
+const { default: TablePage } = _TablePage;
+const { fields } = _ReactFilter;
+const { SuperSelectFilterItem } = fields;
+const { Flex, Tag } = antd;
+const { useRef, useMemo } = React;
+
+const NAV_HEIGHT = 56;
+const DEMO_HEIGHT = 600;
+const TOTAL = 80;
+
+const statusMap = {
+  active: { type: 'success', text: '在职' },
+  vacation: { type: 'warning', text: '休假' },
+  resigned: { type: 'default', text: '离职' },
+  probation: { type: 'processing', text: '试用期' }
+};
+
+const departments = ['技术研发部', '产品设计部', '市场营销部', '人力资源部', '财务部'];
+
+const departmentOptions = departments.map(item => ({ value: item, label: item }));
+const statusOptions = Object.entries(statusMap).map(([value, { text }]) => ({ value, label: text }));
+
+const normalizeFilterValue = value => {
+  if (value == null) {
+    return value;
+  }
+  return Array.isArray(value) ? value[0] : value;
+};
+
+const applyFilters = (employees, data, requestParams) => {
+  const params = Object.assign({}, requestParams?.data, data);
+  let result = employees;
+
+  if (params.keyword) {
+    const keyword = String(params.keyword).toLowerCase();
+    result = result.filter(item => item.employeeNo.toLowerCase().includes(keyword) || item.name.includes(params.keyword));
+  }
+
+  const department = normalizeFilterValue(params.department);
+  if (department) {
+    result = result.filter(item => item.department === department);
+  }
+
+  const status = normalizeFilterValue(params.status);
+  if (status) {
+    result = result.filter(item => item.status === status);
+  }
+
+  return result;
+};
+
+const buildEmployee = index => {
+  const statusKeys = ['active', 'vacation', 'resigned', 'probation'];
+  return {
+    id: &#96;EMP${String(index + 1).padStart(4, '0')}&#96;,
+    employeeNo: &#96;EMP-2024-${String(index + 1).padStart(4, '0')}&#96;,
+    name: &#96;员工${index + 1}&#96;,
+    department: departments[index % departments.length],
+    position: ['工程师', '经理', '专员'][index % 3],
+    status: statusKeys[index % statusKeys.length],
+    joinDate: &#96;2024-${String((index % 12) + 1).padStart(2, '0')}-15&#96;
+  };
+};
+
+const allEmployees = Array.from({ length: TOTAL }, (_, index) => buildEmployee(index));
+
+const columns = [
+  { name: 'employeeNo', title: '工号', width: 160, min: 120, max: 220, fixed: 'left', renderType: 'small' },
+  { name: 'name', title: '姓名', width: 100, renderType: 'main' },
+  { name: 'department', title: '部门', width: 150 },
+  { name: 'position', title: '职位', width: 120 },
+  {
+    name: 'status',
+    title: '状态',
+    width: 100,
+    renderType: 'status',
+    getValueOf: item => statusMap[item.status] || { type: 'default', text: item.status }
+  },
+  { name: 'joinDate', title: '入职日期', width: 120, format: 'date' }
+];
+
+const TIP_TAG_STYLE = { marginRight: 8 };
+
+const Tips = () => (
+  <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
+    <div>
+      <Tag style={TIP_TAG_STYLE} color="blue">页面滚动</Tag>
+      在下方<strong>灰色边框演示区</strong>内滚动（非 <code>scroll.y</code>）；表头通过 <code>sticky</code> + <code>getScrollContainer</code> 吸顶。
+    </div>
+    <div>
+      <Tag style={TIP_TAG_STYLE} color="green">getScrollContainer</Tag>
+      指向演示区滚动容器；<code>scrollTopInset</code> 传入顶部导航占位高度（<code>{NAV_HEIGHT}px</code>），用于吸顶表头偏移与翻页滚回。
+    </div>
+    <div>
+      <Tag style={TIP_TAG_STYLE} color="gold">筛选栏</Tag>
+      顶部工具栏含 <code>search</code> 与 <code>filter</code>；筛选变化会 <code>reload</code> 并回到第 1 页，翻页后滚回工具栏顶部。
+    </div>
+    <div>
+      <Tag style={TIP_TAG_STYLE} color="purple">横向 Scroller</Tag>
+      表格底部未完全露出时，会在滚动容器底部显示横向滚动条（<code>horizontalScroller</code> 默认开启）。
+    </div>
+    <div>
+      <Tag style={TIP_TAG_STYLE} color="orange">操作提示</Tag>
+      在演示区内向下滚动，蓝色导航条会吸顶，表格表头应固定在其下方；翻页后滚回表格顶部。
+    </div>
+  </div>
+);
+
+const BaseExample = () => {
+  const scrollRef = useRef(null);
+
+  const loader = useMemo(
+    () =>
+      ({ data, requestParams }) => {
+        const currentPage = Number(data?.currentPage) || 1;
+        const perPage = Number(data?.perPage) || 50;
+        const filteredEmployees = applyFilters(allEmployees, data, requestParams);
+        const start = (currentPage - 1) * perPage;
+        return new Promise(resolve => {
+          setTimeout(() => {
+            resolve({
+              pageData: filteredEmployees.slice(start, start + perPage),
+              totalCount: filteredEmployees.length
+            });
+          }, 200);
+        });
+      },
+    []
+  );
+
+  return (
+    <Flex vertical gap={16}>
+      <Tips />
+      <div
+        style={{
+          border: '1px solid #f0f0f0',
+          borderRadius: 8,
+          overflow: 'hidden',
+          background: '#fff'
+        }}
+      >
+        <div
+          ref={scrollRef}
+          style={{
+            height: DEMO_HEIGHT,
+            overflow: 'auto',
+            boxSizing: 'border-box'
+          }}
+        >
+          <div
+            style={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 100,
+              height: NAV_HEIGHT,
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0 24px',
+              color: '#fff',
+              fontWeight: 500,
+              background: '#1677ff',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)'
+            }}
+          >
+            模拟顶部导航（{NAV_HEIGHT}px）
+          </div>
+          <Flex vertical gap={16} style={{ padding: 16 }}>
+            <div
+              style={{
+                padding: '20px 24px',
+                background: '#f5f5f5',
+                borderRadius: 8,
+                color: '#666',
+                fontSize: 13
+              }}
+            >
+              在演示区内继续向下滚动 ↓
+            </div>
+            <div
+              style={{
+                height: 520,
+                borderRadius: 8,
+                background: 'linear-gradient(180deg, #f0f5ff 0%, #fff 100%)',
+                border: '1px dashed #d9d9d9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#999'
+              }}
+            >
+              占位区域（模拟页面上方内容）
+            </div>
+            <TablePage
+              name="demo-table-page-sticky-scroll"
+              sticky
+              scrollTopInset={NAV_HEIGHT}
+              getScrollContainer={() => scrollRef.current}
+              scroll={{ x: 900 }}
+              search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 200 } }}
+              filter={{
+                list: [
+                  [
+                    {
+                      type: SuperSelectFilterItem,
+                      props: { name: 'department', label: '部门', single: true, options: departmentOptions }
+                    },
+                    {
+                      type: SuperSelectFilterItem,
+                      props: { name: 'status', label: '状态', single: true, options: statusOptions }
+                    }
+                  ]
+                ],
+                displayLine: 1
+              }}
+              pagination={{
+                open: true,
+                pageSize: 50,
+                cachePageSize: false,
+                showSizeChanger: true,
+                showQuickJumper: true
+              }}
+              dataFormat={data => ({
+                list: data.pageData,
+                total: data.totalCount
+              })}
+              loader={loader}
+              columns={columns}
+            />
+            <div style={{ height: 80, color: '#999', fontSize: 13, textAlign: 'center' }}>演示区底部留白</div>
+          </Flex>
+        </div>
+      </div>
     </Flex>
   );
 };
@@ -1172,14 +1419,16 @@ const columns = [
   }
 ];
 
+const TIP_TAG_STYLE = { marginRight: 8 };
+
 const Tips = () => (
   <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
     <div>
-      <Tag color="blue">表头省略</Tag>
+      <Tag style={TIP_TAG_STYLE} color="blue">表头省略</Tag>
       列 <code>title</code> 超出列宽时自动单行省略，悬停 tooltip 显示完整标题；带排序的列同样生效（<code>Table</code> / <code>TableView</code> 均支持，无需额外配置）。
     </div>
     <div>
-      <Tag color="green">单元格省略</Tag>
+      <Tag style={TIP_TAG_STYLE} color="green">单元格省略</Tag>
       列配置 <code>ellipsis: true</code> 或 <code>ellipsis: {'{ showTitle: true }'}</code>，单元格内容超出时省略，悬停显示完整内容（基于 antd Typography）。
     </div>
     <div style={{ color: '#999' }}>
@@ -1469,22 +1718,24 @@ const columns = [
   { name: 'remark', title: '备注', width: 200, min: 120, max: 400, hidden: true, renderType: 'description' }
 ];
 
+const TIP_TAG_STYLE = { marginRight: 8 };
+
 const Tips = () => (
   <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
     <div>
-      <Tag color="blue">列宽拖动</Tag>
+      <Tag style={TIP_TAG_STYLE} color="blue">列宽拖动</Tag>
       鼠标悬停表头列右侧，出现拖动手柄后可左右拖动调整列宽（受 <code>min</code> / <code>max</code> 约束）。仅 <code>Table</code> 组件支持。
     </div>
     <div>
-      <Tag color="green">显示/隐藏</Tag>
+      <Tag style={TIP_TAG_STYLE} color="green">显示/隐藏</Tag>
       点击最后一列表头的 <strong>设置图标</strong>，可勾选显示或隐藏列、拖拽排序；配置通过 <code>name</code> 持久化到 localStorage。
     </div>
     <div>
-      <Tag color="orange">默认隐藏</Tag>
+      <Tag style={TIP_TAG_STYLE} color="orange">默认隐藏</Tag>
       本示例中「备注」列设置了 <code>hidden: true</code>，可在列配置面板中重新显示。
     </div>
     <div>
-      <Tag color="purple">固定列</Tag>
+      <Tag style={TIP_TAG_STYLE} color="purple">固定列</Tag>
       「订单编号」设置了 <code>fixed: 'left'</code>，固定显示且不可隐藏。
     </div>
   </div>
@@ -1677,19 +1928,21 @@ const columns = [
   }
 ];
 
+const TIP_TAG_STYLE = { marginRight: 8 };
+
 const Tips = () => (
   <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
     <div>
-      <Tag color="blue">groupHeader</Tag>
+      <Tag style={TIP_TAG_STYLE} color="blue">groupHeader</Tag>
       在列配置中通过 <code>groupHeader</code> 声明所属分组，相同 <code>name</code> 的列会自动合并为多级表头（仅 <code>Table</code> 支持）。
     </div>
     <div>
-      <Tag color="green">多级分组</Tag>
+      <Tag style={TIP_TAG_STYLE} color="green">多级分组</Tag>
       <code>groupHeader</code> 为数组，按层级嵌套，例如{' '}
       <code>{&#96;[{ name: 'sales', title: '销售业绩' }, { name: 'detail', title: '明细' }]&#96;}</code>。
     </div>
     <div>
-      <Tag color="orange">排序</Tag>
+      <Tag style={TIP_TAG_STYLE} color="orange">排序</Tag>
       分组表头可与 <code>useSort</code> 配合，排序按钮显示在叶子列表头。
     </div>
   </div>
@@ -1732,9 +1985,10 @@ render(<BaseExample />);
 | columns | array \| function | - | 列配置，见 TableView 的 columns 说明；也可传入函数 `(data) => columns` |
 | getColumns | function | - | 根据接口数据动态生成列配置 |
 | sticky | boolean | - | 是否启用粘性表头，仅 `renderType="Table"` 时生效 |
+| scrollTopInset | number \| string | - | 滚动容器顶部占位高度（如固定导航高度），用于吸顶表头 `top` 偏移、`scroll-margin-top` 与翻页滚回；支持 `56` / `'56px'` |
+| getScrollContainer | function | - | 页面级滚动容器；用于吸顶表头 `getContainer`、浮动横向滚动条定位与翻页滚回 |
 | renderType | `'Table'` \| `'TableView'` | `'Table'` | 表格渲染类型 |
 | horizontalScroller | boolean | `true` | 是否启用底部浮动横向滚动条（仅 `renderType="Table"` 且表格存在横向滚动时生效） |
-| getScrollContainer | function | - | 浮动滚动条 portal 挂载容器，默认 `document.body` |
 | summary | function | - | 总结栏，回调参数包含 `data`、`requestParams`、`refresh`、`reload` 等 fetch 上下文 |
 | columnRenderProps | object | `{}` | 列渲染扩展属性，会合并进列 `render` 的 context |
 | filter | object | - | 顶部筛选器配置，基于 `@kne/react-filter` 的 `FilterLines`，见下方 |
@@ -1758,7 +2012,7 @@ render(<BaseExample />);
 | showQuickJumper | boolean | `true` | 是否展示快速跳转 |
 | hideOnSinglePage | boolean | `false` | 仅一页时是否隐藏分页器 |
 | pageSizeOptions | array | - | 每页条数选项 |
-| pageSize | number | `20` | 默认每页条数，会持久化到 localStorage |
+| pageSize | number | `50` | 默认每页条数，会持久化到 localStorage |
 | showTotal | function | - | 自定义总数展示 `(total) => ReactNode` |
 | onChange | function | - | 自定义翻页回调 `(page, size) => void`，传入后覆盖默认请求逻辑 |
 | onShowSizeChange | function | - | 每页条数变化回调，组件内部已处理持久化 |
@@ -1991,6 +2245,9 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | emptyIsPlaceholder | boolean | `true` | 空值是否显示占位符 |
 | empty | ReactNode | `<Empty />` | 无数据时的展示内容 |
 | sticky | boolean | - | 是否启用粘性表头 |
+| scrollTopInset | number \| string | - | 滚动容器顶部占位高度，用于吸顶表头偏移与滚回定位；`stickyOffset` 为兼容别名 |
+| stickyOffset | number \| string | - | **已废弃**，请使用 `scrollTopInset` |
+| getStickyContainer | function | - | 页面级滚动容器，等同 TablePage 的 `getScrollContainer` |
 | headerStyle | object | - | 表头自定义样式 |
 | onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
 | render | function | - | 自定义渲染 `(props) => ReactNode`，`header` 为 `null`，`renderBody` 返回 antd Table |

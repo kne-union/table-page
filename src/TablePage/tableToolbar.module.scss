@@ -61,7 +61,6 @@
   :global(.ant-input-search) {
     background: var(--bg-color-grey-1, #f5f5f5);
     border-radius: var(--radius-default, 2px);
-    overflow: hidden;
 
     :global(.ant-input-affix-wrapper),
     :global(.ant-input) {
@@ -107,7 +106,6 @@
 .table-toolbar-filter {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
   display: flex;
   align-items: center;
 }
