@@ -19,6 +19,7 @@
 
 .hover {
   padding: 0 8px;
+  margin: 0 -8px;
 
   &:hover {
     color: var(--primary-color, #1677ff);
