@@ -6,12 +6,15 @@
 }
 
 .tooltip {
-  max-width: none;
+  max-width: min(600px, calc(100vw - 32px));
 
   :global(.ant-tooltip-inner) {
-    max-width: 600px;
+    max-width: 100%;
     max-height: 400px;
     overflow-y: auto;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: pre-wrap;
   }
 }
 
