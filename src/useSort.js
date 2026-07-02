@@ -4,6 +4,7 @@ import clone from 'lodash/clone';
 import { useCallback, useMemo, useState } from 'react';
 import get from 'lodash/get';
 import style from './sort.module.scss';
+import { wrapColumnHeaderTitle } from './columnHeaderTitle';
 
 const sortArrayToMap = sort =>
   new Map(
@@ -78,12 +79,14 @@ export const getSortSingle = sortOption => {
 };
 
 export const renderColumnTitle = (title, column, sortRender) => {
+  const titleContent = wrapColumnHeaderTitle(title);
+
   if (!column.sort || typeof sortRender !== 'function') {
-    return title;
+    return titleContent;
   }
   return (
     <span className={classnames(style['title'], style['has-sort'])}>
-      <span className={style['title-text']}>{title}</span>
+      <span className={style['title-text']}>{titleContent}</span>
       {sortRender({
         name: column.name,
         single: getSortSingle(column.sort)
@@ -92,7 +95,7 @@ export const renderColumnTitle = (title, column, sortRender) => {
   );
 };
 
-const useSort = props => {
+const useSort = (props = {}) => {
   const [sort, setSort] = useControlValue({
     value: props.sort,
     defaultValue: props.defaultSort || [],

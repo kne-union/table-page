@@ -1,6 +1,6 @@
 export { default } from './TablePage';
 export { default as preset } from './preset';
-export { getTagColor, renderTagItem, renderTagList } from './renderType';
+export { getTagColor, renderTagItem, renderTagList, getStatusType, renderStatusItem } from './renderType';
 export { default as TableView } from './TableView';
 export { default as Table } from './Table';
 export { default as useSelectedRow } from './useSelectedRow';

@@ -1,7 +1,7 @@
 const { default: TablePage, Table } = _TablePage;
 const { fields } = _ReactFilter;
 const { SuperSelectFilterItem } = fields;
-const { Table: AntTable, Flex, Badge, Tag, Button, Space, message } = antd;
+const { Table: AntTable, Flex, Tag, Button, Space, message } = antd;
 const { useMemo } = React;
 
 const TOTAL = 156;
@@ -16,17 +16,17 @@ const educations = ['本科', '硕士', '博士', '大专'];
 const performances = ['A', 'B', 'C', 'S'];
 
 const statusMap = {
-  active: { color: 'success', text: '在职' },
-  vacation: { color: 'warning', text: '休假' },
-  resigned: { color: 'default', text: '离职' },
-  probation: { color: 'processing', text: '试用期' }
+  active: { type: 'success', text: '在职' },
+  vacation: { type: 'warning', text: '休假' },
+  resigned: { type: 'default', text: '离职' },
+  probation: { type: 'processing', text: '试用期' }
 };
 
 const perfMap = {
-  S: { color: 'success', text: 'S' },
-  A: { color: 'processing', text: 'A' },
-  B: { color: 'warning', text: 'B' },
-  C: { color: 'error', text: 'C' }
+  S: { type: 'success', text: 'S' },
+  A: { type: 'processing', text: 'A' },
+  B: { type: 'warning', text: 'B' },
+  C: { type: 'error', text: 'C' }
 };
 
 const departmentOptions = departments.map(item => ({ value: item, label: item }));
@@ -51,23 +51,48 @@ const buildEmployee = index => {
   };
 };
 
-const statusRender = value => {
-  const { color, text } = statusMap[value] || { color: 'default', text: value };
-  return <Badge status={color} text={text} />;
-};
-
-const perfRender = value => {
-  const { color, text } = perfMap[value] || { color: 'default', text: value };
-  return <Tag color={color === 'processing' ? 'blue' : color === 'success' ? 'green' : color === 'warning' ? 'orange' : color === 'error' ? 'red' : 'default'}>{text}</Tag>;
-};
-
 const columns = [
-  { name: 'employeeNo', title: '工号', width: 180, min: 120, max: 240, fixed: 'left', sort: { single: true } },
-  { name: 'name', title: '姓名', width: 100, min: 80, max: 160, sort: true },
+  {
+    name: 'employeeNo',
+    title: '工号',
+    width: 180,
+    min: 120,
+    max: 240,
+    fixed: 'left',
+    sort: { single: true },
+    renderType: 'main',
+    primary: true,
+    onClick: ({ item, colItem }) => {
+      message.info(`查看员工：${colItem.name}（${item}）`);
+    }
+  },
+  {
+    name: 'name',
+    title: '姓名',
+    width: 100,
+    min: 80,
+    max: 160,
+    sort: true,
+    renderType: 'main',
+    onClick: ({ item, colItem }) =>
+      new Promise(resolve => {
+        const hide = message.loading(`正在加载 ${item} 的详情…`, 0);
+        setTimeout(() => {
+          hide();
+          message.success(`${colItem.department} · ${colItem.position}`);
+          resolve();
+        }, 600);
+      })
+  },
   { name: 'department', title: '部门', width: 150, min: 120, max: 240, sort: true },
   { name: 'position', title: '职位', width: 120, min: 100, max: 200 },
-  { name: 'status', title: '状态', width: 100, min: 80, max: 140, render: statusRender },
-  { name: 'performance', title: '绩效', width: 80, min: 70, max: 120, render: perfRender },
+  {
+    name: 'status',
+    title: '状态',
+    renderType: 'status',
+    getValueOf: item => statusMap[item.status] || { type: 'default', text: item.status }
+  },
+  { name: 'performance', title: '绩效', width: 80, min: 70, max: 120, renderType: 'tag', getValueOf: item => perfMap[item.performance] || { type: 'default', text: item.performance } },
   { name: 'phone', title: '手机号', width: 140, min: 120, max: 180, render: value => value.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') },
   { name: 'email', title: '邮箱', width: 200, min: 160, max: 320, ellipsis: true },
   { name: 'joinDate', title: '入职日期', width: 120, min: 100, max: 160, format: 'date', sort: true },
@@ -166,11 +191,19 @@ const Tips = () => (
     </div>
     <div>
       <Tag color="orange">列配置</Tag>
-      设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏；操作列使用 <code>renderType="options"</code> 且 <code>fixed="right"</code>。
+      设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏；状态列使用 <code>renderType="status"</code>，绩效列使用 <code>renderType="tag"</code>，操作列使用 <code>renderType="options"</code> 且 <code>fixed="right"</code>。
     </div>
     <div>
       <Tag color="cyan">排序</Tag>
       配合 <code>Table.useSort</code> 与 <code>sortRender</code>，在 <code>onSortChange</code> 中调用 <code>reload</code> 传排序参数，与翻页一样不闪烁。
+    </div>
+    <div>
+      <Tag color="geekblue">固定表头</Tag>
+      设置 <code>sticky</code> 与 <code>scroll.y</code>，表体在固定高度内滚动时表头保持可见；横向滚动配合 <code>scroll.x</code>。
+    </div>
+    <div>
+      <Tag color="magenta">单元格点击</Tag>
+      列配置 <code>onClick</code>（配合 <code>renderType="main"</code>、<code>primary</code> / <code>hover</code>），仅可点击单元格 hover 时显示手型；工号列同步演示异步点击 loading。
     </div>
     <div>
       <Tag color="purple">总结栏</Tag>
@@ -218,8 +251,8 @@ const BaseExample = () => {
         ref={tableRef}
         name="demo-employee-table"
         sticky
+        scroll={{ x: 1600, y: 400 }}
         sortRender={sortRender}
-        scroll={{ x: 1600 }}
         rowSelection={getRowSelection(allEmployees)}
         selectedRows={selectedRows}
         search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 220 } }}

@@ -10,9 +10,14 @@
   white-space: nowrap;
 }
 
-.hover {
+.hover,
+.primary,
+.clickable {
   cursor: pointer;
   border-radius: var(--radius-default, 2px);
+}
+
+.hover {
   padding: 0 8px;
 
   &:hover {
@@ -23,4 +28,9 @@
 
 .primary {
   color: var(--primary-color, #1677ff);
+}
+
+.loading {
+  opacity: 0.5;
+  cursor: wait;
 }

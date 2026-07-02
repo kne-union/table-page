@@ -3,6 +3,7 @@ import main from './main';
 import amount from './amount';
 import tag from './tag';
 import tagList from './tagList';
+import status from './status';
 import list from './list';
 import options from './options';
 import enumRender from './enum';
@@ -15,6 +16,7 @@ const renderType = {
   amount,
   tag,
   tagList,
+  status,
   list,
   options,
   enum: enumRender,
@@ -26,3 +28,4 @@ globalParams.renderType = renderType;
 export default renderType;
 
 export { getTagColor, normalizeTagItem, renderTagItem, renderTagList } from './tagUtils';
+export { getStatusType, normalizeStatusItem, renderStatusItem } from './statusUtils';

@@ -1,5 +1,12 @@
 const { Table, TableView } = _TablePage;
-const { Flex, Badge } = antd;
+const { Flex, Tag } = antd;
+const { useMemo } = React;
+
+const orderStatusMap = {
+  已完成: { type: 'success', text: '已完成' },
+  处理中: { type: 'processing', text: '处理中' },
+  待发货: { type: 'warning', text: '待发货' }
+};
 
 const dataSource = [
   {
@@ -25,53 +32,85 @@ const dataSource = [
   }
 ];
 
-const statusRender = value => {
-  const config = {
-    已完成: { color: 'success', text: '已完成' },
-    处理中: { color: 'processing', text: '处理中' },
-    待发货: { color: 'warning', text: '待发货' }
-  };
-  const { color, text } = config[value] || { color: 'default', text: value };
-  return <Badge status={color} text={text} />;
-};
-
 const columns = [
-  { name: 'id', title: '订单编号', width: 120 },
+  { name: 'id', title: '订单编号（系统流水号）', width: 110, renderType: 'small' },
   {
     name: 'customerName',
-    title: '客户名称',
-    width: 180,
+    title: '客户名称（签约主体全称）',
+    width: 140,
+    renderType: 'main',
     ellipsis: true
   },
   {
     name: 'remark',
-    title: '备注',
-    width: 220,
+    title: '备注说明（内部流转备注）',
+    width: 160,
+    renderType: 'description',
     ellipsis: { showTitle: true }
   },
   {
     name: 'amount',
-    title: '金额',
-    width: 100,
-    render: value => `¥${value.toLocaleString()}`
+    title: '订单应付金额（含税，单位：元）',
+    width: 120,
+    sort: true,
+    renderType: 'amount',
+    format: 'number-style:decimal-maximumFractionDigits:0-useGrouping:true-suffix:元'
   },
-  { name: 'status', title: '状态', width: 90, render: statusRender }
+  {
+    name: 'status',
+    title: '订单履约状态（业务状态）',
+    width: 100,
+    renderType: 'status',
+    getValueOf: item => orderStatusMap[item.status] || { type: 'default', text: item.status }
+  }
 ];
+
+const Tips = () => (
+  <div style={{ color: '#666', fontSize: 13, lineHeight: 1.8 }}>
+    <div>
+      <Tag color="blue">表头省略</Tag>
+      列 <code>title</code> 超出列宽时自动单行省略，悬停 tooltip 显示完整标题；带排序的列同样生效（<code>Table</code> / <code>TableView</code> 均支持，无需额外配置）。
+    </div>
+    <div>
+      <Tag color="green">单元格省略</Tag>
+      列配置 <code>ellipsis: true</code> 或 <code>ellipsis: {'{ showTitle: true }'}</code>，单元格内容超出时省略，悬停显示完整内容（基于 antd Typography）。
+    </div>
+    <div style={{ color: '#999' }}>
+      本示例刻意使用较长表头与较窄列宽，便于观察省略与 tooltip 效果；可将鼠标悬停在表头或单元格上查看。
+    </div>
+  </div>
+);
+
+const TableExample = () => {
+  const { sort, sortRender } = Table.useSort({});
+  const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns), [sort]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 8, color: '#666' }}>Table（含排序表头省略）</div>
+      <Table dataSource={sortedData} columns={columns} sortRender={sortRender} scroll={{ x: 700 }} />
+    </div>
+  );
+};
+
+const TableViewExample = () => {
+  const { sort, sortRender } = TableView.useSort({});
+  const sortedData = useMemo(() => TableView.sortDataSource(dataSource, sort, columns), [sort]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 8, color: '#666' }}>TableView（含排序表头省略）</div>
+      <TableView dataSource={sortedData} columns={columns} sortRender={sortRender} />
+    </div>
+  );
+};
 
 const BaseExample = () => {
   return (
     <Flex vertical gap={24}>
-      <div style={{ color: '#666', fontSize: 13 }}>
-        列配置 <code>ellipsis: true</code> 或 <code>ellipsis: {'{ showTitle: true }'}</code>，超出宽度自动省略，悬停显示完整内容（基于 antd Typography）。
-      </div>
-      <div>
-        <div style={{ marginBottom: 8, color: '#666' }}>Table</div>
-        <Table dataSource={dataSource} columns={columns} />
-      </div>
-      <div>
-        <div style={{ marginBottom: 8, color: '#666' }}>TableView</div>
-        <TableView dataSource={dataSource} columns={columns} />
-      </div>
+      <Tips />
+      <TableExample />
+      <TableViewExample />
     </Flex>
   );
 };

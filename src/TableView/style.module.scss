@@ -40,6 +40,11 @@
 
 .header-cell {
   background: var(--bg-color-grey-1);
+
+  .col-content {
+    overflow: hidden;
+    white-space: nowrap;
+  }
 }
 
 .body-row {
@@ -53,7 +58,6 @@
 }
 
 .body-cell {
-  cursor: pointer;
   word-break: break-all;
 }
 
@@ -112,12 +116,18 @@
   box-sizing: border-box;
 }
 
+:global(.ant-table-thead) .col-content {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .single-checked {
   width: 30px;
   min-width: 30px;
   max-width: 30px;
   align-content: center;
   justify-content: center;
+  cursor: pointer;
 }
 
 .col-fixed {

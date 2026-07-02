@@ -83,6 +83,7 @@ const columns = [
     name: 'productName',
     title: '产品名称',
     width: 150,
+    renderType: 'main',
     groupHeader: [{ name: 'product', title: '产品信息' }]
   },
   {

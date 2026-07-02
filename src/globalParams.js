@@ -1,5 +1,6 @@
 export const globalParams = {
   renderType: null,
   renderTypeSize: {},
-  tagTypeColors: {}
+  tagTypeColors: {},
+  statusTypeColors: {}
 };

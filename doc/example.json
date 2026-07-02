@@ -3,7 +3,7 @@
   "list": [
     {
       "title": "TablePage",
-      "description": "表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 useSort 服务端排序、列配置、总结栏等",
+      "description": "表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、列配置、总结栏等",
       "code": "./table-page.js",
       "scope": [
         {
@@ -106,7 +106,7 @@
     },
     {
       "title": "column ellipsis",
-      "description": "列 ellipsis 配置，基于 antd Typography 实现超出省略与 tooltip 展示",
+      "description": "表头 title 超出列宽自动省略、悬停 tooltip；单元格 ellipsis 配置基于 antd Typography 实现内容省略",
       "code": "./column-ellipsis.js",
       "scope": [
         {
@@ -125,7 +125,7 @@
     },
     {
       "title": "renderType",
-      "description": "列 renderType 配置，预设 main / options / enum / description 类型与 short / small / large 尺寸修饰",
+      "description": "列 renderType 配置：main / amount / tag / status / tagList / list / options / description / enum，支持与 short / small / large 尺寸修饰组合；配合 getValueOf、format、onClick 等列属性",
       "code": "./render-type.js",
       "scope": [
         {

@@ -9,6 +9,7 @@ import viewStyle from '../TableView/style.module.scss';
 import style from './style.module.scss';
 import useSelectedRow from '../useSelectedRow';
 import useSort, { renderColumnTitle } from '../useSort';
+import { wrapColumnHeaderTitle } from '../columnHeaderTitle';
 import useTableConfig from '../useTableConfig';
 import useGroupHeader from '../useGroupHeader';
 import useElementWidth from '../useElementWidth';
@@ -88,6 +89,8 @@ const Table = p => {
     render,
     context,
     sticky,
+    stickyOffset,
+    getStickyContainer,
     headerStyle,
     pagination = false,
     sortRender,
@@ -232,7 +235,7 @@ const Table = p => {
       if (column.children && column.children.length > 0) {
         return {
           key: column.name,
-          title: <span className={viewStyle['col-content']}>{column.title}</span>,
+          title: <span className={viewStyle['col-content']}>{wrapColumnHeaderTitle(column.title)}</span>,
           onHeaderCell: () => ({
             className: getAntCellClassName(),
             style: { textAlign: 'center', verticalAlign: 'middle' }
@@ -307,6 +310,27 @@ const Table = p => {
     return Object.assign({}, x != null ? { x } : {}, scroll);
   }, [hasFixedColumn, controllerOpen, totalWidth, tableWidth, scroll]);
 
+  const hasScrollY = scroll?.y != null && scroll?.y !== false;
+
+  const antdSticky = useMemo(() => {
+    if (!sticky) {
+      return undefined;
+    }
+    const config = typeof sticky === 'object' ? Object.assign({}, sticky) : {};
+    if (hasScrollY) {
+      const { getContainer, ...scrollSticky } = config;
+      return Object.assign({ offsetHeader: 0 }, scrollSticky);
+    }
+    return Object.assign({ offsetHeader: 0 }, config, getStickyContainer ? { getContainer: getStickyContainer } : null);
+  }, [sticky, getStickyContainer, hasScrollY]);
+
+  const tableWrapperStyle = useMemo(() => {
+    if (!sticky || stickyOffset == null || hasScrollY) {
+      return undefined;
+    }
+    return { '--sticky-offset': stickyOffset };
+  }, [sticky, stickyOffset, hasScrollY]);
+
   const tableElement = (
     <AntTable
       {...others}
@@ -317,13 +341,11 @@ const Table = p => {
       rowSelection={antdRowSelection}
       pagination={pagination}
       summary={typeof summary === 'function' ? (pageData, ...args) => summary(pageData, ...args) : undefined}
-      sticky={sticky ? { offsetHeader: 0 } : undefined}
+      sticky={antdSticky}
       tableLayout={controllerOpen || hasFixedColumn ? 'fixed' : undefined}
       scroll={tableScroll}
       onHeaderRow={() => ({
-        className: classnames(viewStyle['header'], 'info-page-table-header', {
-          [viewStyle['sticky']]: sticky && !hasFixedColumn
-        }),
+        className: classnames(viewStyle['header'], 'info-page-table-header'),
         style: headerStyle
       })}
       locale={{ emptyText: <div className={viewStyle['empty']}>{empty}</div> }}
@@ -336,14 +358,18 @@ const Table = p => {
           [viewStyle['is-disabled']]: record.disabled
         });
       }}
-      onRow={record => ({
-        onClick: () => {
-          if (record.disabled) {
-            return;
-          }
-          onRowSelect && onRowSelect(record, { columns: visibleColumns, dataSource });
-        }
-      })}
+      onRow={
+        onRowSelect
+          ? record => ({
+              onClick: () => {
+                if (record.disabled) {
+                  return;
+                }
+                onRowSelect(record, { columns: visibleColumns, dataSource });
+              }
+            })
+          : undefined
+      }
     />
   );
 
@@ -354,8 +380,12 @@ const Table = p => {
         [style['is-resize']]: currentMoveColumnIndex !== null,
         [style['is-computed']]: isLayout,
         [style['has-group-header']]: hasGroupHeader,
-        [style['has-summary']]: typeof summary === 'function'
+        [style['has-summary']]: typeof summary === 'function',
+        [style['is-sticky']]: !!sticky,
+        [style['is-sticky-scroll-y']]: !!sticky && hasScrollY,
+        [style['is-sticky-viewport']]: !!sticky && !hasScrollY
       })}
+      style={tableWrapperStyle}
     >
       <div className="info-page-table-body">{!isLayout && tableElement}</div>
       {currentMoveColumnIndex !== null && resizeGuideStyle && <span className={style['column-resize-guide']} style={resizeGuideStyle} aria-hidden />}
