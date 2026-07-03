@@ -211,6 +211,25 @@
   }
 }
 
+.col-content {
+  padding: 8px;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+:global(.ant-table-thead) .col-content {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: 8px;
+  border-end-start-radius: var(--radius-default, 2px);
+  border-end-end-radius: var(--radius-default, 2px);
+}
+
 .table-cell {
   word-break: break-all;
 }
