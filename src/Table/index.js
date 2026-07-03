@@ -4,7 +4,6 @@ import classnames from 'classnames';
 import get from 'lodash/get';
 import { computeColumnsValue, computeDisplay, parseColumnWidth, useSelectedRow, useSort, renderColumnTitle, wrapColumnHeaderTitle, getColumnEllipsis, renderCellContent, resolveColumns } from '@kne/table-view';
 import { isEmpty } from '@kne/is-empty';
-import viewStyle from '@kne/table-view/src/TableView/style.module.scss';
 import style from './style.module.scss';
 import useTableConfig from '../useTableConfig';
 import useGroupHeader from '../useGroupHeader';
@@ -51,7 +50,7 @@ const getColCellStyle = column => ({
 
 const getAntCellClassName = (...extra) => classnames(style['table-cell'], 'info-page-table-col', ...extra);
 
-const wrapColContent = node => <span className={viewStyle['col-content']}>{node}</span>;
+const wrapColContent = node => <span className={style['col-content']}>{node}</span>;
 
 const Table = p => {
   const tableRef = useRef(null);
@@ -174,7 +173,7 @@ const Table = p => {
       const baseColumn = {
         key: colName,
         dataIndex: colName,
-        title: <span className={viewStyle['col-content']}>{renderColumnTitle(title, column, sortRender)}</span>,
+        title: <span className={style['col-content']}>{renderColumnTitle(title, column, sortRender)}</span>,
         width: toAntdWidth(width),
         fixed: toAntdFixed(fixed),
         align: mapJustifyToAlign(justify),
@@ -200,7 +199,7 @@ const Table = p => {
           if (!computedColumn) {
             return null;
           }
-          return renderCellContent(computeDisplay({ column: computedColumn, placeholder, dataSource: record, context }), computedColumn, viewStyle['col-content']);
+          return renderCellContent(computeDisplay({ column: computedColumn, placeholder, dataSource: record, context }), computedColumn, style['col-content']);
         }
       };
 
@@ -209,7 +208,7 @@ const Table = p => {
       }
 
       const configProps = computedColumnProps(column, index, {
-        title: <span className={viewStyle['col-content']}>{renderColumnTitle(title, column, sortRender)}</span>
+        title: <span className={style['col-content']}>{renderColumnTitle(title, column, sortRender)}</span>
       });
       const antdFixed = toAntdFixed(fixed);
 
@@ -231,7 +230,7 @@ const Table = p => {
       if (column.children && column.children.length > 0) {
         return {
           key: column.name,
-          title: <span className={viewStyle['col-content']}>{wrapColumnHeaderTitle(column.title)}</span>,
+          title: <span className={style['col-content']}>{wrapColumnHeaderTitle(column.title)}</span>,
           onHeaderCell: () => ({
             className: getAntCellClassName(),
             style: { textAlign: 'center', verticalAlign: 'middle' }
@@ -358,17 +357,17 @@ const Table = p => {
       tableLayout={controllerOpen || hasFixedColumn ? 'fixed' : undefined}
       scroll={tableScroll}
       onHeaderRow={() => ({
-        className: classnames(viewStyle['header'], 'info-page-table-header'),
+        className: 'info-page-table-header',
         style: headerStyle
       })}
-      locale={{ emptyText: <div className={viewStyle['empty']}>{empty}</div> }}
+      locale={{ emptyText: <div className={style['empty']}>{empty}</div> }}
       rowClassName={record => {
         const id = resolveRowKey(rowKey, record);
         const isChecked = rowSelection?.selectedRowKeys && rowSelection.selectedRowKeys.indexOf(id) > -1;
-        return classnames(viewStyle['body'], 'info-page-table-row', {
-          [viewStyle['is-selected-all']]: rowSelection?.isSelectedAll,
-          [viewStyle['is-selected']]: isChecked,
-          [viewStyle['is-disabled']]: record.disabled
+        return classnames('info-page-table-row', {
+          [style['is-selected-all']]: rowSelection?.isSelectedAll,
+          [style['is-selected']]: isChecked,
+          [style['is-disabled']]: record.disabled
         });
       }}
       onRow={
