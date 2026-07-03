@@ -11,10 +11,9 @@ import { HolderOutlined, SettingOutlined } from '@ant-design/icons';
 import { useDebouncedCallback } from 'use-debounce';
 import ColumnsControlContent from './ColumnsControlContent';
 import tableLocalApis from './tableLocalApis';
-import { parseColumnWidth } from './TableView/columnWidth';
+import { parseColumnWidth, isOptionsColumn } from '@kne/table-view';
 import configStyle from './columnConfig.module.scss';
 import { TABLE_CONFIG_COLUMN_EXTRA_WIDTH } from './columnConfigExtra';
-import { isOptionsColumn } from './columnRenderType';
 
 const DEFAULT_WIDTH = 160;
 const DEFAULT_MIN = 80;

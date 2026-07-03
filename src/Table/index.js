@@ -2,19 +2,13 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { Checkbox, Empty, Table as AntTable } from 'antd';
 import classnames from 'classnames';
 import get from 'lodash/get';
-import computeColumnsValue, { computeDisplay } from '../computeColumnsValue';
+import { computeColumnsValue, computeDisplay, parseColumnWidth, useSelectedRow, useSort, renderColumnTitle, wrapColumnHeaderTitle, getColumnEllipsis, renderCellContent, resolveColumns } from '@kne/table-view';
 import { isEmpty } from '@kne/is-empty';
-import { parseColumnWidth } from '../TableView/columnWidth';
-import viewStyle from '../TableView/style.module.scss';
+import viewStyle from '@kne/table-view/src/TableView/style.module.scss';
 import style from './style.module.scss';
-import useSelectedRow from '../useSelectedRow';
-import useSort, { renderColumnTitle } from '../useSort';
-import { wrapColumnHeaderTitle } from '../columnHeaderTitle';
 import useTableConfig from '../useTableConfig';
 import useGroupHeader from '../useGroupHeader';
 import useElementWidth from '../useElementWidth';
-import { getColumnEllipsis, renderCellContent } from '../renderCellContent';
-import { resolveColumns } from '../columnRenderType';
 import { normalizeScrollTopInsetCSSValue, parseInsetPixels, resolveScrollTopInset } from '../TablePage/scrollUtils';
 
 const mapJustifyToAlign = justify => {
