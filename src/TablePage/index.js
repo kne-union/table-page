@@ -2,16 +2,17 @@ import { withFetch } from '@kne/react-fetch';
 import { Pagination } from 'antd';
 import { getFilterValue } from '@kne/react-filter';
 import Table from '../Table';
-import { TableView } from '@kne/table-view';
+import { TableView, isRenderMobileActive } from '@kne/table-view';
 import classnames from 'classnames';
 import get from 'lodash/get';
 import useRefCallback from '@kne/use-ref-callback';
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from '@kne/react-intl';
+import { useIsMobile } from '@kne/responsive-utils';
 import style from './style.module.scss';
 import withLocale from '../withLocale';
 import HorizontalScroller from './HorizontalScroller';
-import TableToolbar from './TableToolbar';
+import TableToolbar, { TablePageTabs } from './TableToolbar';
 import { scrollAnchorIntoView, normalizeScrollTopInsetCSSValue, resolveScrollTopInset } from './scrollUtils';
 
 const readPageSize = key => {
@@ -40,10 +41,13 @@ const TABLE_COMPONENTS = {
   TableView
 };
 
-const collectFilterFieldNames = (filter, search) => {
+const collectFilterFieldNames = (filter, search, tab) => {
   const names = new Set();
   if (search?.name) {
     names.add(search.name);
+  }
+  if (tab?.name) {
+    names.add(tab.name);
   }
   if (Array.isArray(filter?.list)) {
     filter.list.forEach(row => {
@@ -100,12 +104,17 @@ const TablePageInnerContent = withLocale(
     getScrollContainer,
     filter,
     search,
+    tab,
+    tabProps,
     batchActions,
     selectedRows,
     rowSelection,
+    renderMobile,
     ...props
   }) => {
     const { formatMessage } = useIntl();
+    const isMobile = useIsMobile();
+    const isMobileRenderActive = isRenderMobileActive(renderMobile, isMobile);
     const tableContentRef = useRef(null);
     const pendingScrollRef = useRef(false);
     const handlerDataFormat = useRefCallback(dataFormat);
@@ -118,7 +127,7 @@ const TablePageInnerContent = withLocale(
       return mapFilterValue(value || []);
     });
 
-    const filterFieldNames = useMemo(() => collectFilterFieldNames(filter, search), [filter, search]);
+    const filterFieldNames = useMemo(() => collectFilterFieldNames(filter, search, tab), [filter, search, tab]);
 
     const buildRequestParamsWithFilter = useRefCallback((value, extra = {}) => {
       return Object.assign({}, omitFilterParams(get(requestParams, pagination.paramsType), filterFieldNames), extra, getFilterParams(value));
@@ -145,7 +154,12 @@ const TablePageInnerContent = withLocale(
       [data, fetchProps, requestParams, refresh, reload, loadMore, send, dataFormat, pagination]
     );
 
-    const hasToolbar = !!(filter?.list?.length || (search && search.name) || (batchActions && batchActions.length));
+    const hasTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
+    const hasInnerToolbar = !!(filter?.list?.length || (search && search.name) || (batchActions && batchActions.length));
+    const showOuterTab = hasTab && !isMobile;
+    const showInnerTab = hasTab && isMobile;
+    const wrapWithToolbar = hasInnerToolbar || showInnerTab;
+    const hasToolbar = wrapWithToolbar || showOuterTab;
     const resolvedScrollTopInset = resolveScrollTopInset(scrollTopInset, stickyOffset);
     const scrollTopInsetStyle = useMemo(() => {
       const cssValue = normalizeScrollTopInsetCSSValue(resolvedScrollTopInset);
@@ -188,15 +202,21 @@ const TablePageInnerContent = withLocale(
         pagination.onChange(page, size);
         return;
       }
-      if (page !== get(requestParams, [pagination.paramsType, pagination.currentName], 1)) {
+      const nextSize = Number(size);
+      const currentPage = get(requestParams, [pagination.paramsType, pagination.currentName], 1);
+      const currentSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 50;
+
+      if (nextSize !== currentSize) {
+        pagination.onShowSizeChange && pagination.onShowSizeChange(page, nextSize);
+      }
+
+      if (page !== currentPage || nextSize !== currentSize) {
         (pagination.requestType === 'refresh' ? refresh : reload)({
           [pagination.paramsType]: buildRequestParamsWithFilter(filterValue, {
             [pagination.currentName]: page,
-            [pagination.pageSizeName]: Number(size)
+            [pagination.pageSizeName]: nextSize
           })
         });
-      } else {
-        pagination.onShowSizeChange && pagination.onShowSizeChange(page, Number(size));
       }
     });
 
@@ -204,19 +224,23 @@ const TablePageInnerContent = withLocale(
       if (!pagination.open) {
         return null;
       }
-      return {
+
+      const defaultShowTotal = total => (
+        <>
+          {formatMessage({ id: 'TotalText' })}&nbsp;
+          <span className={style['total_text']}>{total}</span>
+          &nbsp;
+          {formatMessage({ id: 'ItemText' })}
+        </>
+      );
+
+      const baseConfig = {
         total: formatData.total,
-        showTotal:
-          typeof pagination.showTotal === 'function'
-            ? pagination.showTotal
-            : total => (
-                <>
-                  {formatMessage({ id: 'TotalText' })}&nbsp;
-                  <span className={style['total_text']}>{total}</span>
-                  &nbsp;
-                  {formatMessage({ id: 'ItemText' })}
-                </>
-              ),
+        ...(pagination.showTotal !== false
+          ? {
+              showTotal: typeof pagination.showTotal === 'function' ? pagination.showTotal : defaultShowTotal
+            }
+          : {}),
         current: get(requestParams, [pagination.paramsType, pagination.currentName], 1),
         pageSize: Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 50,
         onChange: handlePaginationChange,
@@ -226,7 +250,23 @@ const TablePageInnerContent = withLocale(
         showQuickJumper: pagination.showQuickJumper,
         pageSizeOptions: pagination.pageSizeOptions
       };
-    }, [pagination, formatData.total, requestParams, formatMessage, handlePaginationChange]);
+
+      if (!isMobileRenderActive) {
+        return baseConfig;
+      }
+
+      const mobilePagination = pagination.mobile || {};
+
+      return {
+        ...baseConfig,
+        onShowSizeChange: handlePaginationChange,
+        size: mobilePagination.size,
+        showSizeChanger: mobilePagination.showSizeChanger !== false && pagination.showSizeChanger !== false,
+        showQuickJumper: mobilePagination.showQuickJumper === true,
+        showLessItems: mobilePagination.showLessItems ?? true,
+        pageSizeOptions: pagination.pageSizeOptions || ['10', '20', '50', '100']
+      };
+    }, [pagination, formatData.total, requestParams, formatMessage, handlePaginationChange, isMobileRenderActive]);
 
     const batchContext = useMemo(
       () => ({
@@ -252,6 +292,7 @@ const TablePageInnerContent = withLocale(
 
     const tableProps = {
       ...props,
+      renderMobile,
       rowSelection,
       dataSource: formatData.list,
       pagination: false,
@@ -259,7 +300,8 @@ const TablePageInnerContent = withLocale(
       scrollTopInset: resolvedScrollTopInset,
       getStickyContainer: getScrollContainer,
       className: classnames(className, {
-        [style['table-in-toolbar']]: hasToolbar
+        [style['table-in-toolbar']]: wrapWithToolbar,
+        [style['is-mobile-render']]: isMobileRenderActive
       }),
       columns: resolvedColumns,
       context: tableContext,
@@ -286,16 +328,41 @@ const TablePageInnerContent = withLocale(
             'is-loading': !isComplete && !data
           })}
         >
-          {hasToolbar ? (
-            <div className={style['table-with-toolbar']}>
-              <TableToolbar filterValue={filterValue} onFilterChange={handleFilterChange} filter={filter} search={search} batchActions={batchActions} rowSelection={rowSelection} selectedRows={selectedRows} batchContext={batchContext} />
+          {showOuterTab ? <TablePageTabs filterValue={filterValue} onFilterChange={handleFilterChange} tab={tab} tabProps={tabProps} className={style['table-page-tabs-outer']} isMobileRender={isMobileRenderActive} /> : null}
+          {wrapWithToolbar ? (
+            <div
+              className={classnames(style['table-with-toolbar'], {
+                [style['is-mobile-render']]: isMobileRenderActive
+              })}
+            >
+              <TableToolbar
+                filterValue={filterValue}
+                onFilterChange={handleFilterChange}
+                filter={filter}
+                search={search}
+                tab={tab}
+                tabProps={tabProps}
+                renderTab={showInnerTab}
+                batchActions={batchActions}
+                rowSelection={rowSelection}
+                selectedRows={selectedRows}
+                batchContext={batchContext}
+                isMobileRender={isMobileRenderActive}
+              />
               {tableElement}
             </div>
           ) : (
             tableElement
           )}
         </HorizontalScroller>
-        {paginationConfig ? <Pagination className={style['pagination']} {...paginationConfig} /> : null}
+        {paginationConfig ? (
+          <Pagination
+            className={classnames(style['pagination'], {
+              [style['is-mobile-render']]: isMobileRenderActive
+            })}
+            {...paginationConfig}
+          />
+        ) : null}
       </div>
     );
   }

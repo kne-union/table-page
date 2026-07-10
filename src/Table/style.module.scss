@@ -1,9 +1,18 @@
 // Table 复用 TableView 视觉风格，但不覆盖 antd fixed / sticky / shadow 行为
 .table {
+  --kne-table-cell-padding: var(--kne-table-cell-padding-default, 8px);
   box-sizing: border-box;
   position: relative;
   border: 1px solid #f0f0f0;
   border-radius: var(--radius-default, 2px);
+
+  &.is-size-small {
+    --kne-table-cell-padding: var(--kne-table-cell-padding-small, 4px);
+  }
+
+  &.is-size-large {
+    --kne-table-cell-padding: var(--kne-table-cell-padding-large, 14px 8px);
+  }
 
   :global(.info-page-table-body) {
     width: 100%;
@@ -212,7 +221,7 @@
 }
 
 .col-content {
-  padding: 8px;
+  padding: var(--kne-table-cell-padding);
   display: block;
   width: 100%;
   min-width: 0;
@@ -225,7 +234,7 @@
 }
 
 .empty {
-  padding: 8px;
+  padding: var(--kne-table-cell-padding);
   border-end-start-radius: var(--radius-default, 2px);
   border-end-end-radius: var(--radius-default, 2px);
 }
@@ -273,6 +282,11 @@
     user-select: none;
     cursor: col-resize;
   }
+}
+
+.is-mobile-render {
+  border: none !important;
+  border-radius: 0 !important;
 }
 
 .column-resize-guide {

@@ -23,11 +23,13 @@
 | columnRenderProps | object | `{}` | 列渲染扩展属性，会合并进列 `render` 的 context |
 | filter | object | - | 顶部筛选器配置，基于 `@kne/react-filter` 的 `FilterLines`，见下方 |
 | search | object | - | 顶部搜索框配置，基于 `@kne/react-filter` 的 `SearchInput`，见下方 |
+| tab | object | - | 顶部 Tab 分类切换，选中值写入 filter value，见下方 |
+| tabProps | object | - | 透传给 antd `Tabs` 的额外属性（如 `tabBarExtraContent`） |
 | batchActions | array | - | 批量操作下拉菜单项，需配合 `rowSelection` 使用，见下方 |
 | selectedRows | array | - | 已选行数据，传给 `batchActions` 的 `onClick` 上下文 |
 | className | string | - | 自定义类名 |
 | ...fetchProps | - | - | 其余属性透传给 `@kne/react-fetch`（如 `url`、`params`、`auto` 等） |
-| ...tableProps | - | - | 其余属性透传给内部 `Table`（如 `rowKey`、`rowSelection`、`scroll`） |
+| ...tableProps | - | - | 其余属性透传给内部 `Table` / `TableView`（如 `rowKey`、`rowSelection`、`scroll`、`size`、`renderMobile`、`sortRender`、`mobileSortToolbar`） |
 
 #### pagination
 
@@ -70,6 +72,39 @@
 | label | string | - | 已选展示标签 |
 | placeholder | string | - | 占位符 |
 | searchDelay | number | `500` | 自动提交防抖时间（毫秒） |
+
+#### tab
+
+顶部 Tab 分类切换。默认选中「全部」（不写入筛选值）；切换到具体项时，将 `{ name, label, value: { value, label } }` 写入 filter value，并触发 `reload` 回到第 1 页。桌面端显示在表格边框外侧上方；移动端（含 `renderMobile`）显示在 `SearchInput` 下方。选中值会出现在已选筛选标签中，清除标签会回到「全部」。
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| name | string | - | 必填，写入筛选值的字段名 |
+| label | string | - | 筛选字段标签 |
+| list | `Array<{ label, value }>` | - | Tab 选项列表 |
+
+#### tabProps
+
+透传给 antd `Tabs` 的额外属性。内部会覆盖 `activeKey`、`onChange`、`items`，其余如 `tabBarExtraContent`、`type` 等可自由传入。
+
+```jsx
+<TablePage
+  tab={{
+    name: 'position',
+    label: '职位',
+    list: [
+      { label: '工程师', value: '工程师' },
+      { label: '经理', value: '经理' }
+    ]
+  }}
+  tabProps={{
+    tabBarExtraContent: <Button type="link">新增职位</Button>
+  }}
+  search={{ name: 'keyword', label: '关键词' }}
+  loader={...}
+  columns={...}
+/>
+```
 
 #### batchActions
 
@@ -150,7 +185,21 @@
 | headerStyle | object | - | 表头自定义样式，仅在 `render` 自定义渲染时作用于 `header` |
 | onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
 | render | function | - | 自定义渲染 `(props) => ReactNode`，可获取 `header` 和 `renderBody` |
-| sortRender | function | - | 排序按钮渲染，由 `useSort` 提供 |
+| renderMobile | boolean \| function \| string | - | 仅移动端生效。`true` 使用默认卡片 List（不再渲染 antd Table）；为 function 时签名与 `render` 一致，且优先级高于 `render`，完全接管渲染；为 string 时从 `preset({ renderMobile })` 按名称取渲染函数，未注册则视为未开启 |
+| sortRender | function | - | 排序按钮渲染，由 `useSort` 提供（桌面端表头） |
+| mobileSortToolbar | function | - | 移动端排序工具栏，由 `useSort` 提供 |
+| size | `'small'` \| `'large'` | - | 单元格内边距：默认 `8px`，`small` 为 `4px`，`large` 为 `14px 8px`；可通过 CSS 变量覆盖 |
+
+单元格 padding 由 CSS 变量控制，可在外层覆盖：
+
+```css
+.info-page-table {
+  --kne-table-cell-padding-default: 8px;
+  --kne-table-cell-padding-small: 4px;
+  --kne-table-cell-padding-large: 14px 8px;
+  /* 或直接覆盖当前生效值：--kne-table-cell-padding: 10px; */
+}
+```
 
 #### columns
 
@@ -163,7 +212,8 @@
 | align | string | `'top'` | 垂直对齐方式 |
 | justify | string | `'flex-start'` | 水平对齐方式 |
 | format | string \| function | - | 值格式化 |
-| render | function | - | 自定义单元格渲染 `(value, { column, dataSource, context }) => ReactNode` |
+| render | function | - | 自定义单元格渲染 `(value, { column, dataSource, context }) => ReactNode`；与 `renderType` 同时存在时优先级最高 |
+| renderType | string | - | 声明式列渲染类型；存在 `render` 时仅保留列宽等维度，不参与单元格渲染 |
 | sort | boolean \| object | - | 是否支持排序，`{ single: true }` 为单列排序 |
 | ellipsis | boolean \| object | `false` | 超出省略，基于 antd Typography；`true` 开启省略与 tooltip，`{ showTitle: false }` 关闭 tooltip |
 | display | boolean \| function | - | 是否显示该列 |
@@ -236,7 +286,8 @@ const { selectedRowKeys, getRowSelection, clearSelectedRows } = Table.useSelecte
 |------|------|------|
 | sort | array | 当前排序配置 |
 | setSort | function | 设置排序 |
-| sortRender | function | `({ name, single }) => ReactNode`，传给 Table / TableView |
+| sortRender | function | `({ name, single }) => ReactNode`，传给 Table / TableView 表头 |
+| mobileSortToolbar | function | `({ columns }) => ReactNode`，传给 Table / TableView 移动端工具栏右侧 |
 
 #### columns.sort
 
@@ -253,15 +304,15 @@ const { selectedRowKeys, getRowSelection, clearSelectedRows } = Table.useSelecte
 #### 示例
 
 ```jsx
-const { sort, sortRender } = Table.useSort({ onSortChange: console.log });
+const { sort, sortRender, mobileSortToolbar } = Table.useSort({ onSortChange: console.log });
 const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns), [sort, dataSource]);
 
-<Table dataSource={sortedData} columns={columns} sortRender={sortRender} />;
+<Table dataSource={sortedData} columns={columns} sortRender={sortRender} mobileSortToolbar={mobileSortToolbar} />;
 ```
 
 ### Table
 
-表格组件，以 antd `Table` 作为展示层，外层 API 与 `TableView` 保持一致，可直接复用相同的 `columns`、`rowSelection` 等配置。此外支持透传 antd Table 的原生属性（如 `scroll`、`pagination`、`size` 等）。
+表格组件，以 antd `Table` 作为展示层，外层 API 与 `TableView` 保持一致，可直接复用相同的 `columns`、`rowSelection` 等配置。此外支持透传 antd Table 的原生属性（如 `scroll`、`pagination`、`bordered` 等）。
 
 #### 属性
 
@@ -281,11 +332,14 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | headerStyle | object | - | 表头自定义样式 |
 | onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
 | render | function | - | 自定义渲染 `(props) => ReactNode`，`header` 为 `null`，`renderBody` 返回 antd Table |
-| sortRender | function | - | 排序按钮渲染，由 `useSort` 提供 |
+| renderMobile | boolean \| function \| string | - | 仅移动端生效。`true` 使用默认卡片 List（不再渲染 antd Table）；为 function 时签名与 `render` 一致，且优先级高于 `render`，完全接管渲染；为 string 时从 `preset({ renderMobile })` 按名称取渲染函数，未注册则视为未开启 |
+| sortRender | function | - | 排序按钮渲染，由 `useSort` 提供（桌面端表头） |
+| mobileSortToolbar | function | - | 移动端排序工具栏，由 `useSort` 提供 |
 | pagination | boolean \| object | `false` | 分页配置，默认不显示；传入对象时使用 antd 分页 |
 | name | string | - | 表格唯一标识，用于持久化列配置 |
 | controllerOpen | boolean | `true` | 是否开启列宽拖动与列配置面板 |
 | tableServerApis | object | - | 自定义列配置存储 API，默认使用 `localStorage` |
+| size | `'small'` \| `'large'` | - | 单元格内边距：默认 `8px`，`small` 为 `4px`，`large` 为 `14px 8px`；可通过 CSS 变量覆盖（同 TableView） |
 | ...antdTableProps | - | - | 其余属性透传给 antd `Table`（如 `scroll`、`bordered`） |
 
 #### 与 TableView 的差异

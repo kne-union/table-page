@@ -3,7 +3,7 @@
   "list": [
     {
       "title": "TablePage",
-      "description": "表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、列配置、总结栏等",
+      "description": "表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、tab 分类切换、列配置、总结栏等",
       "code": "./table-page.js",
       "scope": [
         {
@@ -25,6 +25,11 @@
         },
         {
           "packageName": "@kne/react-filter/dist/index.css"
+        },
+        {
+          "name": "_ResponsiveUtils",
+          "packageName": "@kne/responsive-utils",
+          "importStatement": "import * as _ResponsiveUtils from \"@kne/responsive-utils\""
         }
       ]
     },
@@ -170,6 +175,44 @@
       ]
     },
     {
+      "title": "column render",
+      "description": "列同时配置 render 与 renderType 时，render 优先级最高，覆盖内置 renderType 的单元格渲染（Table / TableView 一致）",
+      "code": "./column-render.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    },
+    {
+      "title": "renderMobile",
+      "description": "移动端专用渲染：true 为默认卡片 List；function 完全接管；string 从 preset 按名称查找；支持 mobileSortToolbar 排序工具栏",
+      "code": "./render-mobile.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    },
+    {
       "title": "column config",
       "description": "列宽拖动调整、显示/隐藏字段、列排序与 localStorage 持久化（仅 Table）",
       "code": "./column-config.js",
@@ -192,6 +235,25 @@
       "title": "group header",
       "description": "分组表头（groupHeader），实现多级表头结构，可与 useSort 配合使用（仅 Table）",
       "code": "./group-header.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    },
+    {
+      "title": "size",
+      "description": "单元格 padding 尺寸：默认 8px，small 为 4px，large 为 14px 8px；Table / TableView 均支持，可用 CSS 变量 --kne-table-cell-padding-* 覆盖",
+      "code": "./size.js",
       "scope": [
         {
           "name": "_TablePage",

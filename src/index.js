@@ -35,7 +35,9 @@ export {
   getGridTemplateColumns,
   hasColumnSpan,
   hasColumnWidth,
-  wrapColumnHeaderTitle
+  wrapColumnHeaderTitle,
+  resolveRenderMobile,
+  isRenderMobileActive
 } from '@kne/table-view';
 export { default as Table } from './Table';
 export { default as useTableConfig } from './useTableConfig';
