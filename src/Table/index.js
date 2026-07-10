@@ -2,20 +2,8 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { Checkbox, Empty, Table as AntTable } from 'antd';
 import classnames from 'classnames';
 import get from 'lodash/get';
-import {
-  computeColumnsValue,
-  computeDisplay,
-  parseColumnWidth,
-  useSelectedRow,
-  useSort,
-  renderColumnTitle,
-  wrapColumnHeaderTitle,
-  getColumnEllipsis,
-  renderCellContent,
-  resolveColumns,
-  TableView,
-  isRenderMobileActive
-} from '@kne/table-view';
+import { computeColumnsValue, computeDisplay, parseColumnWidth, useSelectedRow, useSort, renderColumnTitle, wrapColumnHeaderTitle, getColumnEllipsis, renderCellContent, resolveColumns, isRenderMobileActive } from '@kne/table-view';
+import TableView from '../TableView';
 import { isEmpty } from '@kne/is-empty';
 import { useIsMobile } from '@kne/responsive-utils';
 import style from './style.module.scss';
@@ -96,7 +84,7 @@ const Table = p => {
     empty,
     onRowSelect,
     render,
-    renderMobile,
+    renderMobile = true,
     context,
     sticky,
     scrollTopInset,

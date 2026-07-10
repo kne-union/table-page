@@ -3,7 +3,6 @@ const { fields } = _ReactFilter;
 const { SuperSelectFilterItem } = fields;
 const { Table: AntTable, Flex, Tag, Button, Space, message } = antd;
 const { useMemo } = React;
-const { useIsMobile } = _ResponsiveUtils;
 
 const TOTAL = 156;
 
@@ -229,11 +228,8 @@ const Tips = () => (
   </div>
 );
 
-const MOBILE_PREVIEW_PADDING = '0 16px';
-
 const BaseExample = () => {
   const tableRef = React.useRef();
-  const isMobile = useIsMobile();
   const allEmployees = useMemo(() => range(0, TOTAL).map(buildEmployee), []);
   const { selectedRows, getRowSelection } = Table.useSelectedRow({ rowKey: 'id' });
   const { sort, sortRender, mobileSortToolbar } = Table.useSort({
@@ -267,112 +263,110 @@ const BaseExample = () => {
           刷新当前页
         </Button>
       </Space>
-      <div style={isMobile ? { padding: MOBILE_PREVIEW_PADDING } : undefined}>
-        <TablePage
-          ref={tableRef}
-          name="demo-employee-table"
-          sticky
-          scroll={{ x: 1600, y: 400 }}
-          size="large"
-          renderMobile
-          sortRender={sortRender}
-          mobileSortToolbar={mobileSortToolbar}
-          rowSelection={getRowSelection(allEmployees)}
-          selectedRows={selectedRows}
-          search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 220 } }}
-          tab={{
-            name: 'position',
-            label: '职位',
-            list: positionOptions
-          }}
-          tabProps={{
-            tabBarExtraContent: (
-              <Button type="link" size="small" onClick={() => message.info('新增职位')}>
-                新增职位
-              </Button>
-            )
-          }}
-          filter={{
-            list: [
-              [
-                {
-                  type: SuperSelectFilterItem,
-                  props: { name: 'department', label: '部门', single: true, options: departmentOptions }
-                },
-                {
-                  type: SuperSelectFilterItem,
-                  props: { name: 'status', label: '状态', single: true, options: statusOptions }
-                }
-              ]
-            ],
-            displayLine: 1
-          }}
-          batchActions={[
-            {
-              key: 'export',
-              label: '批量导出',
-              onClick: ({ selectedRowKeys }) => {
-                message.info(`正在导出 ${selectedRowKeys.length} 名员工`);
+      <TablePage
+        ref={tableRef}
+        name="demo-employee-table"
+        sticky
+        scroll={{ x: 1600, y: 400 }}
+        size="large"
+        renderMobile
+        sortRender={sortRender}
+        mobileSortToolbar={mobileSortToolbar}
+        rowSelection={getRowSelection(allEmployees)}
+        selectedRows={selectedRows}
+        search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 220 } }}
+        tab={{
+          name: 'position',
+          label: '职位',
+          list: positionOptions
+        }}
+        tabProps={{
+          tabBarExtraContent: (
+            <Button type="link" size="small" onClick={() => message.info('新增职位')}>
+              新增职位
+            </Button>
+          )
+        }}
+        filter={{
+          list: [
+            [
+              {
+                type: SuperSelectFilterItem,
+                props: { name: 'department', label: '部门', single: true, options: departmentOptions }
+              },
+              {
+                type: SuperSelectFilterItem,
+                props: { name: 'status', label: '状态', single: true, options: statusOptions }
               }
-            },
-            {
-              key: 'notify',
-              label: '批量通知',
-              onClick: ({ selectedRowKeys }) => {
-                message.success(`已通知 ${selectedRowKeys.length} 名员工`);
-              }
+            ]
+          ],
+          displayLine: 1
+        }}
+        batchActions={[
+          {
+            key: 'export',
+            label: '批量导出',
+            onClick: ({ selectedRowKeys }) => {
+              message.info(`正在导出 ${selectedRowKeys.length} 名员工`);
             }
-          ]}
-          pagination={{
-            open: true,
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            pageSizeOptions: ['10', '20', '50', '100']
-          }}
-          dataFormat={data => ({
-            list: data.pageData,
-            total: data.totalCount,
-            data
-          })}
-          loader={({ data, requestParams }) => {
-            const currentPage = Number(data?.currentPage ?? requestParams?.data?.currentPage) || 1;
-            const perPage = Number(data?.perPage ?? requestParams?.data?.perPage) || 20;
-            const sortParams = data?.sort ?? requestParams?.data?.sort ?? [{ name: 'joinDate', sort: 'DESC' }];
-            const filteredEmployees = applyFilters(allEmployees, data, requestParams);
-            const sortedEmployees = sortParams.length ? Table.sortDataSource(filteredEmployees, sortParams, columns) : filteredEmployees;
-            const startIndex = (currentPage - 1) * perPage;
+          },
+          {
+            key: 'notify',
+            label: '批量通知',
+            onClick: ({ selectedRowKeys }) => {
+              message.success(`已通知 ${selectedRowKeys.length} 名员工`);
+            }
+          }
+        ]}
+        pagination={{
+          open: true,
+          pageSize: 10,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          pageSizeOptions: ['10', '20', '50', '100']
+        }}
+        dataFormat={data => ({
+          list: data.pageData,
+          total: data.totalCount,
+          data
+        })}
+        loader={({ data, requestParams }) => {
+          const currentPage = Number(data?.currentPage ?? requestParams?.data?.currentPage) || 1;
+          const perPage = Number(data?.perPage ?? requestParams?.data?.perPage) || 20;
+          const sortParams = data?.sort ?? requestParams?.data?.sort ?? [{ name: 'joinDate', sort: 'DESC' }];
+          const filteredEmployees = applyFilters(allEmployees, data, requestParams);
+          const sortedEmployees = sortParams.length ? Table.sortDataSource(filteredEmployees, sortParams, columns) : filteredEmployees;
+          const startIndex = (currentPage - 1) * perPage;
 
-            return new Promise(resolve => {
-              setTimeout(() => {
-                resolve({
-                  pageData: sortedEmployees.slice(startIndex, startIndex + perPage),
-                  totalCount: filteredEmployees.length
-                });
-              }, 400);
-            });
-          }}
-          columns={columns}
-          summary={({ pageData, data }) => {
-            const totalCount = data?.totalCount || 0;
-            return (
-              <AntTable.Summary fixed>
-                <AntTable.Summary.Row>
-                  <AntTable.Summary.Cell index={0} colSpan={5}>
-                    <strong>当前页统计</strong>
-                  </AntTable.Summary.Cell>
-                  <AntTable.Summary.Cell index={5}>
-                    <strong>{pageData.length} 人</strong>
-                  </AntTable.Summary.Cell>
-                  <AntTable.Summary.Cell index={6} colSpan={7}>
-                    <strong>总员工数: {totalCount} 人</strong>
-                  </AntTable.Summary.Cell>
-                </AntTable.Summary.Row>
-              </AntTable.Summary>
-            );
-          }}
+          return new Promise(resolve => {
+            setTimeout(() => {
+              resolve({
+                pageData: sortedEmployees.slice(startIndex, startIndex + perPage),
+                totalCount: filteredEmployees.length
+              });
+            }, 400);
+          });
+        }}
+        columns={columns}
+        summary={({ pageData, data }) => {
+          const totalCount = data?.totalCount || 0;
+          return (
+            <AntTable.Summary fixed>
+              <AntTable.Summary.Row>
+                <AntTable.Summary.Cell index={0} colSpan={5}>
+                  <strong>当前页统计</strong>
+                </AntTable.Summary.Cell>
+                <AntTable.Summary.Cell index={5}>
+                  <strong>{pageData.length} 人</strong>
+                </AntTable.Summary.Cell>
+                <AntTable.Summary.Cell index={6} colSpan={7}>
+                  <strong>总员工数: {totalCount} 人</strong>
+                </AntTable.Summary.Cell>
+              </AntTable.Summary.Row>
+            </AntTable.Summary>
+          );
+        }}
         />
-      </div>
     </Flex>
   );
 };

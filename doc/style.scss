@@ -1,0 +1,9 @@
+@use '~@kne/responsive-utils/scss' as resp;
+
+// 手机预览下给示例内容左右留白，便于观察表格/卡片边框
+@include resp.mobile-container {
+  .example-driver-runner {
+    padding-inline: 16px;
+    box-sizing: border-box;
+  }
+}

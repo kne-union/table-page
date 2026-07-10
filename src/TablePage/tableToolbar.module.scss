@@ -2,6 +2,9 @@
 
 .table-toolbar-section {
   border-bottom: 1px solid #f0f0f0;
+  // 保证批量操作下拉层叠在下方「全选」条之上（renderMobile 时 TableView 为 position:relative）
+  position: relative;
+  z-index: 2;
 
   &.has-value-display {
     .table-toolbar {
@@ -150,7 +153,6 @@
   .table-toolbar-section.has-mobile-search {
     .table-toolbar-search-row {
       padding: 8px 16px 0;
-      background: var(--bg-color-white, #ffffff);
     }
 
     .table-toolbar.is-mobile {

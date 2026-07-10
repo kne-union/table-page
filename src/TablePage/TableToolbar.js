@@ -5,7 +5,7 @@ import { FilterOuter, FilterLines, FilterValueDisplay, SearchInput } from '@kne/
 import '@kne/react-filter/dist/index.css';
 import classnames from 'classnames';
 import { useIntl } from '@kne/react-intl';
-import { useIsMobile } from '@kne/responsive-utils';
+import { useIsMobile, usePopupContainer } from '@kne/responsive-utils';
 import style from './tableToolbar.module.scss';
 
 const TAB_ALL_KEY = '__all__';
@@ -69,6 +69,7 @@ export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, clas
 const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabProps, renderTab = true, batchActions, rowSelection, selectedRows, batchContext, isMobileRender }) => {
   const { formatMessage } = useIntl();
   const isMobile = useIsMobile();
+  const getPopupContainer = usePopupContainer();
   const selectedRowKeys = rowSelection?.selectedRowKeys || [];
   const hasSelection = selectedRowKeys.length > 0;
 
@@ -157,7 +158,7 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
               {showBatch ? (
                 <>
                   <div className={style['table-toolbar-batch']}>
-                    <Dropdown disabled={!hasSelection} menu={{ items: batchMenuItems }} trigger={['click']}>
+                    <Dropdown disabled={!hasSelection} menu={{ items: batchMenuItems }} trigger={['click']} getPopupContainer={getPopupContainer}>
                       <Button size="small" disabled={!hasSelection} className={style['table-toolbar-batch-btn']}>
                         {batchButtonLabel}
                         <DownOutlined />
