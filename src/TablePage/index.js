@@ -2,7 +2,8 @@ import { withFetch } from '@kne/react-fetch';
 import { Pagination } from 'antd';
 import { getFilterValue } from '@kne/react-filter';
 import Table from '../Table';
-import { TableView, isRenderMobileActive } from '@kne/table-view';
+import TableView from '../TableView';
+import { isRenderMobileActive } from '@kne/table-view';
 import classnames from 'classnames';
 import get from 'lodash/get';
 import useRefCallback from '@kne/use-ref-callback';
@@ -109,7 +110,7 @@ const TablePageInnerContent = withLocale(
     batchActions,
     selectedRows,
     rowSelection,
-    renderMobile,
+    renderMobile = true,
     ...props
   }) => {
     const { formatMessage } = useIntl();

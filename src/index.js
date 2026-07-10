@@ -7,7 +7,6 @@ export {
   renderTagList,
   getStatusType,
   renderStatusItem,
-  TableView,
   useSelectedRow,
   useSort,
   sortDataSource,
@@ -39,6 +38,7 @@ export {
   resolveRenderMobile,
   isRenderMobileActive
 } from '@kne/table-view';
+export { default as TableView } from './TableView';
 export { default as Table } from './Table';
 export { default as useTableConfig } from './useTableConfig';
 export { default as tableLocalApis } from './tableLocalApis';

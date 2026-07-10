@@ -25,11 +25,6 @@
         },
         {
           "packageName": "@kne/react-filter/dist/index.css"
-        },
-        {
-          "name": "_ResponsiveUtils",
-          "packageName": "@kne/responsive-utils",
-          "importStatement": "import * as _ResponsiveUtils from \"@kne/responsive-utils\""
         }
       ]
     },

@@ -185,7 +185,7 @@
 | headerStyle | object | - | 表头自定义样式，仅在 `render` 自定义渲染时作用于 `header` |
 | onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
 | render | function | - | 自定义渲染 `(props) => ReactNode`，可获取 `header` 和 `renderBody` |
-| renderMobile | boolean \| function \| string | - | 仅移动端生效。`true` 使用默认卡片 List（不再渲染 antd Table）；为 function 时签名与 `render` 一致，且优先级高于 `render`，完全接管渲染；为 string 时从 `preset({ renderMobile })` 按名称取渲染函数，未注册则视为未开启 |
+| renderMobile | boolean \| function \| string | `true` | 仅移动端生效。`true` 使用默认卡片 List（不再渲染 antd Table）；为 function 时签名与 `render` 一致，且优先级高于 `render`，完全接管渲染；为 string 时从 `preset({ renderMobile })` 按名称取渲染函数，未注册则视为未开启 |
 | sortRender | function | - | 排序按钮渲染，由 `useSort` 提供（桌面端表头） |
 | mobileSortToolbar | function | - | 移动端排序工具栏，由 `useSort` 提供 |
 | size | `'small'` \| `'large'` | - | 单元格内边距：默认 `8px`，`small` 为 `4px`，`large` 为 `14px 8px`；可通过 CSS 变量覆盖 |
@@ -332,7 +332,7 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | headerStyle | object | - | 表头自定义样式 |
 | onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
 | render | function | - | 自定义渲染 `(props) => ReactNode`，`header` 为 `null`，`renderBody` 返回 antd Table |
-| renderMobile | boolean \| function \| string | - | 仅移动端生效。`true` 使用默认卡片 List（不再渲染 antd Table）；为 function 时签名与 `render` 一致，且优先级高于 `render`，完全接管渲染；为 string 时从 `preset({ renderMobile })` 按名称取渲染函数，未注册则视为未开启 |
+| renderMobile | boolean \| function \| string | `true` | 仅移动端生效。`true` 使用默认卡片 List（不再渲染 antd Table）；为 function 时签名与 `render` 一致，且优先级高于 `render`，完全接管渲染；为 string 时从 `preset({ renderMobile })` 按名称取渲染函数，未注册则视为未开启 |
 | sortRender | function | - | 排序按钮渲染，由 `useSort` 提供（桌面端表头） |
 | mobileSortToolbar | function | - | 移动端排序工具栏，由 `useSort` 提供 |
 | pagination | boolean \| object | `false` | 分页配置，默认不显示；传入对象时使用 antd 分页 |
