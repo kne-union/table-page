@@ -2,8 +2,22 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { Checkbox, Empty, Table as AntTable } from 'antd';
 import classnames from 'classnames';
 import get from 'lodash/get';
-import { computeColumnsValue, computeDisplay, parseColumnWidth, useSelectedRow, useSort, renderColumnTitle, wrapColumnHeaderTitle, getColumnEllipsis, renderCellContent, resolveColumns } from '@kne/table-view';
+import {
+  computeColumnsValue,
+  computeDisplay,
+  parseColumnWidth,
+  useSelectedRow,
+  useSort,
+  renderColumnTitle,
+  wrapColumnHeaderTitle,
+  getColumnEllipsis,
+  renderCellContent,
+  resolveColumns,
+  TableView,
+  isRenderMobileActive
+} from '@kne/table-view';
 import { isEmpty } from '@kne/is-empty';
+import { useIsMobile } from '@kne/responsive-utils';
 import style from './style.module.scss';
 import useTableConfig from '../useTableConfig';
 import useGroupHeader from '../useGroupHeader';
@@ -56,6 +70,7 @@ const Table = p => {
   const tableRef = useRef(null);
   const tableWidth = useElementWidth(tableRef);
   const [isLayout, setIsLayout] = useState(true);
+  const isMobile = useIsMobile();
 
   const props = Object.assign(
     {},
@@ -81,6 +96,7 @@ const Table = p => {
     empty,
     onRowSelect,
     render,
+    renderMobile,
     context,
     sticky,
     scrollTopInset,
@@ -89,13 +105,17 @@ const Table = p => {
     headerStyle,
     pagination = false,
     sortRender,
+    mobileSortToolbar,
     name,
     controllerOpen,
     tableServerApis,
     scroll,
     summary,
+    size,
     ...others
   } = props;
+  const sizeClassName = size === 'small' ? style['is-size-small'] : size === 'large' ? style['is-size-large'] : null;
+  const useMobileRender = isRenderMobileActive(renderMobile, isMobile);
 
   const columns = useMemo(() => resolveColumns(columnsProp), [columnsProp]);
 
@@ -253,6 +273,7 @@ const Table = p => {
 
     return {
       type: rowSelection.type === 'radio' ? 'radio' : 'checkbox',
+      preserveSelectedRowKeys: true,
       ...(hasFixedColumn ? { fixed: 'left' } : {}),
       selectedRowKeys: rowSelection.isSelectedAll ? (dataSource || []).filter(item => !item.disabled).map(getRowKey) : rowSelection.selectedRowKeys,
       onChange: (selectedRowKeys, selectedRows, info) => {
@@ -262,11 +283,23 @@ const Table = p => {
             rowSelection.onIsSelectAllChange(checked);
             return;
           }
+          const pageKeys = (dataSource || []).filter(item => !item.disabled).map(getRowKey);
+          const existing = rowSelection.selectedRowKeys || [];
           if (!checked) {
-            rowSelection.onChange([], undefined, { context, checked: false });
+            rowSelection.onChange(
+              existing.filter(key => pageKeys.indexOf(key) === -1),
+              undefined,
+              { context, checked: false }
+            );
             return;
           }
-          rowSelection.onChange((dataSource || []).map(getRowKey), undefined, { context, checked: true });
+          const merged = existing.slice();
+          pageKeys.forEach(key => {
+            if (merged.indexOf(key) === -1) {
+              merged.push(key);
+            }
+          });
+          rowSelection.onChange(merged, undefined, { context, checked: true });
           return;
         }
 
@@ -343,6 +376,29 @@ const Table = p => {
     return { '--scroll-top-inset': cssValue };
   }, [resolvedScrollTopInset]);
 
+  if (useMobileRender) {
+    return (
+      <TableView
+        {...others}
+        className={classnames(className, style['is-mobile-render'])}
+        dataSource={dataSource}
+        columns={visibleColumns}
+        rowKey={rowKey}
+        rowSelection={rowSelection}
+        valueIsEmpty={valueIsEmpty}
+        emptyIsPlaceholder={emptyIsPlaceholder}
+        placeholder={placeholder}
+        empty={empty}
+        onRowSelect={onRowSelect}
+        renderMobile={renderMobile}
+        context={context}
+        sortRender={sortRender}
+        mobileSortToolbar={mobileSortToolbar}
+        size={size}
+      />
+    );
+  }
+
   const tableElement = (
     <AntTable
       {...others}
@@ -388,7 +444,7 @@ const Table = p => {
   const wrappedTable = (
     <div
       ref={tableRef}
-      className={classnames(style['table'], 'info-page-table', className, {
+      className={classnames(style['table'], 'info-page-table', sizeClassName, className, {
         [style['is-resize']]: currentMoveColumnIndex !== null,
         [style['is-computed']]: isLayout,
         [style['has-group-header']]: hasGroupHeader,

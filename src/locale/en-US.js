@@ -9,8 +9,10 @@ const locale = {
   Search: 'Search',
   BatchOperations: 'Batch Actions',
   BatchOperationsWithCount: 'Batch Actions (Selected: {count})',
+  BatchOperationsMobileSelected: 'Selected: {count}',
   Cancel: 'Cancel',
-  Confirm: 'Confirm'
+  Confirm: 'Confirm',
+  All: 'All'
 };
 
 export default locale;

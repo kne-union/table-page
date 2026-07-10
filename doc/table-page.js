@@ -3,6 +3,7 @@ const { fields } = _ReactFilter;
 const { SuperSelectFilterItem } = fields;
 const { Table: AntTable, Flex, Tag, Button, Space, message } = antd;
 const { useMemo } = React;
+const { useIsMobile } = _ResponsiveUtils;
 
 const TOTAL = 156;
 
@@ -31,6 +32,7 @@ const perfMap = {
 
 const departmentOptions = departments.map(item => ({ value: item, label: item }));
 const statusOptions = Object.entries(statusMap).map(([value, { text }]) => ({ value, label: text }));
+const positionOptions = positions.map(item => ({ value: item, label: item }));
 
 const buildEmployee = index => {
   const statusKeys = ['active', 'vacation', 'resigned', 'probation'];
@@ -157,6 +159,11 @@ const applyFilters = (employees, data, requestParams) => {
     result = result.filter(item => item.status === status);
   }
 
+  const position = normalizeFilterValue(params.position);
+  if (position) {
+    result = result.filter(item => item.position === position);
+  }
+
   return result;
 };
 
@@ -192,12 +199,20 @@ const Tips = () => (
       顶部工具栏集成 <code>filter</code>、<code>search</code>、<code>batchActions</code>；筛选变化自动 <code>reload</code> 并回到第 1 页。
     </div>
     <div>
+      <Tag style={TIP_TAG_STYLE} color="lime">Tab</Tag>
+      通过 <code>tab</code> 配置顶部分类切换（默认「全部」），选中值写入 filter value 并显示在已选标签；桌面端在表格边框外，移动端在 SearchInput 下方；可用 <code>tabProps</code> 透传 Tabs 属性（如 <code>tabBarExtraContent</code>）。
+    </div>
+    <div>
       <Tag style={TIP_TAG_STYLE} color="orange">列配置</Tag>
       设置 <code>name</code> 开启列宽拖动与显示/隐藏，「薪资范围」「学历」默认隐藏；状态列使用 <code>renderType="status"</code>，绩效列使用 <code>renderType="tag"</code>，操作列使用 <code>renderType="options"</code> 且 <code>fixed="right"</code>。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="cyan">排序</Tag>
-      配合 <code>Table.useSort</code> 与 <code>sortRender</code>，在 <code>onSortChange</code> 中调用 <code>reload</code> 传排序参数，与翻页一样不闪烁。
+      配合 <code>Table.useSort</code> 与 <code>sortRender</code>、<code>mobileSortToolbar</code>，在 <code>onSortChange</code> 中调用 <code>reload</code> 传排序参数，与翻页一样不闪烁。
+    </div>
+    <div>
+      <Tag style={TIP_TAG_STYLE} color="volcano">移动端</Tag>
+      设置 <code>renderMobile</code> 后，手机预览下启用卡片 List（含全选、排序工具栏）；桌面端仍为 antd Table。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="geekblue">固定表头</Tag>
@@ -214,11 +229,14 @@ const Tips = () => (
   </div>
 );
 
+const MOBILE_PREVIEW_PADDING = '0 16px';
+
 const BaseExample = () => {
   const tableRef = React.useRef();
+  const isMobile = useIsMobile();
   const allEmployees = useMemo(() => range(0, TOTAL).map(buildEmployee), []);
   const { selectedRows, getRowSelection } = Table.useSelectedRow({ rowKey: 'id' });
-  const { sort, sortRender } = Table.useSort({
+  const { sort, sortRender, mobileSortToolbar } = Table.useSort({
     defaultSort: [{ name: 'joinDate', sort: 'DESC' }],
     onSortChange: newSort => {
       tableRef.current?.reload({
@@ -249,95 +267,112 @@ const BaseExample = () => {
           刷新当前页
         </Button>
       </Space>
-      <TablePage
-        ref={tableRef}
-        name="demo-employee-table"
-        sticky
-        scroll={{ x: 1600, y: 400 }}
-        sortRender={sortRender}
-        rowSelection={getRowSelection(allEmployees)}
-        selectedRows={selectedRows}
-        search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 220 } }}
-        filter={{
-          list: [
-            [
-              {
-                type: SuperSelectFilterItem,
-                props: { name: 'department', label: '部门', single: true, options: departmentOptions }
-              },
-              {
-                type: SuperSelectFilterItem,
-                props: { name: 'status', label: '状态', single: true, options: statusOptions }
+      <div style={isMobile ? { padding: MOBILE_PREVIEW_PADDING } : undefined}>
+        <TablePage
+          ref={tableRef}
+          name="demo-employee-table"
+          sticky
+          scroll={{ x: 1600, y: 400 }}
+          size="large"
+          renderMobile
+          sortRender={sortRender}
+          mobileSortToolbar={mobileSortToolbar}
+          rowSelection={getRowSelection(allEmployees)}
+          selectedRows={selectedRows}
+          search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 220 } }}
+          tab={{
+            name: 'position',
+            label: '职位',
+            list: positionOptions
+          }}
+          tabProps={{
+            tabBarExtraContent: (
+              <Button type="link" size="small" onClick={() => message.info('新增职位')}>
+                新增职位
+              </Button>
+            )
+          }}
+          filter={{
+            list: [
+              [
+                {
+                  type: SuperSelectFilterItem,
+                  props: { name: 'department', label: '部门', single: true, options: departmentOptions }
+                },
+                {
+                  type: SuperSelectFilterItem,
+                  props: { name: 'status', label: '状态', single: true, options: statusOptions }
+                }
+              ]
+            ],
+            displayLine: 1
+          }}
+          batchActions={[
+            {
+              key: 'export',
+              label: '批量导出',
+              onClick: ({ selectedRowKeys }) => {
+                message.info(`正在导出 ${selectedRowKeys.length} 名员工`);
               }
-            ]
-          ],
-          displayLine: 1
-        }}
-        batchActions={[
-          {
-            key: 'export',
-            label: '批量导出',
-            onClick: ({ selectedRowKeys }) => {
-              message.info(`正在导出 ${selectedRowKeys.length} 名员工`);
+            },
+            {
+              key: 'notify',
+              label: '批量通知',
+              onClick: ({ selectedRowKeys }) => {
+                message.success(`已通知 ${selectedRowKeys.length} 名员工`);
+              }
             }
-          },
-          {
-            key: 'notify',
-            label: '批量通知',
-            onClick: ({ selectedRowKeys }) => {
-              message.success(`已通知 ${selectedRowKeys.length} 名员工`);
-            }
-          }
-        ]}
-        pagination={{
-          open: true,
-          pageSize: 10,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          pageSizeOptions: ['10', '20', '50', '100']
-        }}
-        dataFormat={data => ({
-          list: data.pageData,
-          total: data.totalCount,
-          data
-        })}
-        loader={({ data, requestParams }) => {
-          const currentPage = Number(data?.currentPage ?? requestParams?.data?.currentPage) || 1;
-          const perPage = Number(data?.perPage ?? requestParams?.data?.perPage) || 20;
-          const sortParams = data?.sort ?? requestParams?.data?.sort ?? [{ name: 'joinDate', sort: 'DESC' }];
-          const filteredEmployees = applyFilters(allEmployees, data, requestParams);
-          const sortedEmployees = sortParams.length ? Table.sortDataSource(filteredEmployees, sortParams, columns) : filteredEmployees;
-          const startIndex = (currentPage - 1) * perPage;
+          ]}
+          pagination={{
+            open: true,
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            pageSizeOptions: ['10', '20', '50', '100']
+          }}
+          dataFormat={data => ({
+            list: data.pageData,
+            total: data.totalCount,
+            data
+          })}
+          loader={({ data, requestParams }) => {
+            const currentPage = Number(data?.currentPage ?? requestParams?.data?.currentPage) || 1;
+            const perPage = Number(data?.perPage ?? requestParams?.data?.perPage) || 20;
+            const sortParams = data?.sort ?? requestParams?.data?.sort ?? [{ name: 'joinDate', sort: 'DESC' }];
+            const filteredEmployees = applyFilters(allEmployees, data, requestParams);
+            const sortedEmployees = sortParams.length ? Table.sortDataSource(filteredEmployees, sortParams, columns) : filteredEmployees;
+            const startIndex = (currentPage - 1) * perPage;
 
-          return new Promise(resolve => {
-            setTimeout(() => {
-              resolve({
-                pageData: sortedEmployees.slice(startIndex, startIndex + perPage),
-                totalCount: filteredEmployees.length
-              });
-            }, 400);
-          });
-        }}
-        columns={columns}
-        summary={({ pageData, data }) => {
-          const totalCount = data?.totalCount || 0;
-          return (
-            <AntTable.Summary fixed>
-              <AntTable.Summary.Row>
-                <AntTable.Summary.Cell index={0} colSpan={5}>
-                  <strong>当前页统计</strong>
-                </AntTable.Summary.Cell>
-                <AntTable.Summary.Cell index={5}>
-                  <strong>{pageData.length} 人</strong>
-                </AntTable.Summary.Cell>
-                <AntTable.Summary.Cell index={6} colSpan={7}>
-                  <strong>总员工数: {totalCount} 人</strong>
-                </AntTable.Summary.Cell>
-              </AntTable.Summary.Row>
-            </AntTable.Summary>
-          );
-        }}
-      />
+            return new Promise(resolve => {
+              setTimeout(() => {
+                resolve({
+                  pageData: sortedEmployees.slice(startIndex, startIndex + perPage),
+                  totalCount: filteredEmployees.length
+                });
+              }, 400);
+            });
+          }}
+          columns={columns}
+          summary={({ pageData, data }) => {
+            const totalCount = data?.totalCount || 0;
+            return (
+              <AntTable.Summary fixed>
+                <AntTable.Summary.Row>
+                  <AntTable.Summary.Cell index={0} colSpan={5}>
+                    <strong>当前页统计</strong>
+                  </AntTable.Summary.Cell>
+                  <AntTable.Summary.Cell index={5}>
+                    <strong>{pageData.length} 人</strong>
+                  </AntTable.Summary.Cell>
+                  <AntTable.Summary.Cell index={6} colSpan={7}>
+                    <strong>总员工数: {totalCount} 人</strong>
+                  </AntTable.Summary.Cell>
+                </AntTable.Summary.Row>
+              </AntTable.Summary>
+            );
+          }}
+        />
+      </div>
     </Flex>
   );
 };

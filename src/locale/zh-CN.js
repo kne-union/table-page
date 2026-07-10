@@ -9,8 +9,10 @@ const locale = {
   Search: '搜索',
   BatchOperations: '批量操作',
   BatchOperationsWithCount: '批量操作(已选:{count}条)',
+  BatchOperationsMobileSelected: '已选:{count}条',
   Cancel: '取消',
-  Confirm: '确定'
+  Confirm: '确定',
+  All: '全部'
 };
 
 export default locale;

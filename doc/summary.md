@@ -7,14 +7,15 @@
 表格页面主组件，基于 `@kne/react-fetch` 封装数据请求与分页逻辑。内置两种渲染模式：
 
 - **`Table` 模式**（默认）：基于 antd `Table`，支持列宽拖动、字段显示/隐藏、分组表头、粘性表头等
-- **`TableView` 模式**：基于 antd Row/Col 栅格布局，适合移动端或卡片式表格场景
+- **`TableView` 模式**：基于 `@kne/table-view` CSS Grid，适合移动端或卡片式表格场景
 
 通过 `loader` 或 `url` 配置数据源，通过 `dataFormat` 适配不同的接口数据结构。分页器渲染在表格外侧，翻页默认采用 `reload` 方式（不显示全屏 loading）。
 
-同时内置了顶部工具栏（`TableToolbar`），整合筛选、搜索、批量操作三大能力：
+同时内置了顶部工具栏（`TableToolbar`），整合筛选、搜索、Tab 分类、批量操作等能力：
 
 - **筛选（filter）**：基于 `@kne/react-filter` 的 `FilterLines`，支持多行多字段组合筛选，筛选值变化时自动 `reload` 并回到第 1 页
 - **搜索（search）**：基于 `@kne/react-filter` 的 `SearchInput`，支持关键词搜索与防抖自动提交，与筛选器共享筛选值状态
+- **Tab（tab）**：顶部分类切换，默认「全部」，选中值写入 filter value 并显示在已选标签；桌面端在表格边框外侧，移动端显示在 SearchInput 下方；可通过 `tabProps` 透传 antd Tabs 属性
 - **批量操作（batchActions）**：配合 `rowSelection` 和 `useSelectedRow`，提供下拉菜单形式的批量操作（如批量导出、批量通知），未选中时自动禁用
 - **已选筛选值展示**：工具栏下方展示当前生效的筛选条件标签，支持快速清除
 
@@ -30,7 +31,7 @@
 
 #### TableView
 
-基于 CSS Grid 的表格视图组件，以 antd Row/Col 布局为基础。相比于 `Table`，它更轻量灵活，适合需要自定义渲染的场景。支持：
+基于 `@kne/table-view` 的 CSS Grid 表格视图组件。相比于 `Table`，它更轻量灵活，适合需要自定义渲染、移动端卡片展示的场景。支持：
 
 - 基于 24 栅格的列宽分配（`span` 属性）
 - CSS Grid 自动布局，内容超出时自动撑开
@@ -59,6 +60,51 @@
 - **多列排序**（`sort: { single: false }`）：允许多列同时排序
 - 排序状态循环切换：DESC → ASC → 取消
 - `sortDataSource(dataSource, sort, columns)` 工具函数，支持本地排序（包含中文排序）
+
+### 渲染逻辑
+
+#### 双模式：Table / TableView
+
+`TablePage` 通过 `type` 切换底层表格实现：
+
+| 模式 | 底层 | 适用场景 |
+|------|------|----------|
+| `Table`（默认） | antd `Table` | 桌面端完整表格能力：列宽拖动、列配置、分组表头、粘性表头、总结栏 |
+| `TableView` | `@kne/table-view` CSS Grid | 轻量栅格表格、移动端、卡片式展示 |
+
+两种模式共享 `columns`、`rowSelection`、`sortRender`、`renderType` 等 API，列渲染管线统一来自 `@kne/table-view`。
+
+#### 列单元格渲染管线
+
+无论 `Table` 还是 `TableView`，单元格内容均走同一套流程（`Table` 在 antd `columns[].render` 内调用）：
+
+1. **`resolveColumns`**：解析 `renderType`，注入内置 `render` 与 `width` / `min` / `max` / `ellipsis`
+2. **`computeColumnsValue`**：`getValueOf` 取值 → `format` 格式化 → 按 `display` / 空值规则过滤
+3. **`computeDisplay`**：空值占位；非空调用列 `render`
+4. **`renderCellContent`**：按 `ellipsis` / `cellFullWidth` 输出最终节点
+
+列渲染优先级：`column.render`（最高）> `renderType` 内置渲染 > 原始格式化值。`render` 与 `renderType` 共存时，后者仅提供列宽等布局维度。
+
+#### 桌面端：antd Table
+
+`Table` 将解析后的列映射为 antd `columns`，在 `render` 回调中复用上述管线。额外能力：
+
+- `useTableConfig` 管理列宽拖动、显示/隐藏、localStorage 持久化
+- `useGroupHeader` 生成分组表头
+- `rowSelection` 映射为 antd 行选择（含 `allowSelectedAll` 全选）
+- `render={({ header, renderBody }) => ...}` 可自定义表格外层，`renderBody()` 返回完整 antd Table
+
+#### 移动端：`renderMobile`
+
+`Table` 与 `TableView` 均支持 `renderMobile`，移动端判断使用 `useIsMobile()`（768px）。激活后 `Table` **不再渲染 antd Table**，委托 `TableView` 处理：
+
+| `renderMobile` 值 | 行为 |
+|-------------------|------|
+| `true` | 默认卡片 List：每行一张卡片，字段列「标题 + 内容」纵向排列，`options` 操作列靠右（紧凑「⋯」入口） |
+| `function` | 完全接管移动端渲染，签名 `({ header, renderBody, ...props }) => ReactNode`；可调用 `renderBody()` 复用默认卡片 |
+| `string` | 从 `preset({ renderMobile: { [name]: fn } })` 查找；未注册则视为未开启，回退普通表格 |
+
+桌面端不受 `renderMobile` 影响：`Table` 仍走 antd Table，`TableView` 仍走 CSS Grid 或 `render`。
 
 ### 列渲染类型系统
 
@@ -102,4 +148,4 @@
 - **后台管理系统**：订单管理、用户列表、商品管理等 CRUD 页面
 - **数据报表**：配合排序、分页、总结栏展示统计数据
 - **列表配置页**：需要用户自定义列宽、显示字段的表格场景
-- **移动端适配**：使用 `TableView` 模式实现栅格式数据展示
+- **移动端适配**：`renderMobile` 启用卡片 List，或 `TableView` 模式做栅格式展示
