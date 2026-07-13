@@ -32,7 +32,6 @@
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
-  background: var(--bg-color-white, #ffffff);
 }
 
 .table-toolbar-batch {
@@ -167,7 +166,6 @@
   .table-toolbar-section.has-tabs {
     .table-page-tabs {
       padding-inline: 16px;
-      background: var(--bg-color-white, #ffffff);
     }
   }
 
@@ -261,8 +259,6 @@
 }
 
 .table-toolbar-value-display {
-  background: var(--bg-color-white, #ffffff);
-
   :global(.filter-value-display),
   :global(.filter-title) {
     padding: 0 16px 6px !important;

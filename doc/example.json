@@ -3,7 +3,7 @@
   "list": [
     {
       "title": "TablePage",
-      "description": "表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、tab 分类切换、列配置、总结栏等",
+      "description": "表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、tab 分类切换、列配置、总结栏；空数据（total 为 0）时不显示分页器",
       "code": "./table-page.js",
       "scope": [
         {

@@ -316,6 +316,8 @@ const Table = p => {
     };
   }, [context, dataSource, rowKey, rowSelection, hasFixedColumn]);
 
+  const hasData = Array.isArray(dataSource) && dataSource.length > 0;
+
   const tableScroll = useMemo(() => {
     let x;
     if (hasFixedColumn) {
@@ -323,10 +325,15 @@ const Table = p => {
     } else if (controllerOpen) {
       x = Math.max(tableWidth, totalWidth);
     }
-    return Object.assign({}, x != null ? { x } : {}, scroll);
-  }, [hasFixedColumn, controllerOpen, totalWidth, tableWidth, scroll]);
+    const nextScroll = Object.assign({}, x != null ? { x } : {}, scroll);
+    if (!hasData && nextScroll.y != null) {
+      const { y, ...rest } = nextScroll;
+      return rest;
+    }
+    return nextScroll;
+  }, [hasFixedColumn, controllerOpen, totalWidth, tableWidth, scroll, hasData]);
 
-  const hasScrollY = scroll?.y != null && scroll?.y !== false;
+  const hasScrollY = hasData && scroll?.y != null && scroll?.y !== false;
   const isStickyViewport = !!sticky && !hasScrollY;
   const resolvedScrollTopInset = resolveScrollTopInset(scrollTopInset, stickyOffset);
 
