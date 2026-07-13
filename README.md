@@ -184,15 +184,15 @@ npm i --save @kne/table-page
 #### 示例代码
 
 - TablePage
-- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、tab 分类切换、列配置、总结栏等
+- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、tab 分类切换、列配置、总结栏；空数据（total 为 0）时不显示分页器
 - _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd),_ReactFilter(@kne/react-filter)[import * as _ReactFilter from "@kne/react-filter"],(@kne/react-filter/dist/index.css)
 
 ```jsx
 const { default: TablePage, Table } = _TablePage;
 const { fields } = _ReactFilter;
 const { SuperSelectFilterItem } = fields;
-const { Table: AntTable, Flex, Tag, Button, Space, message } = antd;
-const { useMemo } = React;
+const { Table: AntTable, Flex, Tag, Button, Space, Switch, message } = antd;
+const { useMemo, useState } = React;
 
 const TOTAL = 156;
 
@@ -381,7 +381,7 @@ const Tips = () => (
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="green">分页</Tag>
-      分页器渲染在表格外侧，翻页时以 <code>reload</code> 方式请求；<code>pageSize</code> 会持久化到 localStorage。
+      分页器渲染在表格外侧，翻页时以 <code>reload</code> 方式请求；<code>pageSize</code> 会持久化到 localStorage；当 <code>total</code> 为 0（无数据）时不显示分页器。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="gold">筛选</Tag>
@@ -420,6 +420,8 @@ const Tips = () => (
 
 const BaseExample = () => {
   const tableRef = React.useRef();
+  const [empty, setEmpty] = useState(false);
+  const emptyRef = React.useRef(false);
   const allEmployees = useMemo(() => range(0, TOTAL).map(buildEmployee), []);
   const { selectedRows, getRowSelection } = Table.useSelectedRow({ rowKey: 'id' });
   const { sort, sortRender, mobileSortToolbar } = Table.useSort({
@@ -435,7 +437,18 @@ const BaseExample = () => {
     <Flex vertical gap={16}>
       <Tips />
       <SortState sort={sort} />
-      <Space>
+      <Space wrap>
+        <Flex align="center" gap={8}>
+          <Switch
+            checked={empty}
+            onChange={checked => {
+              emptyRef.current = checked;
+              setEmpty(checked);
+              tableRef.current?.reload({ data: { currentPage: 1 } });
+            }}
+          />
+          <span>{empty ? '空数据（无分页）' : '有数据（显示分页）'}</span>
+        </Flex>
         <Button
           onClick={() => {
             tableRef.current?.reload({
@@ -521,6 +534,11 @@ const BaseExample = () => {
           data
         })}
         loader={({ data, requestParams }) => {
+          if (emptyRef.current) {
+            return new Promise(resolve => {
+              setTimeout(() => resolve({ pageData: [], totalCount: 0 }), 400);
+            });
+          }
           const currentPage = Number(data?.currentPage ?? requestParams?.data?.currentPage) || 1;
           const perPage = Number(data?.perPage ?? requestParams?.data?.perPage) || 20;
           const sortParams = data?.sort ?? requestParams?.data?.sort ?? [{ name: 'joinDate', sort: 'DESC' }];
@@ -2931,7 +2949,7 @@ render(<BaseExample />);
 
 #### 与 Table 分页的差异
 
-`TablePage` 的分页器渲染在表格外侧（`antd Pagination`），不会出现在 `Table` 边框内部。表格本身始终设置 `pagination={false}`。
+`TablePage` 的分页器渲染在表格外侧（`antd Pagination`），不会出现在 `Table` 边框内部。表格本身始终设置 `pagination={false}`。当 `dataFormat` 返回的 `total` 为 0（无数据）时，分页器不会渲染。
 
 #### renderType
 

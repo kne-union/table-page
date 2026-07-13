@@ -222,7 +222,7 @@ const TablePageInnerContent = withLocale(
     });
 
     const paginationConfig = useMemo(() => {
-      if (!pagination.open) {
+      if (!pagination.open || !(formatData.total > 0)) {
         return null;
       }
 

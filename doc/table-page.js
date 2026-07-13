@@ -1,8 +1,8 @@
 const { default: TablePage, Table } = _TablePage;
 const { fields } = _ReactFilter;
 const { SuperSelectFilterItem } = fields;
-const { Table: AntTable, Flex, Tag, Button, Space, message } = antd;
-const { useMemo } = React;
+const { Table: AntTable, Flex, Tag, Button, Space, Switch, message } = antd;
+const { useMemo, useState } = React;
 
 const TOTAL = 156;
 
@@ -191,7 +191,7 @@ const Tips = () => (
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="green">分页</Tag>
-      分页器渲染在表格外侧，翻页时以 <code>reload</code> 方式请求；<code>pageSize</code> 会持久化到 localStorage。
+      分页器渲染在表格外侧，翻页时以 <code>reload</code> 方式请求；<code>pageSize</code> 会持久化到 localStorage；当 <code>total</code> 为 0（无数据）时不显示分页器。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="gold">筛选</Tag>
@@ -230,6 +230,8 @@ const Tips = () => (
 
 const BaseExample = () => {
   const tableRef = React.useRef();
+  const [empty, setEmpty] = useState(false);
+  const emptyRef = React.useRef(false);
   const allEmployees = useMemo(() => range(0, TOTAL).map(buildEmployee), []);
   const { selectedRows, getRowSelection } = Table.useSelectedRow({ rowKey: 'id' });
   const { sort, sortRender, mobileSortToolbar } = Table.useSort({
@@ -245,7 +247,18 @@ const BaseExample = () => {
     <Flex vertical gap={16}>
       <Tips />
       <SortState sort={sort} />
-      <Space>
+      <Space wrap>
+        <Flex align="center" gap={8}>
+          <Switch
+            checked={empty}
+            onChange={checked => {
+              emptyRef.current = checked;
+              setEmpty(checked);
+              tableRef.current?.reload({ data: { currentPage: 1 } });
+            }}
+          />
+          <span>{empty ? '空数据（无分页）' : '有数据（显示分页）'}</span>
+        </Flex>
         <Button
           onClick={() => {
             tableRef.current?.reload({
@@ -331,6 +344,11 @@ const BaseExample = () => {
           data
         })}
         loader={({ data, requestParams }) => {
+          if (emptyRef.current) {
+            return new Promise(resolve => {
+              setTimeout(() => resolve({ pageData: [], totalCount: 0 }), 400);
+            });
+          }
           const currentPage = Number(data?.currentPage ?? requestParams?.data?.currentPage) || 1;
           const perPage = Number(data?.perPage ?? requestParams?.data?.perPage) || 20;
           const sortParams = data?.sort ?? requestParams?.data?.sort ?? [{ name: 'joinDate', sort: 'DESC' }];
