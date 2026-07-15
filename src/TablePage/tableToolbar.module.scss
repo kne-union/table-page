@@ -161,6 +161,11 @@
     &.has-mobile-search-only .table-toolbar-search-row {
       padding-bottom: 8px;
     }
+
+    // renderMobile 时由 .table-with-toolbar gap 承担与卡片间距，避免 search-only 再叠一层 padding-bottom
+    &.is-mobile-render.has-mobile-search-only .table-toolbar-search-row {
+      padding-bottom: 0;
+    }
   }
 
   .table-toolbar-section.has-tabs {
