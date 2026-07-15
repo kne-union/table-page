@@ -29,6 +29,9 @@
   border-radius: var(--radius-default, 2px);
 
   &.is-mobile-render {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     border: none;
     border-radius: 0;
   }
@@ -108,6 +111,8 @@
   justify-content: flex-end;
 
   &.is-mobile-render {
+    justify-content: center;
+
     :global(.ant-pagination-prev),
     :global(.ant-pagination-item),
     :global(.ant-pagination-jump-prev),

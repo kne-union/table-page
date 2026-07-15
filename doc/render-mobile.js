@@ -1,5 +1,5 @@
 const { Table, TableView, preset } = _TablePage;
-const { Flex, Tag, Card, Button, Dropdown, Tabs, Checkbox } = antd;
+const { Flex, Tag, Card, Button, Dropdown, Tabs, Checkbox, Radio } = antd;
 const { useState, useMemo } = React;
 
 const statusMap = {
@@ -70,7 +70,7 @@ const columns = [
 
 preset({
   renderMobile: {
-    orderCard: ({ renderBody }) => {
+    orderCard: ({ renderBody, dataSource = [] }) => {
       const totalAmount = dataSource.reduce((sum, item) => sum + item.amount, 0);
       return (
         <div
@@ -123,10 +123,11 @@ const getOrderActions = item => [
   { key: 'delete', label: '删除', danger: true, onClick: () => console.log('删除', item.id) }
 ];
 
-const OrderMobileCard = ({ item, checked, disabled, onCheckChange }) => {
+const OrderMobileCard = ({ item, checked, disabled, onCheckChange, selectionType = 'checkbox' }) => {
   const status = statusMap[item.status] || { color: 'default', text: item.status };
   const actionItems = getOrderActions(item);
   const isSelected = checked;
+  const SelectionControl = selectionType === 'radio' ? Radio : Checkbox;
 
   return (
     <div
@@ -143,7 +144,7 @@ const OrderMobileCard = ({ item, checked, disabled, onCheckChange }) => {
         boxSizing: 'border-box'
       }}
     >
-      <Checkbox checked={checked} disabled={disabled} onChange={onCheckChange} style={{ marginTop: 2, flexShrink: 0 }} />
+      <SelectionControl checked={checked} disabled={disabled} onChange={onCheckChange} style={{ marginTop: 2, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <Flex justify="space-between" align="center" gap={8} style={{ marginBottom: 10 }}>
           <Flex align="center" gap={8} wrap="wrap" style={{ flex: 1, minWidth: 0 }}>
@@ -330,33 +331,18 @@ const MobileSortExample = ({ Component }) => {
 
 const CustomMobileRender = ({ Component }) => {
   const [selectKeys, setSelectKeys] = useState([]);
-  const [isSelectedAll, setIsSelectedAll] = useState(false);
+  const { sort, sortRender, mobileSortToolbar } = Table.useSort({});
+  const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns), [sort]);
   const totalAmount = dataSource.reduce((sum, item) => sum + item.amount, 0);
   const selectedAmount = selectKeys.reduce((sum, id) => sum + (dataSource.find(d => d.id === id)?.amount || 0), 0);
-  const checkedAll = isSelectedAll || (dataSource.length > 0 && selectKeys.length === dataSource.length);
-  const indeterminate = selectKeys.length > 0 && !checkedAll;
-
-  const handleSelectAllChange = e => {
-    const checked = e.target.checked;
-    if (!checked) {
-      setIsSelectedAll(false);
-      setSelectKeys([]);
-      return;
-    }
-    setIsSelectedAll(true);
-    setSelectKeys(dataSource.map(item => item.id));
-  };
-
-  const handleCardCheckChange = (id, checked) => {
-    setIsSelectedAll(false);
-    setSelectKeys(keys => (checked ? keys.filter(key => key !== id) : [...keys, id]));
-  };
 
   return (
     <div>
       <div style={{ marginBottom: 12, color: '#666', fontSize: 13, lineHeight: 1.7 }}>
-        <code>renderMobile</code> 为 function 时完全接管渲染，可自定义主次关系卡片：客户名称作主信息，状态/编号/联系人作次要信息。
-        桌面端仍走 <code>render</code>，样式与普通 Table 一致。
+        <code>renderMobile</code> 为 function 时完全接管渲染，可自定义卡片内容；
+        全选 / 排序请用回调里的 <code>renderToolbar()</code>（与默认 MobileCard 同一套实现），
+        行勾选用 <code>getSelectionProps(item)</code>，不必自己维护全选状态或排序 UI。
+        桌面端仍走 <code>render</code>。
       </div>
       <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
         <span>
@@ -378,11 +364,19 @@ const CustomMobileRender = ({ Component }) => {
           <span style={{ color: 'rgba(0,0,0,0.45)', fontSize: 12 }}>桌面端 render 自定义外层</span>
         </Flex>
         <Component
-          dataSource={dataSource}
+          dataSource={sortedData}
           columns={columns}
           controllerOpen={false}
+          sortRender={sortRender}
+          mobileSortToolbar={mobileSortToolbar}
+          rowSelection={{
+            type: 'checkbox',
+            allowSelectedAll: true,
+            selectedRowKeys: selectKeys,
+            onChange: keys => setSelectKeys(keys)
+          }}
           render={({ renderBody }) => <div style={{ overflowX: 'auto' }}>{renderBody()}</div>}
-          renderMobile={() => (
+          renderMobile={({ dataSource: mobileList = [], renderToolbar, getSelectionProps, getRowKey }) => (
             <div
               style={{
                 borderRadius: 12,
@@ -398,34 +392,20 @@ const CustomMobileRender = ({ Component }) => {
                   </Tag>
                 </Flex>
                 <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
-                  {dataSource.length} 笔 · 合计 ¥{totalAmount.toLocaleString()}
+                  {mobileList.length} 笔 · 合计 ¥{mobileList.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}
                 </div>
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  marginBottom: 12,
-                  padding: '4px 8px',
-                  background: 'var(--bg-color-grey-1, #fafafa)',
-                  borderRadius: 8,
-                  fontSize: 12
-                }}
-              >
-                <Checkbox checked={checkedAll} indeterminate={indeterminate} onChange={handleSelectAllChange} />
-                <span>全选</span>
-              </div>
-              <Flex vertical gap={12}>
-                {dataSource.map(item => {
-                  const isChecked = selectKeys.indexOf(item.id) > -1;
+              {renderToolbar()}
+              <Flex vertical gap={12} style={{ marginTop: 12 }}>
+                {mobileList.map(item => {
+                  const selection = getSelectionProps(item);
                   return (
                     <OrderMobileCard
-                      key={item.id}
+                      key={getRowKey(item)}
                       item={item}
-                      checked={(isSelectedAll && !item.disabled) || isChecked}
-                      disabled={isSelectedAll}
-                      onCheckChange={() => handleCardCheckChange(item.id, isChecked)}
+                      checked={selection.checked}
+                      disabled={selection.disabled}
+                      onCheckChange={selection.onChange}
                     />
                   );
                 })}
@@ -434,6 +414,73 @@ const CustomMobileRender = ({ Component }) => {
           )}
         />
       </Card>
+    </div>
+  );
+};
+
+const CustomMobileRadioRender = ({ Component }) => {
+  const [selectKeys, setSelectKeys] = useState([]);
+  const { sort, sortRender, mobileSortToolbar } = Table.useSort({});
+  const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns), [sort]);
+  const selectedOrder = dataSource.find(item => item.id === selectKeys[0]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12, color: '#666', fontSize: 13, lineHeight: 1.7 }}>
+        自定义 <code>renderMobile</code> 单选：<code>rowSelection.type</code> 设为 <code>radio</code>，
+        卡片上的 Radio 直接绑 <code>getSelectionProps(item)</code>，选中态与切换逻辑由 TableView 管理；
+        工具栏 <code>renderToolbar()</code> 此时仅显示排序（单选无全选）。
+      </div>
+      <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
+        <span>
+          当前选中：
+          {selectedOrder ? (
+            <strong>
+              {selectedOrder.id} · ¥{selectedOrder.amount.toLocaleString()}
+            </strong>
+          ) : (
+            <span style={{ color: '#999' }}>未选择</span>
+          )}
+        </span>
+      </Flex>
+      <Component
+        dataSource={sortedData}
+        columns={columns}
+        controllerOpen={false}
+        sortRender={sortRender}
+        mobileSortToolbar={mobileSortToolbar}
+        rowSelection={{
+          type: 'radio',
+          selectedRowKeys: selectKeys,
+          onChange: keys => setSelectKeys(keys)
+        }}
+        renderMobile={({ dataSource: mobileList = [], renderToolbar, getSelectionProps, getRowKey }) => (
+          <div
+            style={{
+              borderRadius: 12,
+              background: '#f5f7fa',
+              padding: 16
+            }}
+          >
+            {renderToolbar()}
+            <Flex vertical gap={12} style={{ marginTop: 12 }}>
+              {mobileList.map(item => {
+                const selection = getSelectionProps(item);
+                return (
+                  <OrderMobileCard
+                    key={getRowKey(item)}
+                    item={item}
+                    selectionType="radio"
+                    checked={selection.checked}
+                    disabled={selection.disabled}
+                    onCheckChange={selection.onChange}
+                  />
+                );
+              })}
+            </Flex>
+          </div>
+        )}
+      />
     </div>
   );
 };
@@ -483,6 +530,7 @@ const Examples = ({ Component }) => (
     <DefaultMobileCards Component={Component} />
     <MobileSortExample Component={Component} />
     <CustomMobileRender Component={Component} />
+    <CustomMobileRadioRender Component={Component} />
     <PresetStringRender Component={Component} />
   </Flex>
 );

@@ -211,7 +211,7 @@ const Tips = () => (
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="volcano">移动端</Tag>
-      设置 <code>renderMobile</code> 后，手机预览下启用卡片 List（含全选、排序工具栏）；桌面端仍为 antd Table。
+      设置 <code>renderMobile</code> 后，手机预览下启用卡片 List（含全选、排序工具栏）；桌面端仍为 antd Table。下方另有「仅 SearchInput + 自定义卡片」示例，用于确认 SearchInput 与卡片列表间距。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="geekblue">固定表头</Tag>
@@ -389,4 +389,126 @@ const BaseExample = () => {
   );
 };
 
-render(<BaseExample />);
+const sharedGroups = [
+  {
+    id: 1,
+    name: '华北销售共享组',
+    description: '覆盖华北区销售线索与客户跟进数据，成员可按只读或读写权限访问。',
+    members: [{ id: 'u1' }, { id: 'u2' }, { id: 'u3' }],
+    dataSources: [{ id: 'd1' }, { id: 'd2' }],
+    sharedModules: [{ id: 'm1' }]
+  },
+  {
+    id: 2,
+    name: '产品研发协作组',
+    description: '产品与研发跨部门协作，共享需求池与缺陷跟踪模块。',
+    members: [{ id: 'u4' }, { id: 'u5' }],
+    dataSources: [{ id: 'd3' }],
+    sharedModules: [{ id: 'm2' }, { id: 'm3' }]
+  },
+  {
+    id: 3,
+    name: '财务审计只读组',
+    description: '审计人员只读访问财务相关模块与导出记录。',
+    members: [{ id: 'u6' }],
+    dataSources: [{ id: 'd4' }, { id: 'd5' }, { id: 'd6' }],
+    sharedModules: [{ id: 'm4' }]
+  }
+];
+
+const sharedGroupColumns = [
+  { name: 'id', title: 'ID', width: 80, renderType: 'small' },
+  { name: 'name', title: '共享组名称', width: 180, renderType: 'main' },
+  { name: 'description', title: '描述', width: 320, renderType: 'description', ellipsis: true },
+  {
+    name: 'options',
+    title: '操作',
+    width: 140,
+    renderType: 'options',
+    getValueOf: item => [
+      { children: '编辑', type: 'link', onClick: () => console.log('edit', item.id) },
+      { children: '删除', type: 'link', isDelete: true, message: `确定删除 ${item.name} 吗？`, onClick: () => console.log('remove', item.id) }
+    ]
+  }
+];
+
+const SharedGroupMobileCard = ({ item }) => (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+      padding: '14px 16px',
+      background: '#fff',
+      border: '1px solid #f0f0f0',
+      borderRadius: 12,
+      boxSizing: 'border-box'
+    }}
+  >
+    <div>
+      <div style={{ marginBottom: 8, fontSize: 16, fontWeight: 600, lineHeight: 1.4, color: 'rgba(0,0,0,0.88)' }}>
+        {item.name}
+      </div>
+      <Flex align="center" gap={8} wrap="wrap" style={{ marginBottom: 6, fontSize: 13, color: 'rgba(0,0,0,0.65)' }}>
+        <span>成员 {item.members.length}</span>
+        <span style={{ color: 'rgba(0,0,0,0.25)' }}>·</span>
+        <span>数据来源 {item.dataSources.length}</span>
+        <span style={{ color: 'rgba(0,0,0,0.25)' }}>·</span>
+        <span>模块 {item.sharedModules.length}</span>
+        <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>#{item.id}</span>
+      </Flex>
+      <div
+        style={{
+          display: '-webkit-box',
+          WebkitBoxOrient: 'vertical',
+          WebkitLineClamp: 2,
+          overflow: 'hidden',
+          fontSize: 13,
+          lineHeight: 1.5,
+          color: 'rgba(0,0,0,0.45)'
+        }}
+      >
+        {item.description}
+      </div>
+    </div>
+  </div>
+);
+
+/** 仅 SearchInput + renderMobile：确认工具栏与卡片列表有间距、不紧贴 */
+const SearchMobileExample = () => (
+  <Flex vertical gap={12}>
+    <div style={{ color: '#666', fontSize: 13, lineHeight: 1.7 }}>
+      <Tag color="blue" style={{ marginRight: 8 }}>
+        search only
+      </Tag>
+      仅配置 <code>search</code>（无 filter / batch / tab），移动端开启 <code>renderMobile</code> 自定义卡片时，
+      SearchInput 与下方卡片列表应有间距，不可紧挨。请切换手机预览查看。
+    </div>
+    <TablePage
+      name="demo-search-mobile-gap"
+      pagination={{ open: false }}
+      search={{ name: 'keyword', label: '关键词', placeholder: '搜索共享组名称' }}
+      columns={sharedGroupColumns}
+      loader={() =>
+        Promise.resolve({
+          pageData: sharedGroups,
+          totalCount: sharedGroups.length
+        })
+      }
+      renderMobile={({ dataSource }) => (
+        <Flex vertical gap={12} className="info-page-table-mobile-card-list">
+          {(dataSource || []).map(item => (
+            <SharedGroupMobileCard key={item.id} item={item} />
+          ))}
+        </Flex>
+      )}
+    />
+  </Flex>
+);
+
+render(
+  <Flex vertical gap={32}>
+    <BaseExample />
+    <SearchMobileExample />
+  </Flex>
+);

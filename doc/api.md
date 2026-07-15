@@ -22,7 +22,7 @@
 | summary | function | - | 总结栏，回调参数包含 `data`、`requestParams`、`refresh`、`reload` 等 fetch 上下文 |
 | columnRenderProps | object | `{}` | 列渲染扩展属性，会合并进列 `render` 的 context |
 | filter | object | - | 顶部筛选器配置，基于 `@kne/react-filter` 的 `FilterLines`，见下方 |
-| search | object | - | 顶部搜索框配置，基于 `@kne/react-filter` 的 `SearchInput`，见下方 |
+| search | object | - | 顶部搜索框配置，基于 `@kne/react-filter` 的 `SearchInput`，见下方；移动端 `renderMobile` 激活时，工具栏与下方卡片列表保留间距（勿紧贴） |
 | tab | object | - | 顶部 Tab 分类切换，选中值写入 filter value，见下方 |
 | tabProps | object | - | 透传给 antd `Tabs` 的额外属性（如 `tabBarExtraContent`） |
 | batchActions | array | - | 批量操作下拉菜单项，需配合 `rowSelection` 使用，见下方 |
@@ -185,10 +185,35 @@
 | headerStyle | object | - | 表头自定义样式，仅在 `render` 自定义渲染时作用于 `header` |
 | onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
 | render | function | - | 自定义渲染 `(props) => ReactNode`，可获取 `header` 和 `renderBody` |
-| renderMobile | boolean \| function \| string | `true` | 仅移动端生效。`true` 使用默认卡片 List（不再渲染 antd Table）；为 function 时签名与 `render` 一致，且优先级高于 `render`，完全接管渲染；为 string 时从 `preset({ renderMobile })` 按名称取渲染函数，未注册则视为未开启 |
+| renderMobile | boolean \| function \| string | `true` | 仅移动端生效。`true` 使用默认卡片 List；为 function 时完全接管渲染（见下方回调参数）；为 string 时从 `preset({ renderMobile })` 按名称取渲染函数，未注册则视为未开启 |
 | sortRender | function | - | 排序按钮渲染，由 `useSort` 提供（桌面端表头） |
-| mobileSortToolbar | function | - | 移动端排序工具栏，由 `useSort` 提供 |
+| mobileSortToolbar | function | - | 移动端排序工具栏，由 `useSort` 提供；传入 TableView 后由 `renderToolbar` / 默认卡片复用 |
 | size | `'small'` \| `'large'` | - | 单元格内边距：默认 `8px`，`small` 为 `4px`，`large` 为 `14px 8px`；可通过 CSS 变量覆盖 |
+
+`renderMobile` 为 function 时，TableView 会传入已接好 `rowSelection` / `mobileSortToolbar` 的能力，自定义布局只需选用：
+
+| 回调参数 | 说明 |
+|------|------|
+| `dataSource` | 当前页数据 |
+| `columns` | 布局后的列配置 |
+| `rowKey` / `rowSelection` / `context` / `empty` | 与 TableView 一致 |
+| `renderBody` | 渲染默认移动端卡片 List（含顶部工具栏） |
+| `renderToolbar` | 渲染组件级工具栏（全选居左、排序居右）；可自由决定摆放位置 |
+| `getRowKey(item)` | 按 `rowKey` 取行 key |
+| `getSelectionProps(item)` | 返回 `{ checked, disabled, onChange }`，可直接绑到卡片上的 Checkbox / Radio |
+| `onSelectionChange` | 行选择切换，签名与内部逻辑一致 |
+
+```jsx
+renderMobile={({ dataSource, renderToolbar, getSelectionProps, getRowKey }) => (
+  <>
+    {renderToolbar()}
+    {dataSource.map(item => {
+      const selection = getSelectionProps(item);
+      return <MyCard key={getRowKey(item)} item={item} {...selection} />;
+    })}
+  </>
+)}
+```
 
 单元格 padding 由 CSS 变量控制，可在外层覆盖：
 
@@ -332,7 +357,7 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | headerStyle | object | - | 表头自定义样式 |
 | onRowSelect | function | - | 行点击回调 `(item, { columns, dataSource }) => void` |
 | render | function | - | 自定义渲染 `(props) => ReactNode`，`header` 为 `null`，`renderBody` 返回 antd Table |
-| renderMobile | boolean \| function \| string | `true` | 仅移动端生效。`true` 使用默认卡片 List（不再渲染 antd Table）；为 function 时签名与 `render` 一致，且优先级高于 `render`，完全接管渲染；为 string 时从 `preset({ renderMobile })` 按名称取渲染函数，未注册则视为未开启 |
+| renderMobile | boolean \| function \| string | `true` | 仅移动端生效，委托 `@kne/table-view` 处理；`true` 为默认卡片 List；为 function 时回调参数同 TableView（见 TableView 文档 `renderMobile` 回调参数）；为 string 时从 preset 按名称查找 |
 | sortRender | function | - | 排序按钮渲染，由 `useSort` 提供（桌面端表头） |
 | mobileSortToolbar | function | - | 移动端排序工具栏，由 `useSort` 提供 |
 | pagination | boolean \| object | `false` | 分页配置，默认不显示；传入对象时使用 antd 分页 |
