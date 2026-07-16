@@ -72,11 +72,27 @@
   }
 }
 
+.table-toolbar-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.table-toolbar-button-group {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .table-toolbar-search {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  margin-left: auto;
 
   :global(.ant-input-search) {
     background: var(--bg-color-grey-1, #f5f5f5);

@@ -26,6 +26,7 @@
 | tab | object | - | 顶部 Tab 分类切换，选中值写入 filter value，见下方 |
 | tabProps | object | - | 透传给 antd `Tabs` 的额外属性（如 `tabBarExtraContent`） |
 | batchActions | array | - | 批量操作下拉菜单项，需配合 `rowSelection` 使用，见下方 |
+| buttonGroup | object | - | 操作按钮组，透传 `@kne/button-group` 的 `ButtonGroup` 属性；桌面端显示在 `SearchInput` 右侧，移动端通过 `ButtonFooter` 固定在列表底部 |
 | selectedRows | array | - | 已选行数据，传给 `batchActions` 的 `onClick` 上下文 |
 | className | string | - | 自定义类名 |
 | ...fetchProps | - | - | 其余属性透传给 `@kne/react-fetch`（如 `url`、`params`、`auto` 等） |
@@ -48,6 +49,10 @@
 | showTotal | function | - | 自定义总数展示 `(total) => ReactNode` |
 | onChange | function | - | 自定义翻页回调 `(page, size) => void`，传入后覆盖默认请求逻辑 |
 | onShowSizeChange | function | - | 每页条数变化回调，组件内部已处理持久化 |
+| forcePagination | boolean | `false` | 移动端（`renderMobile` 激活时）默认改为触底下拉加载；设为 `true` 时强制仍使用分页器 |
+| mergeList | function | 合并 `pageData` | 下拉加载时合并新旧数据 `(prev, next) => data`，需与 `loader` 返回结构一致 |
+| loadMore | object | - | 透传给 `@kne/scroll-loader` 的额外配置（如 `completeTips`、`maxFullCount`） |
+| mobile | object | - | 强制分页时的移动端分页器微调（如 `showSizeChanger`、`showLessItems`） |
 
 #### filter
 
@@ -72,6 +77,27 @@
 | label | string | - | 已选展示标签 |
 | placeholder | string | - | 占位符 |
 | searchDelay | number | `500` | 自动提交防抖时间（毫秒） |
+
+#### buttonGroup
+
+操作按钮组配置，透传给 `@kne/button-group` 的 `ButtonGroup`（如 `list`、`compact` 等）。
+
+- 桌面端：显示在工具栏右侧（`SearchInput` 右侧）；默认 `size="small"`、至少展示 1 个按钮（`showLength` 默认 `1`）、「更多」为三点图标（`moreType="link"`）
+- 移动端：使用 `ButtonFooter` 渲染在列表底部，按钮组居中；默认至少展示 2 个按钮（`showLength` 默认 `2`）、按钮为正常尺寸，其余收入「更多」
+
+```jsx
+<TablePage
+  search={{ name: 'keyword', label: '关键词' }}
+  buttonGroup={{
+    list: [
+      { type: 'primary', children: '新建', onClick: () => {} },
+      { children: '导出', onClick: () => {} }
+    ]
+  }}
+  loader={...}
+  columns={...}
+/>
+```
 
 #### tab
 
@@ -132,6 +158,8 @@
 #### 与 Table 分页的差异
 
 `TablePage` 的分页器渲染在表格外侧（`antd Pagination`），不会出现在 `Table` 边框内部。表格本身始终设置 `pagination={false}`。当 `dataFormat` 返回的 `total` 为 0（无数据）时，分页器不会渲染。
+
+移动端（`renderMobile` 激活）默认使用触底下拉加载（`@kne/scroll-loader` + `react-fetch` 的 `loadMore`），不再展示分页器。若需移动端仍使用分页，请设置 `pagination.forcePagination: true`。
 
 #### renderType
 

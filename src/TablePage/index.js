@@ -1,6 +1,7 @@
 import { withFetch } from '@kne/react-fetch';
 import { Pagination } from 'antd';
 import { getFilterValue } from '@kne/react-filter';
+import ScrollLoader from '@kne/scroll-loader';
 import Table from '../Table';
 import TableView from '../TableView';
 import { isRenderMobileActive } from '@kne/table-view';
@@ -9,12 +10,21 @@ import get from 'lodash/get';
 import useRefCallback from '@kne/use-ref-callback';
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from '@kne/react-intl';
-import { useIsMobile } from '@kne/responsive-utils';
+import { useIsMobile, usePopupContainer } from '@kne/responsive-utils';
 import style from './style.module.scss';
 import withLocale from '../withLocale';
 import HorizontalScroller from './HorizontalScroller';
-import TableToolbar, { TablePageTabs } from './TableToolbar';
+import ButtonGroup, { ButtonFooter } from '@kne/button-group';
+import '@kne/button-group/dist/index.css';
+import TableToolbar, { TablePageTabs, hasButtonGroupList } from './TableToolbar';
+import { resolveToolbarButtonGroupProps, resolveFooterButtonGroupProps } from './buttonGroupUtils';
 import { scrollAnchorIntoView, normalizeScrollTopInsetCSSValue, resolveScrollTopInset } from './scrollUtils';
+
+const defaultMergeList = (data, newData) => {
+  return Object.assign({}, newData, {
+    pageData: [...(data?.pageData || []), ...(newData?.pageData || [])]
+  });
+};
 
 const readPageSize = key => {
   try {
@@ -108,6 +118,7 @@ const TablePageInnerContent = withLocale(
     tab,
     tabProps,
     batchActions,
+    buttonGroup,
     selectedRows,
     rowSelection,
     renderMobile = true,
@@ -115,7 +126,10 @@ const TablePageInnerContent = withLocale(
   }) => {
     const { formatMessage } = useIntl();
     const isMobile = useIsMobile();
+    const getPopupContainer = usePopupContainer();
     const isMobileRenderActive = isRenderMobileActive(renderMobile, isMobile);
+    const showButtonGroup = hasButtonGroupList(buttonGroup);
+    const showMobileButtonFooter = isMobile && showButtonGroup;
     const tableContentRef = useRef(null);
     const pendingScrollRef = useRef(false);
     const handlerDataFormat = useRefCallback(dataFormat);
@@ -156,7 +170,7 @@ const TablePageInnerContent = withLocale(
     );
 
     const hasTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
-    const hasInnerToolbar = !!(filter?.list?.length || (search && search.name) || (batchActions && batchActions.length));
+    const hasInnerToolbar = !!(filter?.list?.length || (search && search.name) || (batchActions && batchActions.length) || (showButtonGroup && !isMobile));
     const showOuterTab = hasTab && !isMobile;
     const showInnerTab = hasTab && isMobile;
     const wrapWithToolbar = hasInnerToolbar || showInnerTab;
@@ -221,8 +235,27 @@ const TablePageInnerContent = withLocale(
       }
     });
 
+    const useMobileLoadMore = isMobileRenderActive && pagination.open && !pagination.forcePagination;
+
+    const currentPage = get(requestParams, [pagination.paramsType, pagination.currentName], 1);
+    const currentPageSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 50;
+    const loadMoreNoMore = !formatData.total || currentPage * currentPageSize >= formatData.total;
+
+    const handleLoadMore = useRefCallback(async () => {
+      const mergeList = pagination.mergeList || defaultMergeList;
+      await loadMore(
+        {
+          [pagination.paramsType]: buildRequestParamsWithFilter(filterValue, {
+            [pagination.currentName]: currentPage + 1,
+            [pagination.pageSizeName]: currentPageSize
+          })
+        },
+        mergeList
+      );
+    });
+
     const paginationConfig = useMemo(() => {
-      if (!pagination.open || !(formatData.total > 0)) {
+      if (useMobileLoadMore || !pagination.open || !(formatData.total > 0)) {
         return null;
       }
 
@@ -267,7 +300,7 @@ const TablePageInnerContent = withLocale(
         showLessItems: mobilePagination.showLessItems ?? true,
         pageSizeOptions: pagination.pageSizeOptions || ['10', '20', '50', '100']
       };
-    }, [pagination, formatData.total, requestParams, formatMessage, handlePaginationChange, isMobileRenderActive]);
+    }, [pagination, formatData.total, requestParams, formatMessage, handlePaginationChange, isMobileRenderActive, useMobileLoadMore]);
 
     const batchContext = useMemo(
       () => ({
@@ -319,50 +352,78 @@ const TablePageInnerContent = withLocale(
 
     const tableElement = <TableComponent {...tableProps} />;
 
-    return (
-      <div className={style['table-page']} style={scrollTopInsetStyle}>
-        <HorizontalScroller
-          ref={tableContentRef}
-          enabled={horizontalScroller && renderType === 'Table'}
-          getPortalContainer={getScrollContainer}
-          className={classnames(style['table-content'], 'loading-container', {
-            'is-loading': !isComplete && !data
-          })}
-        >
-          {showOuterTab ? <TablePageTabs filterValue={filterValue} onFilterChange={handleFilterChange} tab={tab} tabProps={tabProps} className={style['table-page-tabs-outer']} isMobileRender={isMobileRenderActive} /> : null}
-          {wrapWithToolbar ? (
-            <div
-              className={classnames(style['table-with-toolbar'], {
-                [style['is-mobile-render']]: isMobileRenderActive
-              })}
-            >
-              <TableToolbar
-                filterValue={filterValue}
-                onFilterChange={handleFilterChange}
-                filter={filter}
-                search={search}
-                tab={tab}
-                tabProps={tabProps}
-                renderTab={showInnerTab}
-                batchActions={batchActions}
-                rowSelection={rowSelection}
-                selectedRows={selectedRows}
-                batchContext={batchContext}
-                isMobileRender={isMobileRenderActive}
-              />
-              {tableElement}
-            </div>
-          ) : (
-            tableElement
-          )}
-        </HorizontalScroller>
-        {paginationConfig ? (
-          <Pagination
-            className={classnames(style['pagination'], {
+    const tableMain = (
+      <HorizontalScroller
+        ref={tableContentRef}
+        enabled={horizontalScroller && renderType === 'Table'}
+        getPortalContainer={getScrollContainer}
+        className={classnames(style['table-content'], 'loading-container', {
+          'is-loading': !isComplete && !data
+        })}
+      >
+        {showOuterTab ? <TablePageTabs filterValue={filterValue} onFilterChange={handleFilterChange} tab={tab} tabProps={tabProps} className={style['table-page-tabs-outer']} isMobileRender={isMobileRenderActive} /> : null}
+        {wrapWithToolbar ? (
+          <div
+            className={classnames(style['table-with-toolbar'], {
               [style['is-mobile-render']]: isMobileRenderActive
             })}
-            {...paginationConfig}
-          />
+          >
+            <TableToolbar
+              filterValue={filterValue}
+              onFilterChange={handleFilterChange}
+              filter={filter}
+              search={search}
+              tab={tab}
+              tabProps={tabProps}
+              renderTab={showInnerTab}
+              batchActions={batchActions}
+              buttonGroup={buttonGroup}
+              rowSelection={rowSelection}
+              selectedRows={selectedRows}
+              batchContext={batchContext}
+              isMobileRender={isMobileRenderActive}
+            />
+            {tableElement}
+          </div>
+        ) : (
+          tableElement
+        )}
+      </HorizontalScroller>
+    );
+
+    return (
+      <div className={style['table-page']} style={scrollTopInsetStyle}>
+        {useMobileLoadMore ? (
+          <ScrollLoader
+            className={style['mobile-load-more']}
+            completeTips={formatData.total > 0 ? undefined : null}
+            {...(pagination.loadMore || {})}
+            useSimpleBar={false}
+            isLoading={!isComplete}
+            noMore={loadMoreNoMore}
+            onLoader={handleLoadMore}
+          >
+            {tableMain}
+          </ScrollLoader>
+        ) : (
+          <>
+            {tableMain}
+            {paginationConfig ? (
+              <Pagination
+                className={classnames(style['pagination'], {
+                  [style['is-mobile-render']]: isMobileRenderActive
+                })}
+                {...paginationConfig}
+              />
+            ) : null}
+          </>
+        )}
+        {showMobileButtonFooter ? (
+          <ButtonFooter className={style['table-page-button-footer']} innerClassName={style['table-page-button-footer-inner']}>
+            <div className={style['table-page-button-footer-group']}>
+              <ButtonGroup {...resolveFooterButtonGroupProps(buttonGroup, getPopupContainer)} />
+            </div>
+          </ButtonFooter>
         ) : null}
       </div>
     );
