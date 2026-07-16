@@ -195,7 +195,7 @@ const Tips = () => (
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="gold">筛选</Tag>
-      顶部工具栏集成 <code>filter</code>、<code>search</code>、<code>batchActions</code>；筛选变化自动 <code>reload</code> 并回到第 1 页。
+      顶部工具栏集成 <code>filter</code>、<code>search</code>、<code>batchActions</code>、<code>buttonGroup</code>；筛选变化自动 <code>reload</code> 并回到第 1 页；<code>buttonGroup</code> 桌面在 SearchInput 右侧，移动端经 ButtonFooter 固定在列表底部。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="lime">Tab</Tag>
@@ -288,6 +288,19 @@ const BaseExample = () => {
         rowSelection={getRowSelection(allEmployees)}
         selectedRows={selectedRows}
         search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 220 } }}
+        buttonGroup={{
+          list: [
+            {
+              type: 'primary',
+              children: '新建员工',
+              onClick: () => message.success('打开新建员工')
+            },
+            {
+              children: '导出全部',
+              onClick: () => message.info('正在导出全部员工')
+            }
+          ]
+        }}
         tab={{
           name: 'position',
           label: '职位',

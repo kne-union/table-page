@@ -3,9 +3,11 @@ import { Button, Dropdown, Tabs } from 'antd';
 import { DeleteOutlined, DownOutlined } from '@ant-design/icons';
 import { FilterOuter, FilterLines, FilterValueDisplay, SearchInput } from '@kne/react-filter';
 import '@kne/react-filter/dist/index.css';
+import ButtonGroup from '@kne/button-group';
 import classnames from 'classnames';
 import { useIntl } from '@kne/react-intl';
 import { useIsMobile, usePopupContainer } from '@kne/responsive-utils';
+import { hasButtonGroupList, resolveToolbarButtonGroupProps } from './buttonGroupUtils';
 import style from './tableToolbar.module.scss';
 
 const TAB_ALL_KEY = '__all__';
@@ -66,7 +68,7 @@ export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, clas
   );
 };
 
-const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabProps, renderTab = true, batchActions, rowSelection, selectedRows, batchContext, isMobileRender }) => {
+const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabProps, renderTab = true, batchActions, buttonGroup, rowSelection, selectedRows, batchContext, isMobileRender }) => {
   const { formatMessage } = useIntl();
   const isMobile = useIsMobile();
   const getPopupContainer = usePopupContainer();
@@ -103,6 +105,7 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
   const showBatch = batchMenuItems.length > 0;
   const showFilter = filter?.list?.length > 0;
   const showSearch = search && search.name;
+  const showButtonGroup = !isMobile && hasButtonGroupList(buttonGroup);
   const hasTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
   const showTab = hasTab && renderTab;
   const batchButtonLabel = hasSelection
@@ -111,7 +114,7 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
       : formatMessage({ id: 'BatchOperationsWithCount' }, { count: selectedRowKeys.length })
     : formatMessage({ id: 'BatchOperations' });
 
-  if (!showBatch && !showFilter && !showSearch && !showTab) {
+  if (!showBatch && !showFilter && !showSearch && !showTab && !showButtonGroup) {
     return null;
   }
 
@@ -120,7 +123,9 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
 
   const hasValueDisplay = filterValue?.length > 0;
   const showMobileSearchRow = isMobile && showSearch;
-  const showMainToolbar = showBatch || showFilter || (!isMobile && showSearch);
+  const showMainToolbar = showBatch || showFilter || (!isMobile && (showSearch || showButtonGroup));
+  const showDesktopActions = !showMobileSearchRow && (showSearch || showButtonGroup);
+  const showActionsDivider = showDesktopActions && (showBatch || showFilter);
 
   const searchInputNode = showSearch ? (
     <SearchInput
@@ -132,6 +137,12 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
       style={isMobile ? { ...searchStyle, width: '100%', maxWidth: '100%' } : searchStyle}
       {...searchRest}
     />
+  ) : null;
+
+  const buttonGroupNode = showButtonGroup ? (
+    <div className={style['table-toolbar-button-group']}>
+      <ButtonGroup {...resolveToolbarButtonGroupProps(buttonGroup, getPopupContainer)} />
+    </div>
   ) : null;
 
   return (
@@ -189,10 +200,13 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
                   </div>
                 </div>
               ) : null}
-              {!showMobileSearchRow && showSearch ? (
+              {showDesktopActions ? (
                 <>
-                  {showFilter && <span className={style['table-toolbar-divider']} aria-hidden />}
-                  <div className={style['table-toolbar-search']}>{searchInputNode}</div>
+                  {showActionsDivider ? <span className={style['table-toolbar-divider']} aria-hidden /> : null}
+                  <div className={style['table-toolbar-actions']}>
+                    {showSearch ? <div className={style['table-toolbar-search']}>{searchInputNode}</div> : null}
+                    {buttonGroupNode}
+                  </div>
                 </>
               ) : null}
             </div>
@@ -212,4 +226,5 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
   );
 };
 
+export { hasButtonGroupList } from './buttonGroupUtils';
 export default TableToolbar;

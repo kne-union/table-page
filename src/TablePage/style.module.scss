@@ -105,6 +105,63 @@
   border-radius: 0 !important;
 }
 
+.mobile-load-more {
+  width: 100%;
+}
+
+.table-page-button-footer {
+  margin-top: 16px;
+}
+
+.table-page-button-footer-inner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.table-page-button-footer-group {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+
+  > div {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+
+  // ButtonGroup 宽度测量节点，脱离文档流避免把可见按钮挤偏
+  > div > :nth-child(1) {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  > div > :nth-child(2) {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  > div > :global(.ant-space),
+  > div > :global(.ant-space-compact) {
+    justify-content: center;
+    margin-inline: auto;
+    flex: 0 0 auto;
+  }
+}
+
 .pagination:global(.ant-pagination) {
   margin-top: 16px;
   display: flex;

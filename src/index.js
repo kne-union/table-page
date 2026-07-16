@@ -1,4 +1,5 @@
 import '@kne/table-view/dist/index.css';
+import '@kne/scroll-loader/dist/index.css';
 export { default } from './TablePage';
 export { preset, globalParams } from '@kne/table-view';
 export {
