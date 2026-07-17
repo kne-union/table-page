@@ -324,6 +324,9 @@ const Table = p => {
       x = totalWidth;
     } else if (controllerOpen) {
       x = Math.max(tableWidth, totalWidth);
+    } else if (tableWidth && totalWidth > tableWidth) {
+      // controllerOpen 关闭时列总宽超出容器也要开启横向滚动，避免列溢出
+      x = totalWidth;
     }
     const nextScroll = Object.assign({}, x != null ? { x } : {}, scroll);
     if (!hasData && nextScroll.y != null) {

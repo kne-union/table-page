@@ -68,7 +68,7 @@ export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, clas
   );
 };
 
-const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabProps, renderTab = true, batchActions, buttonGroup, rowSelection, selectedRows, batchContext, isMobileRender }) => {
+export const BatchActions = ({ batchActions, rowSelection, selectedRows, batchContext, className }) => {
   const { formatMessage } = useIntl();
   const isMobile = useIsMobile();
   const getPopupContainer = usePopupContainer();
@@ -102,30 +102,75 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
     });
   }, [batchActions, batchContext, hasSelection, rowSelection, selectedRowKeys, selectedRows]);
 
-  const showBatch = batchMenuItems.length > 0;
-  const showFilter = filter?.list?.length > 0;
-  const showSearch = search && search.name;
-  const showButtonGroup = !isMobile && hasButtonGroupList(buttonGroup);
-  const hasTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
-  const showTab = hasTab && renderTab;
+  if (batchMenuItems.length === 0) {
+    return null;
+  }
+
   const batchButtonLabel = hasSelection
     ? isMobile
       ? formatMessage({ id: 'BatchOperationsMobileSelected' }, { count: selectedRowKeys.length })
       : formatMessage({ id: 'BatchOperationsWithCount' }, { count: selectedRowKeys.length })
     : formatMessage({ id: 'BatchOperations' });
 
-  if (!showBatch && !showFilter && !showSearch && !showTab && !showButtonGroup) {
+  return (
+    <div className={classnames(style['table-toolbar-batch'], className)}>
+      <Dropdown disabled={!hasSelection} menu={{ items: batchMenuItems }} trigger={['click']} getPopupContainer={getPopupContainer}>
+        <Button size="small" disabled={!hasSelection} className={style['table-toolbar-batch-btn']}>
+          {batchButtonLabel}
+          <DownOutlined />
+        </Button>
+      </Dropdown>
+      {hasSelection ? (
+        <Button
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
+          title={formatMessage({ id: 'Cancel' })}
+          aria-label={formatMessage({ id: 'Cancel' })}
+          className={style['table-toolbar-batch-clear-btn']}
+          onClick={() => {
+            rowSelection?.onChange?.([]);
+            rowSelection?.onIsSelectAllChange?.(false);
+          }}
+        />
+      ) : null}
+    </div>
+  );
+};
+
+const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabProps, renderTab = true, batchActions, buttonGroup, rowSelection, selectedRows, batchContext, isMobileRender, cardModeToggle }) => {
+  const isMobile = useIsMobile();
+  const getPopupContainer = usePopupContainer();
+
+  const showBatch = Array.isArray(batchActions) && batchActions.length > 0;
+  // 移动端卡片模式下批量操作渲染在「全选/排序」行（排序后面），不在工具栏中
+  const showBatchInToolbar = showBatch && !isMobileRender;
+  const showFilter = filter?.list?.length > 0;
+  const showSearch = search && search.name;
+  const showButtonGroup = hasButtonGroupList(buttonGroup);
+  const showCardModeToggle = !isMobile && !!cardModeToggle;
+  const hasTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
+  const showTab = hasTab && renderTab;
+
+  if (!showBatchInToolbar && !showFilter && !showSearch && !showTab && !showButtonGroup && !showCardModeToggle) {
     return null;
   }
 
   const { list: filterList, displayLine = 1, extraExpand, className: filterClassName, ...filterRest } = filter || {};
   const { className: searchClassName, style: searchStyle, ...searchRest } = search || {};
 
-  const hasValueDisplay = filterValue?.length > 0;
+  // tab 已有选中态展示，已选筛选标签中不再重复显示 tab 的值
+  const displayFilterValue = hasTab ? (filterValue || []).filter(item => item?.name !== tab.name) : filterValue || [];
+  const handleValueDisplayChange = next => {
+    const tabEntry = hasTab ? (filterValue || []).find(item => item?.name === tab.name) : null;
+    onFilterChange(tabEntry ? [...(next || []), tabEntry] : next);
+  };
+
+  const hasValueDisplay = displayFilterValue.length > 0;
   const showMobileSearchRow = isMobile && showSearch;
-  const showMainToolbar = showBatch || showFilter || (!isMobile && (showSearch || showButtonGroup));
-  const showDesktopActions = !showMobileSearchRow && (showSearch || showButtonGroup);
-  const showActionsDivider = showDesktopActions && (showBatch || showFilter);
+  const showMainToolbar = showBatchInToolbar || showFilter || showButtonGroup || (!isMobile && (showSearch || showCardModeToggle));
+  const showDesktopActions = !isMobile && (showSearch || showButtonGroup || showCardModeToggle);
+  const showActionsDivider = showDesktopActions && (showBatchInToolbar || showFilter);
 
   const searchInputNode = showSearch ? (
     <SearchInput
@@ -142,6 +187,16 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
   const buttonGroupNode = showButtonGroup ? (
     <div className={style['table-toolbar-button-group']}>
       <ButtonGroup {...resolveToolbarButtonGroupProps(buttonGroup, getPopupContainer)} />
+    </div>
+  ) : null;
+
+  const batchActionsNode = showBatchInToolbar ? <BatchActions batchActions={batchActions} rowSelection={rowSelection} selectedRows={selectedRows} batchContext={batchContext} /> : null;
+
+  const filterNode = showFilter ? (
+    <div className={style['table-toolbar-filter']}>
+      <div className={classnames(style['table-toolbar-filter-inner'], filterClassName)}>
+        <FilterLines list={filterList} displayLine={displayLine} label="" {...filterRest} />
+      </div>
     </div>
   ) : null;
 
@@ -166,49 +221,37 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
                 [style['is-mobile']]: isMobile
               })}
             >
-              {showBatch ? (
+              {isMobile ? (
                 <>
-                  <div className={style['table-toolbar-batch']}>
-                    <Dropdown disabled={!hasSelection} menu={{ items: batchMenuItems }} trigger={['click']} getPopupContainer={getPopupContainer}>
-                      <Button size="small" disabled={!hasSelection} className={style['table-toolbar-batch-btn']}>
-                        {batchButtonLabel}
-                        <DownOutlined />
-                      </Button>
-                    </Dropdown>
-                    {hasSelection ? (
-                      <Button
-                        danger
-                        size="small"
-                        icon={<DeleteOutlined />}
-                        title={formatMessage({ id: 'Cancel' })}
-                        aria-label={formatMessage({ id: 'Cancel' })}
-                        className={style['table-toolbar-batch-clear-btn']}
-                        onClick={() => {
-                          rowSelection?.onChange?.([]);
-                          rowSelection?.onIsSelectAllChange?.(false);
-                        }}
-                      />
-                    ) : null}
-                  </div>
-                  {showFilter && <span className={style['table-toolbar-divider']} aria-hidden />}
+                  {batchActionsNode ? <div className={style['table-toolbar-mobile-actions']}>{batchActionsNode}</div> : null}
+                  {showFilter || showButtonGroup ? (
+                    <div className={style['table-toolbar-mobile-filter-row']}>
+                      {filterNode}
+                      {buttonGroupNode}
+                    </div>
+                  ) : null}
                 </>
-              ) : null}
-              {showFilter ? (
-                <div className={style['table-toolbar-filter']}>
-                  <div className={classnames(style['table-toolbar-filter-inner'], filterClassName)}>
-                    <FilterLines list={filterList} displayLine={displayLine} label="" {...filterRest} />
-                  </div>
-                </div>
-              ) : null}
-              {showDesktopActions ? (
+              ) : (
                 <>
-                  {showActionsDivider ? <span className={style['table-toolbar-divider']} aria-hidden /> : null}
-                  <div className={style['table-toolbar-actions']}>
-                    {showSearch ? <div className={style['table-toolbar-search']}>{searchInputNode}</div> : null}
-                    {buttonGroupNode}
-                  </div>
+                  {batchActionsNode ? (
+                    <>
+                      {batchActionsNode}
+                      {showFilter && <span className={style['table-toolbar-divider']} aria-hidden />}
+                    </>
+                  ) : null}
+                  {filterNode}
+                  {showDesktopActions ? (
+                    <>
+                      {showActionsDivider ? <span className={style['table-toolbar-divider']} aria-hidden /> : null}
+                      <div className={style['table-toolbar-actions']}>
+                        {showSearch ? <div className={style['table-toolbar-search']}>{searchInputNode}</div> : null}
+                        {showCardModeToggle ? cardModeToggle : null}
+                        {buttonGroupNode}
+                      </div>
+                    </>
+                  ) : null}
                 </>
-              ) : null}
+              )}
             </div>
           ) : null}
           {hasValueDisplay ? (
@@ -217,7 +260,7 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
                 [style['is-mobile-render']]: isMobileRender
               })}
             >
-              <FilterValueDisplay value={filterValue} onChange={onFilterChange} extraExpand={extraExpand} flush={isMobileRender} />
+              <FilterValueDisplay value={displayFilterValue} onChange={handleValueDisplayChange} extraExpand={extraExpand} flush={isMobileRender} />
             </div>
           ) : null}
         </div>

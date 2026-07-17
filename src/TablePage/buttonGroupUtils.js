@@ -41,11 +41,3 @@ export const resolveToolbarButtonGroupProps = (buttonGroup, getPopupContainer) =
     minShowLength: 1
   });
 };
-
-export const resolveFooterButtonGroupProps = (buttonGroup, getPopupContainer) => {
-  return resolveButtonGroupProps(buttonGroup, getPopupContainer, {
-    defaultSize: undefined,
-    defaultShowLength: 2,
-    minShowLength: 2
-  });
-};

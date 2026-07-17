@@ -12,7 +12,9 @@ const locale = {
   BatchOperationsMobileSelected: 'Selected: {count}',
   Cancel: 'Cancel',
   Confirm: 'Confirm',
-  All: 'All'
+  All: 'All',
+  SwitchToCardView: 'Switch to card view',
+  SwitchToTableView: 'Switch to table view'
 };
 
 export default locale;
