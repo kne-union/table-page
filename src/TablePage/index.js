@@ -1,23 +1,22 @@
 import { withFetch } from '@kne/react-fetch';
-import { Pagination } from 'antd';
+import { Pagination, Segmented } from 'antd';
+import { AppstoreOutlined, TableOutlined } from '@ant-design/icons';
 import { getFilterValue } from '@kne/react-filter';
 import ScrollLoader from '@kne/scroll-loader';
 import Table from '../Table';
 import TableView from '../TableView';
-import { isRenderMobileActive } from '@kne/table-view';
+import { isRenderMobileActive, globalParams } from '@kne/table-view';
 import classnames from 'classnames';
 import get from 'lodash/get';
 import useRefCallback from '@kne/use-ref-callback';
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from '@kne/react-intl';
-import { useIsMobile, usePopupContainer } from '@kne/responsive-utils';
+import { useIsMobile } from '@kne/responsive-utils';
 import style from './style.module.scss';
 import withLocale from '../withLocale';
 import HorizontalScroller from './HorizontalScroller';
-import ButtonGroup, { ButtonFooter } from '@kne/button-group';
 import '@kne/button-group/dist/index.css';
-import TableToolbar, { TablePageTabs, hasButtonGroupList } from './TableToolbar';
-import { resolveToolbarButtonGroupProps, resolveFooterButtonGroupProps } from './buttonGroupUtils';
+import TableToolbar, { TablePageTabs, BatchActions, hasButtonGroupList } from './TableToolbar';
 import { scrollAnchorIntoView, normalizeScrollTopInsetCSSValue, resolveScrollTopInset } from './scrollUtils';
 
 const defaultMergeList = (data, newData) => {
@@ -42,6 +41,35 @@ const readPageSize = key => {
 const writePageSize = (key, size) => {
   try {
     localStorage.setItem(key, String(size));
+  } catch {
+    // ignore quota errors
+  }
+};
+
+// renderCard 与 renderMobile 一致：支持 true / function / preset 字符串（从 preset({ renderCard }) 按名称取）
+const resolveRenderCard = renderCard => {
+  if (renderCard === true || typeof renderCard === 'function') {
+    return renderCard;
+  }
+  if (typeof renderCard === 'string') {
+    const name = renderCard.trim();
+    const renderFn = name ? globalParams.renderCard?.[name] : null;
+    return typeof renderFn === 'function' ? renderFn : null;
+  }
+  return null;
+};
+
+const readCardMode = key => {
+  try {
+    return localStorage.getItem(key) === 'card';
+  } catch {
+    return false;
+  }
+};
+
+const writeCardMode = (key, isCard) => {
+  try {
+    localStorage.setItem(key, isCard ? 'card' : 'table');
   } catch {
     // ignore quota errors
   }
@@ -122,14 +150,23 @@ const TablePageInnerContent = withLocale(
     selectedRows,
     rowSelection,
     renderMobile = true,
+    renderCard,
+    forceCard = false,
+    mobileSortToolbar,
     ...props
   }) => {
     const { formatMessage } = useIntl();
     const isMobile = useIsMobile();
-    const getPopupContainer = usePopupContainer();
     const isMobileRenderActive = isRenderMobileActive(renderMobile, isMobile);
     const showButtonGroup = hasButtonGroupList(buttonGroup);
-    const showMobileButtonFooter = isMobile && showButtonGroup;
+    // renderCard 仅 PC 端生效；默认可切换，forceCard 强制卡片且隐藏切换按钮
+    const resolvedRenderCard = useMemo(() => resolveRenderCard(renderCard), [renderCard]);
+    const renderCardEnabled = resolvedRenderCard != null && !isMobile;
+    // 未传 name 时不持久化切换状态
+    const cardModeKey = props.name ? `${props.name.toUpperCase()}_TABLE_PAGE_CARD_MODE` : null;
+    const [cardMode, setCardMode] = useState(() => (cardModeKey ? readCardMode(cardModeKey) : false));
+    const isCardModeActive = renderCardEnabled && (forceCard || cardMode);
+    const showCardModeToggle = renderCardEnabled && !forceCard;
     const tableContentRef = useRef(null);
     const pendingScrollRef = useRef(false);
     const handlerDataFormat = useRefCallback(dataFormat);
@@ -170,7 +207,7 @@ const TablePageInnerContent = withLocale(
     );
 
     const hasTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
-    const hasInnerToolbar = !!(filter?.list?.length || (search && search.name) || (batchActions && batchActions.length) || (showButtonGroup && !isMobile));
+    const hasInnerToolbar = !!(filter?.list?.length || (search && search.name) || (batchActions && batchActions.length) || showButtonGroup || showCardModeToggle);
     const showOuterTab = hasTab && !isMobile;
     const showInnerTab = hasTab && isMobile;
     const wrapWithToolbar = hasInnerToolbar || showInnerTab;
@@ -236,6 +273,9 @@ const TablePageInnerContent = withLocale(
     });
 
     const useMobileLoadMore = isMobileRenderActive && pagination.open && !pagination.forcePagination;
+    // PC 卡片模式默认下拉加载，pagination.forcePagination 为 true 时仍用分页
+    const useCardLoadMore = isCardModeActive && pagination.open && !pagination.forcePagination;
+    const useLoadMoreMode = useMobileLoadMore || useCardLoadMore;
 
     const currentPage = get(requestParams, [pagination.paramsType, pagination.currentName], 1);
     const currentPageSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 50;
@@ -255,7 +295,7 @@ const TablePageInnerContent = withLocale(
     });
 
     const paginationConfig = useMemo(() => {
-      if (useMobileLoadMore || !pagination.open || !(formatData.total > 0)) {
+      if (useLoadMoreMode || !pagination.open || !(formatData.total > 0)) {
         return null;
       }
 
@@ -300,7 +340,7 @@ const TablePageInnerContent = withLocale(
         showLessItems: mobilePagination.showLessItems ?? true,
         pageSizeOptions: pagination.pageSizeOptions || ['10', '20', '50', '100']
       };
-    }, [pagination, formatData.total, requestParams, formatMessage, handlePaginationChange, isMobileRenderActive, useMobileLoadMore]);
+    }, [pagination, formatData.total, requestParams, formatMessage, handlePaginationChange, isMobileRenderActive, useLoadMoreMode]);
 
     const batchContext = useMemo(
       () => ({
@@ -324,9 +364,21 @@ const TablePageInnerContent = withLocale(
       data
     };
 
+    // 移动端卡片模式下批量操作渲染在「全选/排序」行的排序后面
+    const showMobileBatchInCardToolbar = isMobileRenderActive && Array.isArray(batchActions) && batchActions.length > 0;
+    const resolvedMobileSortToolbar = showMobileBatchInCardToolbar
+      ? args => (
+          <>
+            {typeof mobileSortToolbar === 'function' ? mobileSortToolbar(args) : null}
+            <BatchActions batchActions={batchActions} rowSelection={rowSelection} selectedRows={selectedRows} batchContext={batchContext} />
+          </>
+        )
+      : mobileSortToolbar;
+
     const tableProps = {
       ...props,
       renderMobile,
+      mobileSortToolbar: resolvedMobileSortToolbar,
       rowSelection,
       dataSource: formatData.list,
       pagination: false,
@@ -350,12 +402,32 @@ const TablePageInnerContent = withLocale(
 
     const TableComponent = TABLE_COMPONENTS[renderType] || Table;
 
-    const tableElement = <TableComponent {...tableProps} />;
+    // PC 卡片模式直接走 TableView 的卡片渲染（forceCardRender 在非移动端强制生效）
+    const tableElement = isCardModeActive ? <TableView {...tableProps} className={classnames(tableProps.className, style['is-card-render'])} renderMobile={resolvedRenderCard} forceCardRender /> : <TableComponent {...tableProps} />;
+
+    const cardModeToggleNode = showCardModeToggle ? (
+      <Segmented
+        className={style['card-mode-toggle']}
+        size="small"
+        value={cardMode ? 'card' : 'table'}
+        options={[
+          { value: 'table', icon: <TableOutlined />, title: formatMessage({ id: 'SwitchToTableView' }) },
+          { value: 'card', icon: <AppstoreOutlined />, title: formatMessage({ id: 'SwitchToCardView' }) }
+        ]}
+        onChange={value => {
+          const next = value === 'card';
+          if (cardModeKey) {
+            writeCardMode(cardModeKey, next);
+          }
+          setCardMode(next);
+        }}
+      />
+    ) : null;
 
     const tableMain = (
       <HorizontalScroller
         ref={tableContentRef}
-        enabled={horizontalScroller && renderType === 'Table'}
+        enabled={horizontalScroller && renderType === 'Table' && !isCardModeActive}
         getPortalContainer={getScrollContainer}
         className={classnames(style['table-content'], 'loading-container', {
           'is-loading': !isComplete && !data
@@ -365,7 +437,8 @@ const TablePageInnerContent = withLocale(
         {wrapWithToolbar ? (
           <div
             className={classnames(style['table-with-toolbar'], {
-              [style['is-mobile-render']]: isMobileRenderActive
+              [style['is-mobile-render']]: isMobileRenderActive,
+              [style['is-card-mode']]: isCardModeActive
             })}
           >
             <TableToolbar
@@ -382,6 +455,7 @@ const TablePageInnerContent = withLocale(
               selectedRows={selectedRows}
               batchContext={batchContext}
               isMobileRender={isMobileRenderActive}
+              cardModeToggle={cardModeToggleNode}
             />
             {tableElement}
           </div>
@@ -393,7 +467,7 @@ const TablePageInnerContent = withLocale(
 
     return (
       <div className={style['table-page']} style={scrollTopInsetStyle}>
-        {useMobileLoadMore ? (
+        {useLoadMoreMode ? (
           <ScrollLoader
             className={style['mobile-load-more']}
             completeTips={formatData.total > 0 ? undefined : null}
@@ -418,13 +492,6 @@ const TablePageInnerContent = withLocale(
             ) : null}
           </>
         )}
-        {showMobileButtonFooter ? (
-          <ButtonFooter className={style['table-page-button-footer']} innerClassName={style['table-page-button-footer-inner']}>
-            <div className={style['table-page-button-footer-group']}>
-              <ButtonGroup {...resolveFooterButtonGroupProps(buttonGroup, getPopupContainer)} />
-            </div>
-          </ButtonFooter>
-        ) : null}
       </div>
     );
   }

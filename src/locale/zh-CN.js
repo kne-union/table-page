@@ -12,7 +12,9 @@ const locale = {
   BatchOperationsMobileSelected: '已选:{count}条',
   Cancel: '取消',
   Confirm: '确定',
-  All: '全部'
+  All: '全部',
+  SwitchToCardView: '切换为卡片视图',
+  SwitchToTableView: '切换为表格视图'
 };
 
 export default locale;

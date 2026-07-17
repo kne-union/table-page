@@ -222,8 +222,9 @@
 
 .col-content {
   padding: var(--kne-table-cell-padding);
+  margin-inline: var(--kne-table-cell-margin, 4px);
   display: block;
-  width: 100%;
+  width: calc(100% - var(--kne-table-cell-margin, 4px) * 2);
   min-width: 0;
   box-sizing: border-box;
 }

@@ -165,6 +165,38 @@
 }
 
 @include resp.mobile-container {
+  .table-toolbar.is-mobile {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .table-toolbar-mobile-actions {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  // filter 靠左、buttonGroup 靠右，两端对齐
+  .table-toolbar-mobile-filter-row {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    .table-toolbar-filter {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .table-toolbar-button-group {
+      margin-left: auto;
+    }
+  }
+
   .table-toolbar-section.has-mobile-search {
     .table-toolbar-search-row {
       padding: 8px 16px 0;

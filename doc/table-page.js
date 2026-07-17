@@ -1,7 +1,7 @@
 const { default: TablePage, Table } = _TablePage;
 const { fields } = _ReactFilter;
 const { SuperSelectFilterItem } = fields;
-const { Table: AntTable, Flex, Tag, Button, Space, Switch, message } = antd;
+const { Table: AntTable, Col, Flex, Row, Tag, Button, Space, Switch, message } = antd;
 const { useMemo, useState } = React;
 
 const TOTAL = 156;
@@ -195,11 +195,11 @@ const Tips = () => (
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="gold">筛选</Tag>
-      顶部工具栏集成 <code>filter</code>、<code>search</code>、<code>batchActions</code>、<code>buttonGroup</code>；筛选变化自动 <code>reload</code> 并回到第 1 页；<code>buttonGroup</code> 桌面在 SearchInput 右侧，移动端经 ButtonFooter 固定在列表底部。
+      顶部工具栏集成 <code>filter</code>、<code>search</code>、<code>batchActions</code>、<code>buttonGroup</code>；筛选变化自动 <code>reload</code> 并回到第 1 页；移动端 <code>buttonGroup</code> 与筛选同行两端对齐（筛选靠左、按钮组靠右），批量操作显示在「全选/排序」行的排序后面。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="lime">Tab</Tag>
-      通过 <code>tab</code> 配置顶部分类切换（默认「全部」），选中值写入 filter value 并显示在已选标签；桌面端在表格边框外，移动端在 SearchInput 下方；可用 <code>tabProps</code> 透传 Tabs 属性（如 <code>tabBarExtraContent</code>）。
+      通过 <code>tab</code> 配置顶部分类切换（默认「全部」），选中值写入 filter value 参与请求，但不在已选筛选标签中重复展示；桌面端在表格边框外，移动端在 SearchInput 下方；可用 <code>tabProps</code> 透传 Tabs 属性（如 <code>tabBarExtraContent</code>）。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="orange">列配置</Tag>
@@ -225,12 +225,65 @@ const Tips = () => (
       <Tag style={TIP_TAG_STYLE} color="purple">总结栏</Tag>
       <code>summary</code> 回调可拿到 <code>data</code>、<code>requestParams</code> 等 fetch 上下文。
     </div>
+    <div>
+      <Tag style={TIP_TAG_STYLE} color="red">PC 卡片</Tag>
+      传入 <code>renderCard</code>（签名同 <code>renderMobile</code>）后，工具栏 <code>buttonGroup</code> 前出现表格/卡片切换按钮，状态按 <code>name</code> 持久化到 localStorage；卡片模式下外框透明、默认触底下拉加载（<code>pagination.forcePagination</code> 可改回分页）；<code>forceCard</code> 强制卡片并隐藏切换按钮；移动端忽略。
+    </div>
   </div>
+);
+
+const EmployeeCard = ({ item }) => (
+  <div
+    style={{
+      boxSizing: 'border-box',
+      border: '1px solid #f0f0f0',
+      borderRadius: 8,
+      padding: 16,
+      background: '#fff'
+    }}
+  >
+    <Flex justify="space-between" align="center" style={{ marginBottom: 8 }}>
+      <strong>{item.name}</strong>
+      <Tag color={statusMap[item.status]?.type}>{statusMap[item.status]?.text || item.status}</Tag>
+    </Flex>
+    <Flex align="center" gap={8} wrap style={{ marginBottom: 4, fontSize: 13, color: 'rgba(0,0,0,0.65)' }}>
+      <span>{item.department}</span>
+      <span style={{ color: 'rgba(0,0,0,0.25)' }}>·</span>
+      <span>{item.position}</span>
+    </Flex>
+    <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>
+      {item.employeeNo} · 入职 {item.joinDate} · 薪资 {item.salary}
+    </div>
+    <Flex justify="flex-end" gap={4} style={{ marginTop: 12, paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
+      <Button type="link" size="small" onClick={() => message.info(`查看 ${item.name}`)}>
+        查看
+      </Button>
+      <Button type="link" size="small" onClick={() => message.info(`编辑 ${item.name}`)}>
+        编辑
+      </Button>
+      {item.status !== 'resigned' && (
+        <Button type="link" size="small" danger onClick={() => message.warning(`办理离职 ${item.name}`)}>
+          离职办理
+        </Button>
+      )}
+    </Flex>
+  </div>
+);
+
+const renderEmployeeCard = ({ dataSource = [] }) => (
+  <Row gutter={[12, 12]}>
+    {dataSource.map(item => (
+      <Col span={12} key={item.id}>
+        <EmployeeCard item={item} />
+      </Col>
+    ))}
+  </Row>
 );
 
 const BaseExample = () => {
   const tableRef = React.useRef();
   const [empty, setEmpty] = useState(false);
+  const [cardForcePagination, setCardForcePagination] = useState(false);
   const emptyRef = React.useRef(false);
   const allEmployees = useMemo(() => range(0, TOTAL).map(buildEmployee), []);
   const { selectedRows, getRowSelection } = Table.useSelectedRow({ rowKey: 'id' });
@@ -275,6 +328,10 @@ const BaseExample = () => {
         >
           刷新当前页
         </Button>
+        <Flex align="center" gap={8}>
+          <span>卡片模式数据加载：</span>
+          <Switch checkedChildren="分页" unCheckedChildren="下拉加载" checked={cardForcePagination} onChange={setCardForcePagination} />
+        </Flex>
       </Space>
       <TablePage
         ref={tableRef}
@@ -283,6 +340,7 @@ const BaseExample = () => {
         scroll={{ x: 1600, y: 400 }}
         size="large"
         renderMobile
+        renderCard={renderEmployeeCard}
         sortRender={sortRender}
         mobileSortToolbar={mobileSortToolbar}
         rowSelection={getRowSelection(allEmployees)}
@@ -349,7 +407,8 @@ const BaseExample = () => {
           pageSize: 10,
           showSizeChanger: true,
           showQuickJumper: true,
-          pageSizeOptions: ['10', '20', '50', '100']
+          pageSizeOptions: ['10', '20', '50', '100'],
+          forcePagination: cardForcePagination
         }}
         dataFormat={data => ({
           list: data.pageData,

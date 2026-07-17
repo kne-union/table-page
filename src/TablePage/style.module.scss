@@ -27,13 +27,15 @@
 .table-with-toolbar {
   border: 1px solid #f0f0f0;
   border-radius: var(--radius-default, 2px);
+  overflow: hidden;
 
   &.is-mobile-render {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0;
     border: none;
     border-radius: 0;
+    overflow: visible;
   }
 
   :global(.table-page-toolbar) {
@@ -100,6 +102,36 @@
   border-radius: 0 !important;
 }
 
+// PC 卡片模式：外框透明，工具栏不需要左右内边距
+.table-with-toolbar.is-card-mode {
+  border-color: transparent;
+
+  :global(.table-page-toolbar) {
+    padding-inline: 0;
+  }
+}
+
+// PC 卡片模式：卡片区域与上方工具栏留出间距
+.is-card-render {
+  padding-top: 12px;
+}
+
+.card-mode-toggle {
+  flex-shrink: 0;
+  background: var(--bg-color-grey-1, #f5f5f5);
+
+  :global(.ant-segmented-item:not(.ant-segmented-item-selected)) {
+    color: var(--font-color-grey, #666);
+  }
+
+  :global(.ant-segmented-item-selected) {
+    color: var(--primary-color, #1677ff);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.1),
+      0 0 0 1px rgba(0, 0, 0, 0.04);
+  }
+}
+
 .is-mobile-render {
   border: none !important;
   border-radius: 0 !important;
@@ -107,59 +139,6 @@
 
 .mobile-load-more {
   width: 100%;
-}
-
-.table-page-button-footer {
-  margin-top: 16px;
-}
-
-.table-page-button-footer-inner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.table-page-button-footer-group {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-
-  > div {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-  }
-
-  // ButtonGroup 宽度测量节点，脱离文档流避免把可见按钮挤偏
-  > div > :nth-child(1) {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    width: 100%;
-    height: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  > div > :nth-child(2) {
-    position: absolute;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  > div > :global(.ant-space),
-  > div > :global(.ant-space-compact) {
-    justify-content: center;
-    margin-inline: auto;
-    flex: 0 0 auto;
-  }
 }
 
 .pagination:global(.ant-pagination) {
