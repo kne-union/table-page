@@ -438,7 +438,8 @@ const TablePageInnerContent = withLocale(
           <div
             className={classnames(style['table-with-toolbar'], {
               [style['is-mobile-render']]: isMobileRenderActive,
-              [style['is-card-mode']]: isCardModeActive
+              [style['is-card-mode']]: isCardModeActive,
+              [style['is-sticky']]: !!sticky
             })}
           >
             <TableToolbar

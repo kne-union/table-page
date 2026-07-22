@@ -32,7 +32,7 @@
 | selectedRows | array | - | 已选行数据，传给 `batchActions` 的 `onClick` 上下文 |
 | className | string | - | 自定义类名 |
 | ...fetchProps | - | - | 其余属性透传给 `@kne/react-fetch`（如 `url`、`params`、`auto` 等） |
-| ...tableProps | - | - | 其余属性透传给内部 `Table` / `TableView`（如 `rowKey`、`rowSelection`、`scroll`、`size`、`renderMobile`、`sortRender`、`mobileSortToolbar`） |
+| ...tableProps | - | - | 其余属性透传给内部 `Table` / `TableView`（如 `rowKey`、`rowSelection`、`scroll`、`size`、`renderMobile`、`sortRender`、`mobileSortToolbar`、`dataType`、`expandedKeys`、`onLoadChildren` 等树形属性） |
 
 #### pagination
 
@@ -219,6 +219,16 @@
 | sortRender | function | - | 排序按钮渲染，由 `useSort` 提供（桌面端表头） |
 | mobileSortToolbar | function | - | 移动端排序工具栏，由 `useSort` 提供；传入 TableView 后由 `renderToolbar` / 默认卡片复用 |
 | size | `'small'` \| `'large'` | - | 单元格内边距：默认 `8px`，`small` 为 `4px`，`large` 为 `14px 8px`；可通过 CSS 变量覆盖 |
+| dataType | `'list'` \| `'tree'` \| `'treeList'` | `'list'` | 数据形态。`list` 扁平；`tree` 使用 `childrenKey` 嵌套；`treeList` 按 `parentKey` 组装为树 |
+| parentKey | string | `'parentId'` | `treeList` 父子关联字段 |
+| childrenKey | string | `'children'` | 子节点字段名 |
+| hasChildrenKey | string | `'hasChildren'` | 懒加载标记；为 `true` 时即使尚无子节点也显示展开图标 |
+| treeTitleKey | string \| function | `'name'` | 移动端树形面包屑文案字段（委托 TableView） |
+| onLoadChildren | function | - | 懒加载：`(item, { key }) => void \| Promise`；请用 `mergeTreeChildren` 合并回 dataSource |
+| expandedKeys | `true` \| `false` \| `Array` | - | 受控展开。`true` 全开，`false` 全关，数组为展开 key |
+| defaultExpandedKeys | `true` \| `false` \| `Array` | `false` | 非受控初始展开 |
+| onExpandedKeysChange | function | - | 展开变化回调 `(keys) => void` |
+| indentSize | number | `16` | 树形每层缩进（px），映射 antd `expandable.indentSize` |
 
 `renderMobile` 为 function 时，TableView 会传入已接好 `rowSelection` / `mobileSortToolbar` 的能力，自定义布局只需选用：
 
@@ -286,6 +296,7 @@ renderMobile={({ dataSource, renderToolbar, getSelectionProps, getRowKey }) => (
 | allowSelectedAll | boolean | - | 是否允许全选（仅 checkbox 模式） |
 | isSelectedAll | boolean | - | 是否全选状态 |
 | onIsSelectAllChange | function | - | 全选状态变化回调 |
+| checkRelation | `'parent'` \| `'all'` \| `'independent'` | `'parent'` | 树形 checkbox 父子勾选关联（仅 `dataType` 为 `tree` / `treeList`）：`parent` 勾父级时子级 UI 全勾但值只留父级；`all` 值含父级与子孙；`independent` 互不影响 |
 
 ### useSelectedRow
 
@@ -395,7 +406,12 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 | controllerOpen | boolean | `true` | 是否开启列宽拖动与列配置面板 |
 | tableServerApis | object | - | 自定义列配置存储 API，默认使用 `localStorage` |
 | size | `'small'` \| `'large'` | - | 单元格内边距：默认 `8px`，`small` 为 `4px`，`large` 为 `14px 8px`；可通过 CSS 变量覆盖（同 TableView） |
-| ...antdTableProps | - | - | 其余属性透传给 antd `Table`（如 `scroll`、`bordered`） |
+| dataType | `'list'` \| `'tree'` \| `'treeList'` | `'list'` | 同 TableView；`tree` / `treeList` 时使用与 TableView 一致的自绘展开列（三角 + 缩进），并隐藏 antd 默认展开列 |
+| parentKey / childrenKey / hasChildrenKey | string | 见 TableView | 同 TableView |
+| onLoadChildren | function | - | 同 TableView；展开时触发懒加载，三角显示 loading |
+| expandedKeys / defaultExpandedKeys / onExpandedKeysChange | - | - | 同 TableView |
+| indentSize | number | `16` | 同 TableView；作用于自绘展开列缩进 |
+| ...antdTableProps | - | - | 其余属性透传给 antd `Table`（如 `scroll`、`bordered`）；树形下内部会合并 `expandable`（`showExpandColumn: false`） |
 
 #### 与 TableView 的差异
 

@@ -19,6 +19,7 @@
 - **Tab（tab）**：顶部分类切换，默认「全部」，选中值写入 filter value 参与请求但不在已选标签中重复展示；桌面端在表格边框外侧，移动端显示在 SearchInput 下方；可通过 `tabProps` 透传 antd Tabs 属性
 - **批量操作（batchActions）**：配合 `rowSelection` 和 `useSelectedRow`，提供下拉菜单形式的批量操作（如批量导出、批量通知），未选中时自动禁用
 - **PC 卡片视图（renderCard）**：取值同 `renderMobile`（true / function / preset 字符串），生效后 PC 端可切换表格/卡片（状态按 `name` 存 localStorage）；`forceCard` 强制卡片并不显示切换按钮；卡片模式下外框透明、默认触底下拉加载；移动端忽略
+- **树形数据**：透传 `dataType`（`tree` / `treeList`）、`expandedKeys`、`onLoadChildren`、`rowSelection.checkRelation` 等给内部 Table / TableView
 - **已选筛选值展示**：工具栏下方展示当前生效的筛选条件标签，支持快速清除
 
 #### Table
@@ -30,6 +31,7 @@
 - **配置持久化**：设置 `name` 后，列宽和显示状态自动保存到 localStorage
 - **分组表头**：通过 `groupHeader` 配置实现多级表头结构
 - **浮动横向滚动条**：当表格宽度超出容器时，底部自动显示横向滚动条（通过 `horizontalScroller` 控制）
+- **树形数据**：支持与 `TableView` 相同的 `dataType`（`tree` / `treeList`），映射为 antd Table 树形展开，含懒加载与 `checkRelation` 勾选关联
 
 #### TableView
 
@@ -40,6 +42,7 @@
 - 行选择（checkbox 多选 / radio 单选）
 - 行点击事件
 - 通过 `render` 属性自定义渲染，可拆分表头和表体
+- 树形数据（`dataType: 'tree' | 'treeList'`）：展开收起、懒加载、移动端面包屑卡片
 
 ### 核心 Hooks
 
@@ -93,7 +96,8 @@
 
 - `useTableConfig` 管理列宽拖动、显示/隐藏、localStorage 持久化
 - `useGroupHeader` 生成分组表头
-- `rowSelection` 映射为 antd 行选择（含 `allowSelectedAll` 全选）
+- `rowSelection` 映射为 antd 行选择（含 `allowSelectedAll` 全选；树形下支持 `checkRelation`）
+- `dataType` 为 `tree` / `treeList` 时归一化为嵌套数据并接入 antd `expandable`
 - `render={({ header, renderBody }) => ...}` 可自定义表格外层，`renderBody()` 返回完整 antd Table
 
 #### 移动端：`renderMobile`
