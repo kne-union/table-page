@@ -37,7 +37,27 @@ export {
   hasColumnWidth,
   wrapColumnHeaderTitle,
   resolveRenderMobile,
-  isRenderMobileActive
+  isRenderMobileActive,
+  isTreeDataType,
+  buildTreeFromList,
+  normalizeTreeData,
+  flattenAllTree,
+  flattenVisibleTree,
+  collectExpandableKeys,
+  toggleExpandedKey,
+  nodeCanExpand,
+  mergeTreeChildren,
+  getTreeBreadcrumbItems,
+  CHECK_RELATION,
+  resolveCheckRelation,
+  buildTreeKeyMaps,
+  normalizeParentKeys,
+  toggleTreeCheck,
+  getTreeCheckState,
+  buildSelectAllKeys,
+  buildClearSelectAllKeys,
+  isAllTreeSelected,
+  hasAnyTreeSelected
 } from '@kne/table-view';
 export { default as TableView } from './TableView';
 export { default as Table } from './Table';

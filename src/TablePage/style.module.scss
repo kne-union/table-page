@@ -27,7 +27,12 @@
 .table-with-toolbar {
   border: 1px solid #f0f0f0;
   border-radius: var(--radius-default, 2px);
+  // 圆角裁剪；sticky 吸顶时必须可见，否则 position:sticky 会被祖先裁剪失效
   overflow: hidden;
+
+  &.is-sticky {
+    overflow: visible;
+  }
 
   &.is-mobile-render {
     display: flex;
