@@ -142,6 +142,9 @@
 .table-page-tabs {
   background: transparent;
   padding: 0;
+  // 「更多」下拉挂在 tabs 内时，需高于下方 table-with-toolbar（overflow 形成层叠上下文）
+  position: relative;
+  z-index: 2;
 
   :global(.ant-tabs) {
     margin-bottom: 0;
