@@ -23,7 +23,9 @@ const getTabActiveKey = (filterValue, tabName) => {
 
 export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, className, isMobileRender }) => {
   const { formatMessage } = useIntl();
+  const getPopupContainer = usePopupContainer();
   const showTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
+  const { getPopupContainer: userGetPopupContainer, ...restTabProps } = tabProps || {};
 
   const tabItems = useMemo(() => {
     if (!showTab) {
@@ -63,7 +65,7 @@ export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, clas
         [style['is-mobile-render']]: isMobileRender
       })}
     >
-      <Tabs size="small" {...tabProps} activeKey={getTabActiveKey(filterValue, tab.name)} onChange={handleTabChange} items={tabItems} />
+      <Tabs size="small" {...restTabProps} getPopupContainer={userGetPopupContainer ?? getPopupContainer} activeKey={getTabActiveKey(filterValue, tab.name)} onChange={handleTabChange} items={tabItems} />
     </div>
   );
 };
