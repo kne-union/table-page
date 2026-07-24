@@ -9,6 +9,7 @@ import { isRenderMobileActive, globalParams } from '@kne/table-view';
 import classnames from 'classnames';
 import get from 'lodash/get';
 import useRefCallback from '@kne/use-ref-callback';
+import useControlValue from '@kne/use-control-value';
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from '@kne/react-intl';
 import { useIsMobile } from '@kne/responsive-utils';
@@ -23,6 +24,17 @@ const defaultMergeList = (data, newData) => {
   return Object.assign({}, newData, {
     pageData: [...(data?.pageData || []), ...(newData?.pageData || [])]
   });
+};
+
+/** 与 use-control-value 一致：有 value key 为受控，否则用 defaultValue */
+const resolveInitialFilterValue = filter => {
+  if (!filter) {
+    return [];
+  }
+  if ('value' in filter) {
+    return filter.value || [];
+  }
+  return filter.defaultValue || [];
 };
 
 const readPageSize = key => {
@@ -170,9 +182,7 @@ const TablePageInnerContent = withLocale(
     const tableContentRef = useRef(null);
     const pendingScrollRef = useRef(false);
     const handlerDataFormat = useRefCallback(dataFormat);
-    const isFilterControlled = filter && filter.value !== undefined;
-    const [internalFilterValue, setInternalFilterValue] = useState(() => filter?.defaultValue || []);
-    const filterValue = isFilterControlled ? filter.value : internalFilterValue;
+    const [filterValue, setFilterValue] = useControlValue(Object.assign({ defaultValue: [] }, filter));
     const mapFilterValue = filter?.mapFilterValue || getFilterValue;
 
     const getFilterParams = useRefCallback(value => {
@@ -229,10 +239,7 @@ const TablePageInnerContent = withLocale(
     });
 
     const handleFilterChange = useRefCallback(value => {
-      if (!isFilterControlled) {
-        setInternalFilterValue(value);
-      }
-      filter?.onChange?.(value);
+      setFilterValue(value);
       reload({
         [pagination.paramsType]: buildRequestParamsWithFilter(value, {
           [pagination.currentName]: 1
@@ -521,11 +528,17 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
   const [pageSize, setPageSize] = useState(() => (cachePageSize ? readPageSize(pageSizeKey) : null) ?? pagination.pageSize);
   const params = props[pagination.paramsType];
   const filterDefaultParams = useMemo(() => {
-    if (!props.filter?.defaultValue?.length) {
+    const filter = props.filter;
+    if (!filter) {
       return {};
     }
-    const mapFilterValue = props.filter.mapFilterValue || getFilterValue;
-    return mapFilterValue(props.filter.defaultValue);
+    const initialValue = resolveInitialFilterValue(filter);
+    const mapFilterValue = filter.mapFilterValue || getFilterValue;
+    // 有 mapFilterValue 时即使 initialValue 为空也要跑（注入 namespace 等）
+    if (!initialValue.length && !filter.mapFilterValue) {
+      return {};
+    }
+    return mapFilterValue(initialValue);
   }, [props.filter]);
   const fetchParams = useMemo(() => {
     return {

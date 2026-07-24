@@ -3626,8 +3626,8 @@ render(<BaseExample />);
 |------|------|--------|------|
 | list | `Array<Array>` | - | 传给 `FilterLines` 的筛选项配置 |
 | displayLine | number | `1` | 默认展示行数 |
-| value | array | - | 受控筛选值 |
-| defaultValue | array | `[]` | 默认筛选值，会合并进首次请求参数 |
+| value | array | - | 受控筛选值（传入则受控，同时用于 UI 与首次请求；由 `@kne/use-control-value` 管理） |
+| defaultValue | array | `[]` | 非受控初始筛选值，会合并进首次请求参数 |
 | onChange | function | - | 筛选值变化回调 `(value) => void` |
 | mapFilterValue | function | - | 自定义参数转换，默认 `getFilterValue` |
 
