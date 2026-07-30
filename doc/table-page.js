@@ -190,6 +190,10 @@ const Tips = () => (
       通过 <code>loader</code> 模拟分页接口，请求参数为 <code>data.currentPage</code>、<code>data.perPage</code>。
     </div>
     <div>
+      <Tag style={TIP_TAG_STYLE} color="processing">蒙层 Loading</Tag>
+      <code>reload</code> 切换数据时保留旧表格，叠加半透明蒙层与 spinner，加载完成后再替换为新数据；<code>refresh</code> 会卸载表格并显示全屏 loading。点下方「演示蒙层 Loading」可观察效果。
+    </div>
+    <div>
       <Tag style={TIP_TAG_STYLE} color="green">分页</Tag>
       分页器渲染在表格外侧，翻页时以 <code>reload</code> 方式请求；<code>pageSize</code> 会持久化到 localStorage；当 <code>total</code> 为 0（无数据）时不显示分页器。
     </div>
@@ -285,6 +289,7 @@ const BaseExample = () => {
   const [empty, setEmpty] = useState(false);
   const [cardForcePagination, setCardForcePagination] = useState(false);
   const emptyRef = React.useRef(false);
+  const slowReloadRef = React.useRef(false);
   const allEmployees = useMemo(() => range(0, TOTAL).map(buildEmployee), []);
   const { selectedRows, getRowSelection } = Table.useSelectedRow({ rowKey: 'id' });
   const { sort, sortRender, mobileSortToolbar } = Table.useSort({
@@ -313,6 +318,21 @@ const BaseExample = () => {
           <span>{empty ? '空数据（无分页）' : '有数据（显示分页）'}</span>
         </Flex>
         <Button
+          type="primary"
+          onClick={() => {
+            slowReloadRef.current = true;
+            Promise.resolve(
+              tableRef.current?.reload({
+                data: { currentPage: 1 }
+              })
+            ).finally(() => {
+              slowReloadRef.current = false;
+            });
+          }}
+        >
+          演示蒙层 Loading
+        </Button>
+        <Button
           onClick={() => {
             tableRef.current?.reload({
               data: { currentPage: 1 }
@@ -326,7 +346,7 @@ const BaseExample = () => {
             tableRef.current?.refresh();
           }}
         >
-          刷新当前页
+          刷新当前页（全屏 loading）
         </Button>
         <Flex align="center" gap={8}>
           <span>卡片模式数据加载：</span>
@@ -416,9 +436,10 @@ const BaseExample = () => {
           data
         })}
         loader={({ data, requestParams }) => {
+          const delay = slowReloadRef.current ? 1600 : 400;
           if (emptyRef.current) {
             return new Promise(resolve => {
-              setTimeout(() => resolve({ pageData: [], totalCount: 0 }), 400);
+              setTimeout(() => resolve({ pageData: [], totalCount: 0 }), delay);
             });
           }
           const currentPage = Number(data?.currentPage ?? requestParams?.data?.currentPage) || 1;
@@ -434,7 +455,7 @@ const BaseExample = () => {
                 pageData: sortedEmployees.slice(startIndex, startIndex + perPage),
                 totalCount: filteredEmployees.length
               });
-            }, 400);
+            }, delay);
           });
         }}
         columns={columns}
