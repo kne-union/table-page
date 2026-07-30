@@ -313,16 +313,15 @@ const Table = p => {
       setResizeGuideStyle(null);
       return;
     }
+    const wrapperRect = root.getBoundingClientRect();
     const headerRect = headerCell.getBoundingClientRect();
     const resizeBar = headerCell.querySelector('.table-cell-resize-bar');
     const barRect = resizeBar?.getBoundingClientRect();
     const containerRect = tableContainer.getBoundingClientRect();
     setResizeGuideStyle({
-      position: 'fixed',
-      left: Math.round(barRect?.right ?? headerRect.right),
-      top: Math.round(containerRect.top),
-      height: Math.round(containerRect.height),
-      zIndex: 100
+      left: Math.round((barRect?.right ?? headerRect.right) - wrapperRect.left),
+      top: Math.round(containerRect.top - wrapperRect.top),
+      height: Math.round(containerRect.height)
     });
   }, [currentMoveColumnIndex]);
 

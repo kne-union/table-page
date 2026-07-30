@@ -263,7 +263,7 @@ const TablePageInnerContent = withLocale(
       }
       const nextSize = Number(size);
       const currentPage = get(requestParams, [pagination.paramsType, pagination.currentName], 1);
-      const currentSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 50;
+      const currentSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 20;
 
       if (nextSize !== currentSize) {
         pagination.onShowSizeChange && pagination.onShowSizeChange(page, nextSize);
@@ -285,7 +285,7 @@ const TablePageInnerContent = withLocale(
     const useLoadMoreMode = useMobileLoadMore || useCardLoadMore;
 
     const currentPage = get(requestParams, [pagination.paramsType, pagination.currentName], 1);
-    const currentPageSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 50;
+    const currentPageSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 20;
     const loadMoreNoMore = !formatData.total || currentPage * currentPageSize >= formatData.total;
 
     const handleLoadMore = useRefCallback(async () => {
@@ -323,7 +323,7 @@ const TablePageInnerContent = withLocale(
             }
           : {}),
         current: get(requestParams, [pagination.paramsType, pagination.currentName], 1),
-        pageSize: Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 50,
+        pageSize: Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 20,
         onChange: handlePaginationChange,
         size: pagination.size,
         hideOnSinglePage: pagination.hideOnSinglePage,
@@ -432,14 +432,7 @@ const TablePageInnerContent = withLocale(
     ) : null;
 
     const tableMain = (
-      <HorizontalScroller
-        ref={tableContentRef}
-        enabled={horizontalScroller && renderType === 'Table' && !isCardModeActive}
-        getPortalContainer={getScrollContainer}
-        className={classnames(style['table-content'], 'loading-container', {
-          'is-loading': !isComplete && !data
-        })}
-      >
+      <HorizontalScroller ref={tableContentRef} enabled={horizontalScroller && renderType === 'Table' && !isCardModeActive} getPortalContainer={getScrollContainer} className={style['table-content']}>
         {showOuterTab ? <TablePageTabs filterValue={filterValue} onFilterChange={handleFilterChange} tab={tab} tabProps={tabProps} className={style['table-page-tabs-outer']} isMobileRender={isMobileRenderActive} /> : null}
         {wrapWithToolbar ? (
           <div
@@ -474,7 +467,13 @@ const TablePageInnerContent = withLocale(
     );
 
     return (
-      <div className={style['table-page']} style={scrollTopInsetStyle}>
+      <div
+        className={classnames(style['table-page'], 'loading-container', {
+          // reload 会保留旧 data，仅将 isComplete 置为 false；用蒙层提示切换中，避免卸载表格
+          'is-loading': !isComplete
+        })}
+        style={scrollTopInsetStyle}
+      >
         {useLoadMoreMode ? (
           <ScrollLoader
             className={style['mobile-load-more']}
@@ -513,13 +512,13 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
     {
       showSizeChanger: true,
       showQuickJumper: true,
-      hideOnSinglePage: false,
+      hideOnSinglePage: true,
       open: true,
       paramsType: 'data',
       requestType: 'reload',
       currentName: 'currentPage',
       pageSizeName: 'perPage',
-      pageSize: 50
+      pageSize: 20
     },
     pagination
   );

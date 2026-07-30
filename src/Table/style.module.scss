@@ -233,11 +233,21 @@
   display: block;
   width: calc(100% - var(--kne-table-cell-margin, 4px) * 2);
   min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
+  // 在内容层裁剪超长内容；勿设到 .table-cell，否则会裁掉 fixed 列 ::after 阴影
+  overflow: hidden;
+
+  // Tag 等 nowrap 内容超出时截断，避免挡住相邻单元格
+  :global(.ant-tag) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+  }
 }
 
 :global(.ant-table-thead) .col-content {
-  overflow: hidden;
   white-space: nowrap;
 }
 
@@ -396,7 +406,7 @@
 }
 
 .column-resize-guide {
-  position: fixed;
+  position: absolute;
   width: 0;
   border-right: 1px dashed var(--primary-color, #1677ff);
   pointer-events: none;

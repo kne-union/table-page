@@ -45,9 +45,9 @@
 | requestType | `'reload'` \| `'refresh'` | `'reload'` | 翻页时的请求方式，`reload` 不切换 loading，`refresh` 会重新 loading |
 | showSizeChanger | boolean | `true` | 是否展示每页条数切换 |
 | showQuickJumper | boolean | `true` | 是否展示快速跳转 |
-| hideOnSinglePage | boolean | `false` | 仅一页时是否隐藏分页器 |
+| hideOnSinglePage | boolean | `true` | 仅一页时是否隐藏分页器 |
 | pageSizeOptions | array | - | 每页条数选项 |
-| pageSize | number | `50` | 默认每页条数，会持久化到 localStorage |
+| pageSize | number | `20` | 默认每页条数，会持久化到 localStorage |
 | showTotal | function | - | 自定义总数展示 `(total) => ReactNode` |
 | onChange | function | - | 自定义翻页回调 `(page, size) => void`，传入后覆盖默认请求逻辑 |
 | onShowSizeChange | function | - | 每页条数变化回调，组件内部已处理持久化 |
