@@ -158,7 +158,18 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
     return null;
   }
 
-  const { list: filterList, displayLine = 1, extraExpand, className: filterClassName, ...filterRest } = filter || {};
+  const {
+    list: filterList,
+    displayLine = 1,
+    extraExpand,
+    className: filterClassName,
+    searchParamsValue: _searchParamsValue,
+    mapFilterValue: _mapFilterValue,
+    value: _value,
+    defaultValue: _defaultValue,
+    onChange: _onChange,
+    ...filterRest
+  } = filter || {};
   const { className: searchClassName, style: searchStyle, ...searchRest } = search || {};
 
   // tab 已有选中态展示，已选筛选标签中不再重复显示 tab 的值

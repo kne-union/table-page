@@ -27,7 +27,7 @@ npm i --save @kne/table-page
 
 同时内置了顶部工具栏（`TableToolbar`），整合筛选、搜索、Tab 分类、批量操作等能力：
 
-- **筛选（filter）**：基于 `@kne/react-filter` 的 `FilterLines`，支持多行多字段组合筛选，筛选值变化时自动 `reload` 并回到第 1 页
+- **筛选（filter）**：基于 `@kne/react-filter` 的 `FilterLines`，支持多行多字段组合筛选，筛选值变化时自动 `reload` 并回到第 1 页；可通过 `filter.searchParamsValue`（与 `useSearchParamsValue` 同参）从 URL 平铺参数合并初始筛选并保证首包请求带上对应参数
 - **搜索（search）**：基于 `@kne/react-filter` 的 `SearchInput`，支持关键词搜索与防抖自动提交，与筛选器共享筛选值状态；移动端开启 `renderMobile` 时，SearchInput 与下方卡片列表之间保留间距
 - **操作按钮（buttonGroup）**：透传 `@kne/button-group` 参数；桌面端显示在 SearchInput 右侧（small、至少 1 个外露），移动端与筛选同行两端对齐（筛选靠左、按钮组靠右，small、外露 1 个），批量操作显示在「全选/排序」行的排序后面
 - **Tab（tab）**：顶部分类切换，默认「全部」，选中值写入 filter value 参与请求但不在已选标签中重复展示；桌面端在表格边框外侧，移动端显示在 SearchInput 下方；可通过 `tabProps` 透传 antd Tabs 属性
@@ -1141,6 +1141,99 @@ render(
     <SearchMobileExample />
   </Flex>
 );
+
+```
+
+- searchParamsValue
+- filter.searchParamsValue 与 useSearchParamsValue 同参：从 URL 平铺参数合并进 defaultValue（URL 同名覆盖），保证首包请求已带筛选；可选 setSearchParams 清理已消费 key
+- _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd),_ReactFilter(@kne/react-filter)[import * as _ReactFilter from "@kne/react-filter"],(@kne/react-filter/dist/index.css)
+
+```jsx
+const { default: TablePage } = _TablePage;
+const { fields } = _ReactFilter;
+const { InputFilterItem } = fields;
+const { Flex, Typography, Card } = antd;
+const { useMemo, useState } = React;
+
+const mockUsers = [
+  { id: '1', name: 'Alice', userId: 'u-1001', tenantId: 't-88' },
+  { id: '2', name: 'Bob', userId: 'u-1002', tenantId: 't-88' },
+  { id: '3', name: 'Carol', userId: 'u-2002', tenantId: 't-99' }
+];
+
+/**
+ * TablePage filter.searchParamsValue：与 useSearchParamsValue 同参。
+ * 非受控 defaultValue 与 URL 按 name 合并（URL 同名覆盖）；首包请求参数已含合并结果。
+ */
+const BaseExample = () => {
+  const [lastRequest, setLastRequest] = useState(null);
+
+  const searchParams = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('userId', 'u-1001');
+    return params;
+  }, []);
+
+  const [liveSearch, setLiveSearch] = useState(searchParams);
+
+  return (
+    <Flex vertical gap={16}>
+      <Card size="small" title="说明">
+        <Typography.Paragraph style={{ marginBottom: 0 }}>
+          模拟 URL <Typography.Text code>?userId=u-1001</Typography.Text>，并配置 defaultValue 含 status。合并后首包应同时带上 status 与 userId。
+        </Typography.Paragraph>
+      </Card>
+      {lastRequest ? (
+        <Card size="small" title="首次/最近请求 data 参数">
+          <pre style={{ margin: 0, fontSize: 12 }}>{JSON.stringify(lastRequest, null, 2)}</pre>
+        </Card>
+      ) : null}
+      <TablePage
+        name="search-params-value-demo"
+        data={{ currentPage: 1, perPage: 10 }}
+        pagination={{ paramsType: 'data' }}
+        filter={{
+          defaultValue: [{ name: 'status', label: '状态', value: { label: '开启', value: 'open' } }],
+          searchParamsValue: {
+            searchParams: liveSearch,
+            setSearchParams: next => setLiveSearch(next),
+            fields: [
+              { name: 'userId', label: '用户Id' },
+              { name: 'tenantId', label: '租户Id' }
+            ]
+          },
+          list: [
+            [
+              { type: InputFilterItem, props: { name: 'userId', label: '用户Id' } },
+              { type: InputFilterItem, props: { name: 'tenantId', label: '租户Id' } },
+              { type: InputFilterItem, props: { name: 'status', label: '状态' } }
+            ]
+          ]
+        }}
+        loader={({ data }) => {
+          setLastRequest(data);
+          const list = mockUsers.filter(row => {
+            if (data.userId && row.userId !== data.userId) return false;
+            if (data.tenantId && row.tenantId !== data.tenantId) return false;
+            return true;
+          });
+          return Promise.resolve({
+            pageData: list,
+            totalCount: list.length
+          });
+        }}
+        columns={[
+          { name: 'name', title: '姓名', type: 'main' },
+          { name: 'userId', title: '用户Id' },
+          { name: 'tenantId', title: '租户Id' }
+        ]}
+      />
+      <Typography.Text type="secondary">当前 search：?{liveSearch.toString() || '(已清理)'}</Typography.Text>
+    </Flex>
+  );
+};
+
+render(<BaseExample />);
 
 ```
 
@@ -3651,6 +3744,7 @@ render(<BaseExample />);
 | defaultValue | array | `[]` | 非受控初始筛选值，会合并进首次请求参数 |
 | onChange | function | - | 筛选值变化回调 `(value) => void` |
 | mapFilterValue | function | - | 自定义参数转换，默认 `getFilterValue` |
+| searchParamsValue | object | - | 与 `@kne/react-filter` 的 `useSearchParamsValue` **同参** `{ searchParams, setSearchParams?, fields }`。同步解析 URL 作初始筛选种子：非受控时 `mergeByName(defaultValue, fromUrl)`（同名 URL 覆盖）并写入 `defaultValue` + 首包参数；受控时不改写 `value`/`onChange`，首包用 `mergeByName(value, fromUrl)`。有 `setSearchParams` 时清理已消费 key。勿与外层 `useSearchParamsValue` 同时使用 |
 
 #### search
 

@@ -19,6 +19,7 @@ import HorizontalScroller from './HorizontalScroller';
 import '@kne/button-group/dist/index.css';
 import TableToolbar, { TablePageTabs, BatchActions, hasButtonGroupList } from './TableToolbar';
 import { scrollAnchorIntoView, normalizeScrollTopInsetCSSValue, resolveScrollTopInset } from './scrollUtils';
+import { parseSearchParamsValue, mergeFilterByName, stripConsumedUrlParams } from './searchParamsValue';
 
 const defaultMergeList = (data, newData) => {
   return Object.assign({}, newData, {
@@ -506,7 +507,7 @@ const TablePageInnerContent = withLocale(
 
 const TablePageInner = withFetch(TablePageInnerContent);
 
-const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScrollContainer, ...props }, ref) => {
+const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScrollContainer, filter: filterProp, ...props }, ref) => {
   pagination = Object.assign(
     {},
     {
@@ -525,20 +526,59 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
   const pageSizeKey = `${(props.name || 'common').toUpperCase()}_TABLE_PAGE_SIZE`;
   const cachePageSize = pagination.cachePageSize !== false;
   const [pageSize, setPageSize] = useState(() => (cachePageSize ? readPageSize(pageSizeKey) : null) ?? pagination.pageSize);
+
+  const [searchParamsSnapshot] = useState(() => parseSearchParamsValue(filterProp?.searchParamsValue));
+  const { items: fromUrl, consumedKeys } = searchParamsSnapshot;
+
+  const filter = useMemo(() => {
+    if (!filterProp) {
+      return filterProp;
+    }
+    const { searchParamsValue: _searchParamsValue, ...rest } = filterProp;
+    if ('value' in filterProp) {
+      return rest;
+    }
+    return Object.assign({}, rest, {
+      defaultValue: mergeFilterByName(filterProp.defaultValue || [], fromUrl)
+    });
+  }, [filterProp, fromUrl]);
+
   const params = props[pagination.paramsType];
   const filterDefaultParams = useMemo(() => {
-    const filter = props.filter;
-    if (!filter) {
+    if (!filterProp && !filter) {
       return {};
     }
-    const initialValue = resolveInitialFilterValue(filter);
-    const mapFilterValue = filter.mapFilterValue || getFilterValue;
-    // 有 mapFilterValue 时即使 initialValue 为空也要跑（注入 namespace 等）
-    if (!initialValue.length && !filter.mapFilterValue) {
+    const mapFilterValue = (filter || filterProp)?.mapFilterValue || getFilterValue;
+    let initialValue;
+    if (filterProp && 'value' in filterProp) {
+      // 受控：不改 value；首包用 value ∪ fromUrl 作请求种子
+      initialValue = mergeFilterByName(filterProp.value || [], fromUrl);
+    } else {
+      initialValue = resolveInitialFilterValue(filter);
+    }
+    if (!initialValue.length && !(filter || filterProp)?.mapFilterValue) {
       return {};
     }
     return mapFilterValue(initialValue);
-  }, [props.filter]);
+  }, [filter, filterProp, fromUrl]);
+
+  const urlStrippedRef = useRef(false);
+  useEffect(() => {
+    if (urlStrippedRef.current) {
+      return;
+    }
+    urlStrippedRef.current = true;
+    const setSearchParams = filterProp?.searchParamsValue?.setSearchParams;
+    const searchParams = filterProp?.searchParamsValue?.searchParams;
+    if (typeof setSearchParams !== 'function') {
+      return;
+    }
+    const nextParams = stripConsumedUrlParams(searchParams, consumedKeys);
+    if (nextParams) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [filterProp, consumedKeys]);
+
   const fetchParams = useMemo(() => {
     return {
       [pagination.paramsType]: Object.assign({}, params, filterDefaultParams, {
@@ -550,6 +590,7 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
     <TablePageInner
       {...props}
       {...fetchParams}
+      filter={filter}
       horizontalScroller={horizontalScroller}
       getScrollContainer={getScrollContainer}
       pagination={Object.assign({}, pagination, {
