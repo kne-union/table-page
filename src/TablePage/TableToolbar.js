@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Dropdown, Tabs } from 'antd';
 import { DeleteOutlined, DownOutlined } from '@ant-design/icons';
 import { FilterOuter, FilterLines, FilterValueDisplay, SearchInput } from '@kne/react-filter';
@@ -6,11 +6,32 @@ import '@kne/react-filter/dist/index.css';
 import ButtonGroup from '@kne/button-group';
 import classnames from 'classnames';
 import { useIntl } from '@kne/react-intl';
-import { useIsMobile, usePopupContainer } from '@kne/responsive-utils';
+import { MOBILE_BREAKPOINT, useIsMobile, usePopupContainer } from '@kne/responsive-utils';
 import { hasButtonGroupList, resolveToolbarButtonGroupProps } from './buttonGroupUtils';
 import style from './tableToolbar.module.scss';
 
 const TAB_ALL_KEY = '__all__';
+
+/** 按宿主内容宽度判断移动端（补齐 example 手机预览等 container 上下文未贯通的场景） */
+const useHostWidthIsMobile = hostRef => {
+  const [widthIsMobile, setWidthIsMobile] = useState(false);
+
+  useEffect(() => {
+    const el = hostRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+    const update = () => {
+      setWidthIsMobile(el.getBoundingClientRect().width < MOBILE_BREAKPOINT);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hostRef]);
+
+  return widthIsMobile;
+};
 
 const getTabActiveKey = (filterValue, tabName) => {
   if (!tabName || !Array.isArray(filterValue)) {
@@ -141,7 +162,11 @@ export const BatchActions = ({ batchActions, rowSelection, selectedRows, batchCo
 };
 
 const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabProps, renderTab = true, batchActions, buttonGroup, rowSelection, selectedRows, batchContext, isMobileRender, cardModeToggle }) => {
-  const isMobile = useIsMobile();
+  const hostRef = useRef(null);
+  const contextIsMobile = useIsMobile();
+  const widthIsMobile = useHostWidthIsMobile(hostRef);
+  // 视口/Provider 与宿主宽度任一命中即走移动端，保证 Filter 与工具栏一致
+  const isMobile = contextIsMobile || widthIsMobile;
   const getPopupContainer = usePopupContainer();
 
   const showBatch = Array.isArray(batchActions) && batchActions.length > 0;
@@ -214,9 +239,10 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
   ) : null;
 
   return (
-    <FilterOuter value={filterValue} onChange={onFilterChange} className={style['table-toolbar-filter-outer']}>
+    <FilterOuter isMobile={isMobile} value={filterValue} onChange={onFilterChange} className={style['table-toolbar-filter-outer']}>
       {() => (
         <div
+          ref={hostRef}
           className={classnames(style['table-toolbar-section'], 'table-page-toolbar-section', {
             [style['has-value-display']]: hasValueDisplay,
             [style['has-mobile-search']]: showMobileSearchRow,
