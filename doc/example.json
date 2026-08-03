@@ -29,6 +29,52 @@
       ]
     },
     {
+      "title": "searchParamsValue",
+      "description": "filter.searchParamsValue 与 useSearchParamsValue 同参：从 URL 平铺参数合并进 defaultValue（URL 同名覆盖），保证首包请求已带筛选；可选 setSearchParams 清理已消费 key",
+      "code": "./search-params-value.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        },
+        {
+          "name": "_ReactFilter",
+          "packageName": "@kne/react-filter",
+          "importStatement": "import * as _ReactFilter from \"@kne/react-filter\""
+        },
+        {
+          "packageName": "@kne/react-filter/dist/index.css"
+        }
+      ]
+    },
+    {
+      "title": "pagination searchParams",
+      "description": "pagination.searchParams + setSearchParams：当前页与每页条数写入 URL（默认 currentPage / perPage）；落地 URL 决定首包分页，翻页与改 pageSize 以 replace 写回",
+      "code": "./pagination-search-params.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        }
+      ]
+    },
+    {
       "title": "TablePage sticky scroll",
       "description": "自包含演示区：sticky + getScrollContainer 由区内页面滚动触发表头吸顶（非 scroll.y）；模拟导航在区内 sticky，不遮挡文档站顶栏",
       "code": "./table-page-sticky-scroll.js",

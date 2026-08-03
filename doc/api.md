@@ -55,6 +55,8 @@
 | mergeList | function | 合并 `pageData` | 下拉加载时合并新旧数据 `(prev, next) => data`，需与 `loader` 返回结构一致 |
 | loadMore | object | - | 透传给 `@kne/scroll-loader` 的额外配置（如 `completeTips`、`maxFullCount`） |
 | mobile | object | - | 强制分页时的移动端分页器微调（如 `showSizeChanger`、`showLessItems`） |
+| searchParams | `URLSearchParams` | - | 与 `setSearchParams` 同时传入时开启分页 URL 状态同步；参数名复用 `currentName` / `pageSizeName`（默认 `currentPage`、`perPage`） |
+| setSearchParams | function | - | `(next: URLSearchParams, opts?) => void`；翻页、改每页条数、筛选重置到第 1 页时以 `replace: true` 写回 URL。触底下拉 `loadMore` 不写回。可与 `filter.searchParamsValue` 共用同一对实例 |
 
 #### filter
 
@@ -68,6 +70,7 @@
 | defaultValue | array | `[]` | 非受控初始筛选值，会合并进首次请求参数 |
 | onChange | function | - | 筛选值变化回调 `(value) => void` |
 | mapFilterValue | function | - | 自定义参数转换，默认 `getFilterValue` |
+| searchParamsValue | object | - | 与 `@kne/react-filter` 的 `useSearchParamsValue` **同参** `{ searchParams, setSearchParams?, fields }`。同步解析 URL 作初始筛选种子：非受控时 `mergeByName(defaultValue, fromUrl)`（同名 URL 覆盖）并写入 `defaultValue` + 首包参数；受控时不改写 `value`/`onChange`，首包用 `mergeByName(value, fromUrl)`。有 `setSearchParams` 时清理已消费 key。勿与外层 `useSearchParamsValue` 同时使用 |
 
 #### search
 
