@@ -78,3 +78,61 @@ export const stripConsumedUrlParams = (searchParams, consumedKeys) => {
   });
   return changed ? next : null;
 };
+
+const parsePositiveInt = raw => {
+  if (raw == null || raw === '') {
+    return undefined;
+  }
+  const num = Number(raw);
+  if (!Number.isFinite(num) || num <= 0) {
+    return undefined;
+  }
+  return Math.floor(num);
+};
+
+/**
+ * 从 URL 读取分页状态（非法数字忽略）。
+ * @param {URLSearchParams} [searchParams]
+ * @param {{ currentName?: string, pageSizeName?: string }} [options]
+ * @returns {{ current?: number, pageSize?: number }}
+ */
+export const parsePaginationSearchParams = (searchParams, { currentName = 'currentPage', pageSizeName = 'perPage' } = {}) => {
+  const result = {};
+  if (!searchParams) {
+    return result;
+  }
+  const current = parsePositiveInt(searchParams.get(currentName));
+  const pageSize = parsePositiveInt(searchParams.get(pageSizeName));
+  if (current != null) {
+    result.current = current;
+  }
+  if (pageSize != null) {
+    result.pageSize = pageSize;
+  }
+  return result;
+};
+
+/**
+ * 写入分页参数到 URL，保留其它 query。
+ * @param {URLSearchParams} [searchParams]
+ * @param {{ current?: number, pageSize?: number, currentName?: string, pageSizeName?: string }} options
+ * @returns {URLSearchParams}
+ */
+export const patchPaginationSearchParams = (searchParams, { current, pageSize, currentName = 'currentPage', pageSizeName = 'perPage' } = {}) => {
+  const next = new URLSearchParams(searchParams);
+  if (current != null) {
+    next.set(currentName, String(current));
+  }
+  if (pageSize != null) {
+    next.set(pageSizeName, String(pageSize));
+  }
+  return next;
+};
+
+/**
+ * @param {object} [pagination]
+ * @returns {boolean}
+ */
+export const isPaginationSearchParamsEnabled = pagination => {
+  return !!(pagination?.searchParams && typeof pagination.setSearchParams === 'function');
+};

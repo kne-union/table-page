@@ -55,6 +55,8 @@
 | mergeList | function | 合并 `pageData` | 下拉加载时合并新旧数据 `(prev, next) => data`，需与 `loader` 返回结构一致 |
 | loadMore | object | - | 透传给 `@kne/scroll-loader` 的额外配置（如 `completeTips`、`maxFullCount`） |
 | mobile | object | - | 强制分页时的移动端分页器微调（如 `showSizeChanger`、`showLessItems`） |
+| searchParams | `URLSearchParams` | - | 与 `setSearchParams` 同时传入时开启分页 URL 状态同步；参数名复用 `currentName` / `pageSizeName`（默认 `currentPage`、`perPage`） |
+| setSearchParams | function | - | `(next: URLSearchParams, opts?) => void`；翻页、改每页条数、筛选重置到第 1 页时以 `replace: true` 写回 URL。触底下拉 `loadMore` 不写回。可与 `filter.searchParamsValue` 共用同一对实例 |
 
 #### filter
 

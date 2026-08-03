@@ -23,11 +23,12 @@ npm i --save @kne/table-page
 - **`Table` 模式**（默认）：基于 antd `Table`，支持列宽拖动、字段显示/隐藏、分组表头、粘性表头等
 - **`TableView` 模式**：基于 `@kne/table-view` CSS Grid，适合移动端或卡片式表格场景
 
-通过 `loader` 或 `url` 配置数据源，通过 `dataFormat` 适配不同的接口数据结构。分页器渲染在表格外侧，翻页默认采用 `reload` 方式（不显示全屏 loading）。
+通过 `loader` 或 `url` 配置数据源，通过 `dataFormat` 适配不同的接口数据结构。分页器渲染在表格外侧，翻页默认采用 `reload` 方式（不显示全屏 loading）。在 `pagination` 上同时传入 `searchParams` 与 `setSearchParams` 可将当前页、每页条数同步到 URL（参数名复用 `currentName` / `pageSizeName`）。
 
 同时内置了顶部工具栏（`TableToolbar`），整合筛选、搜索、Tab 分类、批量操作等能力：
 
 - **筛选（filter）**：基于 `@kne/react-filter` 的 `FilterLines`，支持多行多字段组合筛选，筛选值变化时自动 `reload` 并回到第 1 页；可通过 `filter.searchParamsValue`（与 `useSearchParamsValue` 同参）从 URL 平铺参数合并初始筛选并保证首包请求带上对应参数
+- **分页 URL 状态**：`pagination.searchParams` + `pagination.setSearchParams` 开启后，当前页与每页条数与 URL 双向同步（筛选重置页码时也会写回；`loadMore` 不写回）
 - **搜索（search）**：基于 `@kne/react-filter` 的 `SearchInput`，支持关键词搜索与防抖自动提交，与筛选器共享筛选值状态；移动端开启 `renderMobile` 时，SearchInput 与下方卡片列表之间保留间距
 - **操作按钮（buttonGroup）**：透传 `@kne/button-group` 参数；桌面端显示在 SearchInput 右侧（small、至少 1 个外露），移动端与筛选同行两端对齐（筛选靠左、按钮组靠右，small、外露 1 个），批量操作显示在「全选/排序」行的排序后面
 - **Tab（tab）**：顶部分类切换，默认「全部」，选中值写入 filter value 参与请求但不在已选标签中重复展示；桌面端在表格边框外侧，移动端显示在 SearchInput 下方；可通过 `tabProps` 透传 antd Tabs 属性
@@ -1297,6 +1298,86 @@ const BaseExample = () => {
         ]}
       />
       <Typography.Text type="secondary">当前 search：?{liveSearch.toString() || '(已清理)'}</Typography.Text>
+    </Flex>
+  );
+};
+
+render(<BaseExample />);
+
+```
+
+- pagination searchParams
+- pagination.searchParams + setSearchParams：当前页与每页条数写入 URL（默认 currentPage / perPage）；落地 URL 决定首包分页，翻页与改 pageSize 以 replace 写回
+- _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd)
+
+```jsx
+const { default: TablePage } = _TablePage;
+const { Flex, Typography, Card } = antd;
+const { useMemo, useState } = React;
+
+const TOTAL = 56;
+const range = (start, end) => Array.from({ length: end - start }, (_, i) => start + i);
+
+/**
+ * pagination.searchParams + setSearchParams：当前页 / 每页条数与 URL 双向同步。
+ * 模拟落地 ?currentPage=2&perPage=10，翻页或改 pageSize 后 URL 会 replace 更新。
+ */
+const BaseExample = () => {
+  const initialSearchParams = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('currentPage', '2');
+    params.set('perPage', '10');
+    return params;
+  }, []);
+
+  const [liveSearch, setLiveSearch] = useState(initialSearchParams);
+  const [lastRequest, setLastRequest] = useState(null);
+
+  return (
+    <Flex vertical gap={16}>
+      <Card size="small" title="说明">
+        <Typography.Paragraph style={{ marginBottom: 0 }}>
+          模拟 URL <Typography.Text code>?currentPage=2&perPage=10</Typography.Text>
+          。首包应请求第 2 页、每页 10 条；翻页或切换每页条数后下方 search 同步更新（replace）。
+        </Typography.Paragraph>
+      </Card>
+      {lastRequest ? (
+        <Card size="small" title="最近请求 data 参数">
+          <pre style={{ margin: 0, fontSize: 12 }}>{JSON.stringify(lastRequest, null, 2)}</pre>
+        </Card>
+      ) : null}
+      <TablePage
+        name="pagination-search-params-demo"
+        pagination={{
+          paramsType: 'data',
+          searchParams: liveSearch,
+          setSearchParams: next => setLiveSearch(next),
+          pageSizeOptions: ['10', '20', '50'],
+          showSizeChanger: true,
+          hideOnSinglePage: false,
+          cachePageSize: false
+        }}
+        loader={({ data }) => {
+          setLastRequest(data);
+          const currentPage = Number(data.currentPage) || 1;
+          const perPage = Number(data.perPage) || 10;
+          const start = (currentPage - 1) * perPage;
+          const pageData = range(start, Math.min(start + perPage, TOTAL)).map(index => ({
+            id: String(index + 1),
+            name: &#96;用户 ${index + 1}&#96;,
+            no: &#96;NO-${String(index + 1).padStart(3, '0')}&#96;
+          }));
+          return Promise.resolve({
+            pageData,
+            totalCount: TOTAL
+          });
+        }}
+        columns={[
+          { name: 'no', title: '编号', type: 'main' },
+          { name: 'name', title: '姓名' }
+        ]}
+      />
+      <Typography.Text type="secondary">当前 search：?{liveSearch.toString() || '(空)'}</Typography.Text>
     </Flex>
   );
 };
@@ -3799,6 +3880,8 @@ render(<BaseExample />);
 | mergeList | function | 合并 `pageData` | 下拉加载时合并新旧数据 `(prev, next) => data`，需与 `loader` 返回结构一致 |
 | loadMore | object | - | 透传给 `@kne/scroll-loader` 的额外配置（如 `completeTips`、`maxFullCount`） |
 | mobile | object | - | 强制分页时的移动端分页器微调（如 `showSizeChanger`、`showLessItems`） |
+| searchParams | `URLSearchParams` | - | 与 `setSearchParams` 同时传入时开启分页 URL 状态同步；参数名复用 `currentName` / `pageSizeName`（默认 `currentPage`、`perPage`） |
+| setSearchParams | function | - | `(next: URLSearchParams, opts?) => void`；翻页、改每页条数、筛选重置到第 1 页时以 `replace: true` 写回 URL。触底下拉 `loadMore` 不写回。可与 `filter.searchParamsValue` 共用同一对实例 |
 
 #### filter
 

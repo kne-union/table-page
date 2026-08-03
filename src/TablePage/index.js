@@ -19,7 +19,7 @@ import HorizontalScroller from './HorizontalScroller';
 import '@kne/button-group/dist/index.css';
 import TableToolbar, { TablePageTabs, BatchActions, hasButtonGroupList } from './TableToolbar';
 import { scrollAnchorIntoView, normalizeScrollTopInsetCSSValue, resolveScrollTopInset } from './scrollUtils';
-import { parseSearchParamsValue, mergeFilterByName, stripConsumedUrlParams } from './searchParamsValue';
+import { parseSearchParamsValue, mergeFilterByName, stripConsumedUrlParams, parsePaginationSearchParams, patchPaginationSearchParams, isPaginationSearchParamsEnabled } from './searchParamsValue';
 
 const defaultMergeList = (data, newData) => {
   return Object.assign({}, newData, {
@@ -239,8 +239,23 @@ const TablePageInnerContent = withLocale(
       });
     });
 
+    const syncPaginationToUrl = useRefCallback((page, size) => {
+      if (!isPaginationSearchParamsEnabled(pagination)) {
+        return;
+      }
+      const nextParams = patchPaginationSearchParams(pagination.searchParams, {
+        current: page,
+        pageSize: size,
+        currentName: pagination.currentName,
+        pageSizeName: pagination.pageSizeName
+      });
+      pagination.setSearchParams(nextParams, { replace: true });
+    });
+
     const handleFilterChange = useRefCallback(value => {
       setFilterValue(value);
+      const currentSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 20;
+      syncPaginationToUrl(1, currentSize);
       reload({
         [pagination.paramsType]: buildRequestParamsWithFilter(value, {
           [pagination.currentName]: 1
@@ -258,19 +273,22 @@ const TablePageInnerContent = withLocale(
 
     const handlePaginationChange = useRefCallback((page, size) => {
       pendingScrollRef.current = true;
-      if (typeof pagination.onChange === 'function') {
-        pagination.onChange(page, size);
-        return;
-      }
       const nextSize = Number(size);
       const currentPage = get(requestParams, [pagination.paramsType, pagination.currentName], 1);
       const currentSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 20;
+
+      if (typeof pagination.onChange === 'function') {
+        syncPaginationToUrl(page, nextSize || currentSize);
+        pagination.onChange(page, size);
+        return;
+      }
 
       if (nextSize !== currentSize) {
         pagination.onShowSizeChange && pagination.onShowSizeChange(page, nextSize);
       }
 
       if (page !== currentPage || nextSize !== currentSize) {
+        syncPaginationToUrl(page, nextSize);
         (pagination.requestType === 'refresh' ? refresh : reload)({
           [pagination.paramsType]: buildRequestParamsWithFilter(filterValue, {
             [pagination.currentName]: page,
@@ -525,7 +543,23 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
   );
   const pageSizeKey = `${(props.name || 'common').toUpperCase()}_TABLE_PAGE_SIZE`;
   const cachePageSize = pagination.cachePageSize !== false;
-  const [pageSize, setPageSize] = useState(() => (cachePageSize ? readPageSize(pageSizeKey) : null) ?? pagination.pageSize);
+  const paginationUrlEnabled = isPaginationSearchParamsEnabled(pagination);
+  const [urlPagination] = useState(() =>
+    paginationUrlEnabled
+      ? parsePaginationSearchParams(pagination.searchParams, {
+          currentName: pagination.currentName,
+          pageSizeName: pagination.pageSizeName
+        })
+      : {}
+  );
+  const [pageSize, setPageSize] = useState(() => urlPagination.pageSize ?? (cachePageSize ? readPageSize(pageSizeKey) : null) ?? pagination.pageSize);
+  const [initialCurrent] = useState(() => {
+    if (urlPagination.current != null) {
+      return urlPagination.current;
+    }
+    const fromProps = Number(get(props[pagination.paramsType], pagination.currentName));
+    return Number.isFinite(fromProps) && fromProps > 0 ? fromProps : 1;
+  });
 
   const [searchParamsSnapshot] = useState(() => parseSearchParamsValue(filterProp?.searchParamsValue));
   const { items: fromUrl, consumedKeys } = searchParamsSnapshot;
@@ -582,10 +616,11 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
   const fetchParams = useMemo(() => {
     return {
       [pagination.paramsType]: Object.assign({}, params, filterDefaultParams, {
+        ...(paginationUrlEnabled ? { [pagination.currentName]: initialCurrent } : null),
         [pagination.pageSizeName]: pageSize
       })
     };
-  }, [params, pagination.pageSizeName, pagination.paramsType, pageSize, filterDefaultParams]);
+  }, [params, pagination.pageSizeName, pagination.paramsType, pagination.currentName, pageSize, filterDefaultParams, paginationUrlEnabled, initialCurrent]);
   return (
     <TablePageInner
       {...props}
