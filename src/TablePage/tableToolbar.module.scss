@@ -12,16 +12,16 @@
     }
 
     .table-toolbar-value-display {
-      padding-top: 0;
+      padding-top: 8px;
 
-      // 新稳定类名：根 react-filter，内部短类名
-      :global(.react-filter .title),
-      :global(.react-filter .value-display),
+      // 短类名挂在 inner 子树上（react-filter 在祖先，不能写成 .react-filter .xxx 后代）
+      :global(.title),
+      :global(.value-display),
       > :global(.ant-space) {
         border-bottom: none !important;
       }
 
-      :global(.react-filter .line) {
+      :global(.line) {
         border-bottom: none !important;
       }
     }
@@ -94,6 +94,13 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
+
+  .table-toolbar-search-input,
+  :global(.ant-input-search),
+  :global(.ant-input-group-wrapper) {
+    width: 180px !important;
+    max-width: 100%;
+  }
 
   :global(.ant-input-search) {
     background: var(--bg-color-grey-1, #f5f5f5);
@@ -169,8 +176,7 @@
 }
 
 @include resp.mobile-container {
-  // 容器查询即可切移动端工具栏布局，不依赖 JS .is-mobile（预览与真机一致）
-  .table-toolbar {
+  .table-toolbar.is-mobile {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
@@ -207,7 +213,7 @@
       padding: 8px 16px 0;
     }
 
-    .table-toolbar {
+    .table-toolbar.is-mobile {
       padding-top: 8px;
     }
 
@@ -246,25 +252,6 @@
       max-width: 100%;
     }
   }
-
-  // 移动端容器内不要套桌面紧凑筛选样式
-  .table-toolbar-filter-inner {
-    :global(.react-filter .title) {
-      width: 100%;
-      padding: 0 !important;
-      margin: 0 !important;
-      line-height: 24px !important;
-      border-bottom: none !important;
-    }
-
-    :global(.react-filter .title > .ant-space-item:first-child) {
-      display: none !important;
-    }
-
-    :global(.react-filter .label) {
-      display: none !important;
-    }
-  }
 }
 
 .table-toolbar-filter {
@@ -291,9 +278,9 @@
   width: 100%;
 }
 
-// 桌面紧凑筛选：仅非移动端 JS 态；移动端容器查询下由上方规则覆盖
 .table-toolbar:not(.is-mobile) .table-toolbar-filter-inner {
-  :global(.react-filter .title) {
+  :global(.title),
+  :global(.more-row) {
     width: 100%;
     padding: 0 !important;
     margin: 0 !important;
@@ -301,28 +288,28 @@
     border-bottom: none !important;
   }
 
-  :global(.react-filter .title > .ant-space-item:first-child) {
+  :global(.title > .ant-space-item:first-child) {
     display: none !important;
   }
 
-  :global(.react-filter .label) {
+  :global(.label) {
     display: none !important;
   }
 
-  :global(.react-filter .list) {
+  :global(.list) {
     width: 100%;
   }
 
-  :global(.react-filter .line) {
+  :global(.line) {
     min-height: 24px;
     gap: 8px;
   }
 
-  :global(.react-filter .item-wrap) {
+  :global(.item-wrap) {
     height: 24px;
   }
 
-  :global(.react-filter .item) {
+  :global(.item) {
     height: 24px;
     padding: 0 8px;
 
@@ -331,14 +318,14 @@
     }
   }
 
-  :global(.react-filter .item-label) {
+  :global(.item-label) {
     line-height: 24px;
   }
 }
 
 .table-toolbar-value-display {
-  :global(.react-filter .value-display),
-  :global(.react-filter .title) {
+  :global(.value-display),
+  :global(.title) {
     padding: 0 16px 6px !important;
     margin-top: 0 !important;
     line-height: 22px !important;
@@ -346,16 +333,16 @@
     gap: 8px !important;
   }
 
-  :global(.react-filter .value-display .label) {
+  :global(.value-display .label) {
     line-height: 22px;
   }
 
-  :global(.react-filter .value-display .line) {
+  :global(.value-display .line) {
     min-height: 22px;
     gap: 6px;
   }
 
-  :global(.react-filter .value-tag) {
+  :global(.value-tag) {
     margin-inline-end: 0;
   }
 }
@@ -379,8 +366,8 @@
 .table-toolbar-value-display.is-mobile-render {
   padding-inline: 0;
 
-  :global(.react-filter .value-display),
-  :global(.react-filter .title) {
+  :global(.value-display),
+  :global(.title) {
     padding-inline: 0 !important;
   }
 }

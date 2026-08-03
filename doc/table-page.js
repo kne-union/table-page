@@ -32,6 +32,44 @@ const perfMap = {
 const departmentOptions = departments.map(item => ({ value: item, label: item }));
 const statusOptions = Object.entries(statusMap).map(([value, { text }]) => ({ value, label: text }));
 const positionOptions = positions.map(item => ({ value: item, label: item }));
+const educationOptions = educations.map(item => ({ value: item, label: item }));
+const performanceOptions = performances.map(item => ({ value: item, label: item }));
+const workYearsOptions = [
+  { value: '1', label: '1年以内' },
+  { value: '1-3', label: '1-3年' },
+  { value: '3-5', label: '3-5年' },
+  { value: '5+', label: '5年以上' }
+];
+const salaryOptions = [
+  { value: '15-20', label: '15-20K' },
+  { value: '20-30', label: '20-30K' },
+  { value: '30-50', label: '30-50K' },
+  { value: '50+', label: '50K以上' }
+];
+const locationOptions = [
+  { value: 'beijing', label: '北京' },
+  { value: 'shanghai', label: '上海' },
+  { value: 'guangzhou', label: '广州' },
+  { value: 'shenzhen', label: '深圳' },
+  { value: 'hangzhou', label: '杭州' }
+];
+const contractOptions = [
+  { value: 'fulltime', label: '全职' },
+  { value: 'parttime', label: '兼职' },
+  { value: 'intern', label: '实习' },
+  { value: 'outsource', label: '外包' }
+];
+const genderOptions = [
+  { value: 'male', label: '男' },
+  { value: 'female', label: '女' }
+];
+const levelOptions = [
+  { value: 'p5', label: 'P5' },
+  { value: 'p6', label: 'P6' },
+  { value: 'p7', label: 'P7' },
+  { value: 'p8', label: 'P8' },
+  { value: 'p9', label: 'P9' }
+];
 
 const buildEmployee = index => {
   const statusKeys = ['active', 'vacation', 'resigned', 'probation'];
@@ -365,7 +403,7 @@ const BaseExample = () => {
         mobileSortToolbar={mobileSortToolbar}
         rowSelection={getRowSelection(allEmployees)}
         selectedRows={selectedRows}
-        search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 220 } }}
+        search={{ name: 'keyword', label: '关键词', placeholder: '搜索工号/姓名', style: { width: 180 } }}
         buttonGroup={{
           list: [
             {
@@ -392,19 +430,49 @@ const BaseExample = () => {
           )
         }}
         filter={{
+          // 扁平 list：桌面端按容器宽度自动收起到「更多」
           list: [
-            [
-              {
-                type: SuperSelectFilterItem,
-                props: { name: 'department', label: '部门', single: true, options: departmentOptions }
-              },
-              {
-                type: SuperSelectFilterItem,
-                props: { name: 'status', label: '状态', single: true, options: statusOptions }
-              }
-            ]
-          ],
-          displayLine: 1
+            {
+              type: SuperSelectFilterItem,
+              props: { name: 'department', label: '部门', single: true, options: departmentOptions }
+            },
+            {
+              type: SuperSelectFilterItem,
+              props: { name: 'status', label: '状态', single: true, options: statusOptions }
+            },
+            {
+              type: SuperSelectFilterItem,
+              props: { name: 'education', label: '学历', single: true, options: educationOptions }
+            },
+            {
+              type: SuperSelectFilterItem,
+              props: { name: 'performance', label: '绩效', single: true, options: performanceOptions }
+            },
+            {
+              type: SuperSelectFilterItem,
+              props: { name: 'workYears', label: '工龄', single: true, options: workYearsOptions }
+            },
+            {
+              type: SuperSelectFilterItem,
+              props: { name: 'salary', label: '薪资', single: true, options: salaryOptions }
+            },
+            {
+              type: SuperSelectFilterItem,
+              props: { name: 'location', label: '工作城市', single: true, options: locationOptions }
+            },
+            {
+              type: SuperSelectFilterItem,
+              props: { name: 'contract', label: '合同类型', single: true, options: contractOptions }
+            },
+            {
+              type: SuperSelectFilterItem,
+              props: { name: 'gender', label: '性别', single: true, options: genderOptions }
+            },
+            {
+              type: SuperSelectFilterItem,
+              props: { name: 'level', label: '职级', single: true, options: levelOptions }
+            }
+          ]
         }}
         batchActions={[
           {
