@@ -1,11 +1,11 @@
 import { withFetch } from '@kne/react-fetch';
-import { Pagination, Segmented } from 'antd';
+import { Pagination, Segmented, Skeleton, Spin } from 'antd';
 import { AppstoreOutlined, TableOutlined } from '@ant-design/icons';
 import { getFilterValue } from '@kne/react-filter';
 import ScrollLoader from '@kne/scroll-loader';
 import Table from '../Table';
 import TableView from '../TableView';
-import { isRenderMobileActive, globalParams } from '@kne/table-view';
+import { isRenderMobileActive, globalParams, resolveColumns } from '@kne/table-view';
 import classnames from 'classnames';
 import get from 'lodash/get';
 import useRefCallback from '@kne/use-ref-callback';
@@ -20,6 +20,197 @@ import '@kne/button-group/dist/index.css';
 import TableToolbar, { TablePageTabs, BatchActions, hasButtonGroupList } from './TableToolbar';
 import { scrollAnchorIntoView, normalizeScrollTopInsetCSSValue, resolveScrollTopInset } from './scrollUtils';
 import { parseSearchParamsValue, mergeFilterByName, stripConsumedUrlParams, parsePaginationSearchParams, patchPaginationSearchParams, isPaginationSearchParamsEnabled } from './searchParamsValue';
+
+const noop = () => {};
+
+const SKELETON_ROW_COUNT = 8;
+const FALLBACK_SKELETON_COLUMNS = 5;
+
+/** 是否存在工具栏 / Filter 区域（首屏 loading 需占位保高） */
+const hasToolbarArea = ({ filter, search, tab, batchActions, buttonGroup, renderCard, forceCard }, isMobile) => {
+  const hasTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
+  const hasFilter = !!(filter?.list?.length > 0);
+  const hasSearch = !!(search && search.name);
+  const hasBatch = Array.isArray(batchActions) && batchActions.length > 0;
+  const hasBtn = hasButtonGroupList(buttonGroup);
+  const hasCardToggle = !isMobile && resolveRenderCard(renderCard) != null && !forceCard;
+  return hasTab || hasFilter || hasSearch || hasBatch || hasBtn || hasCardToggle;
+};
+
+const flattenLeafColumns = (columns, output = []) => {
+  (columns || []).forEach(column => {
+    if (Array.isArray(column?.children) && column.children.length > 0) {
+      flattenLeafColumns(column.children, output);
+      return;
+    }
+    output.push(column);
+  });
+  return output;
+};
+
+/** 首包无 data 时尽量解析列配置；失败则用占位列 */
+const resolveLoadingColumns = (columns, getColumns) => {
+  try {
+    const raw = typeof getColumns === 'function' ? getColumns(null) : typeof columns === 'function' ? columns(null) : columns;
+    if (!Array.isArray(raw) || raw.length === 0) {
+      return null;
+    }
+    return flattenLeafColumns(resolveColumns(raw));
+  } catch (e) {
+    return null;
+  }
+};
+
+const CellSkeleton = () => <Skeleton.Button active size="small" className={style['table-cell-skeleton']} style={{ width: '70%' }} />;
+
+/**
+ * 产出 Table / TableView 共用列：
+ * - 用 render 画骨架（不用 placeholder）
+ * - valueIsEmpty 恒 false，避免 TableView removeEmpty 把空列滤掉导致格子空白
+ */
+const buildSkeletonTableColumns = leafColumns => {
+  const source =
+    leafColumns && leafColumns.length > 0
+      ? leafColumns
+      : Array.from({ length: FALLBACK_SKELETON_COLUMNS }, (_, index) => ({
+          name: `__skeleton_col_${index}`,
+          title: ' '
+        }));
+
+  return source.map((column, index) => ({
+    name: column.name || column.key || `__skeleton_col_${index}`,
+    title: typeof column.title === 'function' ? ' ' : (column.title ?? ' '),
+    width: column.width,
+    min: column.min,
+    max: column.max,
+    fixed: column.fixed,
+    justify: column.justify,
+    align: column.align,
+    span: column.span,
+    valueIsEmpty: () => false,
+    getValueOf: () => '__skeleton__',
+    render: () => <CellSkeleton />
+  }));
+};
+
+const buildSkeletonDataSource = (rowCount = SKELETON_ROW_COUNT) =>
+  Array.from({ length: rowCount }, (_, index) => ({
+    id: `__skeleton_row_${index}`
+  }));
+
+/**
+ * withFetch 首包 loading：Toolbar/Filter 占位保高 + Table/TableView 骨架屏 + loading，
+ * 复用正式表格样式，避免全局绝对定位 Spin 把高度塌成 0。
+ */
+const TablePageLoadingShell = withLocale(
+  ({ filter, search, tab, tabProps, batchActions, buttonGroup, rowSelection, selectedRows, renderMobile = true, renderCard, forceCard = false, columns, getColumns, pagination = {}, className, size, renderType = 'Table' }) => {
+    const isMobile = useIsMobile();
+    const isMobileRenderActive = isRenderMobileActive(renderMobile, isMobile);
+    const showButtonGroup = hasButtonGroupList(buttonGroup);
+    const resolvedRenderCard = resolveRenderCard(renderCard);
+    const showCardModeToggle = resolvedRenderCard != null && !isMobile && !forceCard;
+    const hasTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
+    const hasInnerToolbar = !!(filter?.list?.length || (search && search.name) || (batchActions && batchActions.length) || showButtonGroup || showCardModeToggle);
+    const showOuterTab = hasTab && !isMobile;
+    const showInnerTab = hasTab && isMobile;
+    const wrapWithToolbar = hasInnerToolbar || showInnerTab;
+    const filterValue = resolveInitialFilterValue(filter);
+    const SkeletonTableComponent = TABLE_COMPONENTS[renderType] || Table;
+    const useAntdTable = SkeletonTableComponent === Table;
+
+    const skeletonRowCount = Math.min(Math.max(Number(pagination.pageSize) || SKELETON_ROW_COUNT, 3), SKELETON_ROW_COUNT);
+    const skeletonColumns = useMemo(() => buildSkeletonTableColumns(resolveLoadingColumns(columns, getColumns)), [columns, getColumns]);
+    const skeletonDataSource = useMemo(() => buildSkeletonDataSource(skeletonRowCount), [skeletonRowCount]);
+    // 与正式表一致保留选择列占位（含表头全选/隐藏 checkbox 宽度）；禁用交互
+    const skeletonRowSelection = useMemo(() => {
+      if (!rowSelection) {
+        return undefined;
+      }
+      return {
+        type: rowSelection.type === 'radio' ? 'radio' : 'checkbox',
+        allowSelectedAll: rowSelection.allowSelectedAll,
+        selectedRowKeys: [],
+        onChange: noop,
+        getCheckboxProps: () => ({ disabled: true })
+      };
+    }, [rowSelection]);
+
+    const cardModeToggleNode = showCardModeToggle ? (
+      <Segmented
+        className={style['card-mode-toggle']}
+        size="small"
+        value="table"
+        options={[
+          { value: 'table', icon: <TableOutlined /> },
+          { value: 'card', icon: <AppstoreOutlined /> }
+        ]}
+      />
+    ) : null;
+
+    // renderType=TableView 时骨架也用 TableView；桌面端 Table 可透传 loading，其余外层 Spin
+    const showOuterSpin = isMobileRenderActive || !useAntdTable;
+    const tableSkeleton = (
+      <SkeletonTableComponent
+        key={`skeleton-${renderType}`}
+        className={classnames({ [style['table-in-toolbar']]: wrapWithToolbar }, className)}
+        columns={skeletonColumns}
+        dataSource={skeletonDataSource}
+        rowSelection={skeletonRowSelection}
+        {...(useAntdTable ? { loading: !showOuterSpin, controllerOpen: false, pagination: false } : null)}
+        rowKey="id"
+        size={size}
+        renderMobile={renderMobile}
+        empty={null}
+      />
+    );
+
+    const skeletonNode = showOuterSpin ? (
+      <Spin spinning className={style['table-skeleton-spin']}>
+        {tableSkeleton}
+      </Spin>
+    ) : (
+      tableSkeleton
+    );
+
+    const toolbarNode = wrapWithToolbar ? (
+      <TableToolbar
+        filterValue={filterValue}
+        onFilterChange={noop}
+        filter={filter}
+        search={search}
+        tab={tab}
+        tabProps={tabProps}
+        renderTab={showInnerTab}
+        batchActions={batchActions}
+        buttonGroup={buttonGroup}
+        rowSelection={rowSelection}
+        selectedRows={selectedRows}
+        isMobileRender={isMobileRenderActive}
+        cardModeToggle={cardModeToggleNode}
+      />
+    ) : null;
+
+    return (
+      <div className={style['table-page']}>
+        <div className={style['table-content']}>
+          {showOuterTab ? <TablePageTabs filterValue={filterValue} onFilterChange={noop} tab={tab} tabProps={tabProps} className={style['table-page-tabs-outer']} isMobileRender={isMobileRenderActive} /> : null}
+          {wrapWithToolbar ? (
+            <div
+              className={classnames(style['table-with-toolbar'], style['is-loading-shell'], {
+                [style['is-mobile-render']]: isMobileRenderActive
+              })}
+            >
+              {toolbarNode}
+              {skeletonNode}
+            </div>
+          ) : (
+            skeletonNode
+          )}
+        </div>
+      </div>
+    );
+  }
+);
 
 const defaultMergeList = (data, newData) => {
   return Object.assign({}, newData, {
@@ -103,7 +294,12 @@ const collectFilterFieldNames = (filter, search, tab) => {
   }
   if (Array.isArray(filter?.list)) {
     filter.list.forEach(row => {
+      // 兼容扁平 list：[{ type, props }]；以及分组 list：[[item, item]]
       if (!Array.isArray(row)) {
+        const name = row?.props?.name;
+        if (name) {
+          names.add(name);
+        }
         return;
       }
       row.forEach(item => {
@@ -123,6 +319,35 @@ const omitFilterParams = (params, filterFieldNames) => {
     delete next[name];
   });
   return next;
+};
+
+const isPlainObject = value => !!value && typeof value === 'object' && !Array.isArray(value);
+
+// lodash.merge 不会删掉「新对象里没有的嵌套 key」，且 [] 合并不了旧数组；清空一律写 null
+const withNestedClears = (prevParams, nextParams) => {
+  const result = Object.assign({}, nextParams);
+  Object.keys(prevParams || {}).forEach(key => {
+    const prevVal = prevParams[key];
+    const nextVal = nextParams[key];
+    if (!isPlainObject(prevVal)) {
+      return;
+    }
+    if (isPlainObject(nextVal)) {
+      const nested = {};
+      Object.keys(prevVal).forEach(nestedKey => {
+        if (!(nestedKey in nextVal)) {
+          nested[nestedKey] = null;
+        }
+      });
+      result[key] = Object.assign({}, nested, nextVal);
+      return;
+    }
+    if (nextVal === undefined) {
+      // 整个嵌套对象被拿掉时，直接 null 覆盖（比逐字段 { ids: null } 更干净）
+      result[key] = null;
+    }
+  });
+  return result;
 };
 
 const TablePageInnerContent = withLocale(
@@ -166,6 +391,7 @@ const TablePageInnerContent = withLocale(
     renderCard,
     forceCard = false,
     mobileSortToolbar,
+    filterSeedParams = {},
     ...props
   }) => {
     const { formatMessage } = useIntl();
@@ -193,7 +419,64 @@ const TablePageInnerContent = withLocale(
     const filterFieldNames = useMemo(() => collectFilterFieldNames(filter, search, tab), [filter, search, tab]);
 
     const buildRequestParamsWithFilter = useRefCallback((value, extra = {}) => {
-      return Object.assign({}, omitFilterParams(get(requestParams, pagination.paramsType), filterFieldNames), extra, getFilterParams(value));
+      const prevFilterParams = Object.assign({}, getFilterParams(filterValue) || {});
+      let filterParams = Object.assign({}, getFilterParams(value) || {});
+      Object.keys(filterParams).forEach(key => {
+        const v = filterParams[key];
+        if (v === undefined || v === '') {
+          delete filterParams[key];
+        } else if (Array.isArray(v) && v.length === 0) {
+          // lodash.merge 用 [] 合并不掉旧数组，改成 null 才能覆盖
+          filterParams[key] = null;
+        }
+      });
+      // mapFilterValue 常返回 { filter: {...} }：嵌套里被删掉的字段写成 null，否则 lodash.merge 会残留
+      filterParams = withNestedClears(prevFilterParams, filterParams);
+      filterParams = withNestedClears(isPlainObject(get(requestParams, [pagination.paramsType, 'filter'])) ? { filter: get(requestParams, [pagination.paramsType, 'filter']) } : {}, filterParams);
+
+      const currentParams = get(requestParams, pagination.paramsType) || {};
+      const seedParams = filterSeedParams || {};
+
+      // 待清理 key：配置字段 + 旧筛选 + 首包种子（props.data 里的 filterDefaultParams）
+      // react-fetch 用 lodash.merge：省略字段不会覆盖；[] 也合并不掉旧数组，必须显式传 null
+      const keysToClear = new Set([...filterFieldNames, ...Object.keys(prevFilterParams), ...Object.keys(seedParams)]);
+      Object.keys(filterParams).forEach(key => keysToClear.delete(key));
+      keysToClear.delete(pagination.currentName);
+      keysToClear.delete(pagination.pageSizeName);
+
+      const cleared = {};
+      keysToClear.forEach(name => {
+        cleared[name] = null;
+      });
+
+      // 旧写法把筛选抬升到 props.params.filter，而 mapFilterValue 仍是扁平字段时：必须清掉嵌套 filter 里的同名字段
+      if (isPlainObject(currentParams.filter) && !isPlainObject(filterParams.filter) && filterParams.filter !== null) {
+        const nested = {};
+        const active = new Set(Object.keys(filterParams));
+        new Set([...Object.keys(currentParams.filter), ...filterFieldNames]).forEach(name => {
+          if (name === pagination.currentName || name === pagination.pageSizeName) {
+            return;
+          }
+          if (!active.has(name)) {
+            nested[name] = null;
+          }
+        });
+        Object.keys(filterParams).forEach(name => {
+          if (filterFieldNames.has(name) || name in currentParams.filter) {
+            nested[name] = filterParams[name];
+            delete filterParams[name];
+          }
+        });
+        filterParams.filter = nested;
+      }
+
+      const merged = Object.assign({}, omitFilterParams(currentParams, keysToClear), extra, cleared, filterParams);
+      Object.keys(merged).forEach(key => {
+        if (merged[key] === undefined) {
+          delete merged[key];
+        }
+      });
+      return merged;
     });
 
     const formatData = useMemo(() => {
@@ -253,13 +536,14 @@ const TablePageInnerContent = withLocale(
     });
 
     const handleFilterChange = useRefCallback(value => {
+      const nextParams = buildRequestParamsWithFilter(value, {
+        [pagination.currentName]: 1
+      });
       setFilterValue(value);
       const currentSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 20;
       syncPaginationToUrl(1, currentSize);
       reload({
-        [pagination.paramsType]: buildRequestParamsWithFilter(value, {
-          [pagination.currentName]: 1
-        })
+        [pagination.paramsType]: nextParams
       });
     });
 
@@ -523,7 +807,25 @@ const TablePageInnerContent = withLocale(
   }
 );
 
-const TablePageInner = withFetch(TablePageInnerContent);
+const TablePageFetched = withFetch(TablePageInnerContent);
+
+// 首包 / refresh loading：Toolbar 占位 + cell 骨架屏 + Spin；外层 grid 再垫一层，盖住首帧 null
+const TablePageInner = forwardRef((props, ref) => {
+  const isMobile = useIsMobile();
+  const { loading: loadingProp, ...rest } = props;
+  const reserveToolbar = hasToolbarArea(props, isMobile);
+  const loading = loadingProp !== undefined ? loadingProp : <TablePageLoadingShell {...props} />;
+  const fetched = <TablePageFetched {...rest} loading={loading} ref={ref} />;
+  if (!reserveToolbar) {
+    return fetched;
+  }
+  return (
+    <div className={style['fetch-stack']}>
+      <div className={style['toolbar-height-reserve']} aria-hidden />
+      {fetched}
+    </div>
+  );
+});
 
 const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScrollContainer, filter: filterProp, ...props }, ref) => {
   pagination = Object.assign(
@@ -578,23 +880,18 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
   }, [filterProp, fromUrl]);
 
   const params = props[pagination.paramsType];
-  const filterDefaultParams = useMemo(() => {
-    if (!filterProp && !filter) {
+  // 仅作首包种子；后续筛选走 handleFilterChange → reload，避免受控 value 变化改 requestToken 触发 refresh 卸载表格
+  const [filterDefaultParams] = useState(() => {
+    if (!filterProp) {
       return {};
     }
-    const mapFilterValue = (filter || filterProp)?.mapFilterValue || getFilterValue;
-    let initialValue;
-    if (filterProp && 'value' in filterProp) {
-      // 受控：不改 value；首包用 value ∪ fromUrl 作请求种子
-      initialValue = mergeFilterByName(filterProp.value || [], fromUrl);
-    } else {
-      initialValue = resolveInitialFilterValue(filter);
-    }
-    if (!initialValue.length && !(filter || filterProp)?.mapFilterValue) {
+    const mapFn = filterProp.mapFilterValue || getFilterValue;
+    const initialValue = 'value' in filterProp ? mergeFilterByName(filterProp.value || [], fromUrl) : mergeFilterByName(filterProp.defaultValue || [], fromUrl);
+    if (!initialValue.length && !filterProp.mapFilterValue) {
       return {};
     }
-    return mapFilterValue(initialValue);
-  }, [filter, filterProp, fromUrl]);
+    return mapFn(initialValue) || {};
+  });
 
   const urlStrippedRef = useRef(false);
   useEffect(() => {
@@ -626,6 +923,7 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
       {...props}
       {...fetchParams}
       filter={filter}
+      filterSeedParams={filterDefaultParams}
       horizontalScroller={horizontalScroller}
       getScrollContainer={getScrollContainer}
       pagination={Object.assign({}, pagination, {

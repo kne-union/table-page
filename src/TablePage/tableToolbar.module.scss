@@ -33,6 +33,12 @@
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
+  box-sizing: border-box;
+
+  // 非移动端保底高度与加载占位对齐；展开「更多」后可增高，不锁死 41px
+  &:not(.is-mobile) {
+    min-height: 41px;
+  }
 }
 
 .table-toolbar-batch {
@@ -60,16 +66,21 @@
   }
 }
 
+// PC：按「批量操作」文案保底宽度，减少切到「已选:x条」时的跳动
+.table-toolbar:not(.is-mobile) .table-toolbar-batch-btn {
+  min-width: 96px;
+}
+
 .table-toolbar-batch-clear-btn {
   border: none !important;
   box-shadow: none !important;
-  color: var(--color-error, #ff4d4f) !important;
-  background: var(--color-error-bg, #fff1f0) !important;
+  background: var(--bg-color-grey-1, #f5f5f5) !important;
+  color: var(--font-color, rgba(0, 0, 0, 0.88)) !important;
 
   &:not(:disabled):hover {
     border: none !important;
-    color: var(--color-error, #ff4d4f) !important;
-    background: var(--color-error-bg-hover, #ffccc7) !important;
+    background: var(--bg-color-grey-2, #f0f0f0) !important;
+    color: var(--font-color, rgba(0, 0, 0, 0.88)) !important;
   }
 }
 
@@ -95,11 +106,14 @@
   display: flex;
   align-items: center;
 
-  .table-toolbar-search-input,
-  :global(.ant-input-search),
-  :global(.ant-input-group-wrapper) {
-    width: 180px !important;
-    max-width: 100%;
+  // 仅桌面端固定宽度；移动端 search-row 也挂了本类，不能写死 180
+  &:not(.table-toolbar-search-row) {
+    .table-toolbar-search-input,
+    :global(.ant-input-search),
+    :global(.ant-input-group-wrapper) {
+      width: 180px !important;
+      max-width: 100%;
+    }
   }
 
   :global(.ant-input-search) {
@@ -189,25 +203,6 @@
     align-items: center;
   }
 
-  // filter 靠左、buttonGroup 靠右，两端对齐
-  .table-toolbar-mobile-filter-row {
-    width: 100%;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-
-    .table-toolbar-filter {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .table-toolbar-button-group {
-      margin-left: auto;
-    }
-  }
-
   .table-toolbar-section.has-mobile-search {
     .table-toolbar-search-row {
       padding: 8px 16px 0;
@@ -232,31 +227,78 @@
       padding-inline: 16px;
     }
   }
+}
 
-  .table-toolbar-search-row {
-    display: block;
+// 仅移动端 JS 渲染，不依赖容器查询；左侧无 filter 时操作按钮也需居右
+.table-toolbar-mobile-filter-row {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+
+  .table-toolbar-filter {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .table-toolbar-filter-inner {
     width: 100%;
-    margin-left: 0;
-    flex-shrink: 1;
-    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    // 打断「内容撑父 → 父宽再喂给 width:100%」循环；弹层 portal 到 body/boundary，不会被裁
+    overflow: hidden;
 
-    &.table-toolbar-search {
-      margin-left: 0;
+    :global(.title) {
+      display: flex !important;
+      max-width: 100%;
+      min-width: 0;
     }
 
-    .table-toolbar-search-input,
-    :global(.ant-input-search),
-    :global(.ant-input-group-wrapper),
-    :global(.ant-input-group) {
-      width: 100% !important;
+    :global(.list),
+    :global(.list-scroll-wrap),
+    :global(.list-scroll) {
+      min-width: 0 !important;
       max-width: 100%;
     }
+  }
+
+  .table-toolbar-button-group {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+}
+
+// search-row 仅移动端 JS 渲染，不依赖容器查询；避免 180px !important 盖掉整行
+.table-toolbar-search-row {
+  display: block;
+  width: 100%;
+  margin-left: 0;
+  flex-shrink: 1;
+  box-sizing: border-box;
+
+  &.table-toolbar-search {
+    margin-left: 0;
+  }
+
+  .table-toolbar-search-input,
+  :global(.ant-input-search),
+  :global(.ant-input-group-wrapper),
+  :global(.ant-input-group),
+  :global(.ant-input-affix-wrapper) {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 }
 
 .table-toolbar-filter {
   flex: 1;
   min-width: 0;
+  max-width: 100%;
   display: flex;
   align-items: center;
 }
@@ -272,20 +314,32 @@
 .table-toolbar-filter-outer {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
 }
 
 .table-toolbar-filter-inner {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .table-toolbar:not(.is-mobile) .table-toolbar-filter-inner {
+  // .children 无内容时 FilterLines 仍可能留下空行；一并清掉避免表头上方空一截
   :global(.title),
-  :global(.more-row) {
+  :global(.more-row),
+  :global(.children) {
     width: 100%;
     padding: 0 !important;
     margin: 0 !important;
     line-height: 24px !important;
     border-bottom: none !important;
+  }
+
+  :global(.children:not(:has(.ant-space-item))) {
+    display: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
   }
 
   :global(.title > .ant-space-item:first-child) {

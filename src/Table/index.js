@@ -82,7 +82,8 @@ const wrapColContent = node => <span className={style['col-content']}>{node}</sp
 const Table = p => {
   const tableRef = useRef(null);
   const tableWidth = useElementWidth(tableRef);
-  const [isLayout, setIsLayout] = useState(true);
+  // controllerOpen 默认 true：需等列宽计算；骨架屏等场景显式 false 时可立即渲染
+  const [isLayout, setIsLayout] = useState(() => p.controllerOpen !== false);
   const isMobile = useIsMobile();
 
   const props = Object.assign(

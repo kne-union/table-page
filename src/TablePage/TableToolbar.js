@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Button, Dropdown, Tabs } from 'antd';
-import { DeleteOutlined, DownOutlined } from '@ant-design/icons';
+import { DownOutlined, MinusSquareOutlined } from '@ant-design/icons';
 import { FilterOuter, FilterLines, FilterValueDisplay, SearchInput } from '@kne/react-filter';
 import '@kne/react-filter/dist/index.css';
 import ButtonGroup from '@kne/button-group';
@@ -72,7 +72,6 @@ export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, clas
 
 export const BatchActions = ({ batchActions, rowSelection, selectedRows, batchContext, className }) => {
   const { formatMessage } = useIntl();
-  const isMobile = useIsMobile();
   const getPopupContainer = usePopupContainer();
   const selectedRowKeys = rowSelection?.selectedRowKeys || [];
   const hasSelection = selectedRowKeys.length > 0;
@@ -108,11 +107,7 @@ export const BatchActions = ({ batchActions, rowSelection, selectedRows, batchCo
     return null;
   }
 
-  const batchButtonLabel = hasSelection
-    ? isMobile
-      ? formatMessage({ id: 'BatchOperationsMobileSelected' }, { count: selectedRowKeys.length })
-      : formatMessage({ id: 'BatchOperationsWithCount' }, { count: selectedRowKeys.length })
-    : formatMessage({ id: 'BatchOperations' });
+  const batchButtonLabel = hasSelection ? formatMessage({ id: 'BatchOperationsWithCount' }, { count: selectedRowKeys.length }) : formatMessage({ id: 'BatchOperations' });
 
   return (
     <div className={classnames(style['table-toolbar-batch'], className)}>
@@ -124,9 +119,8 @@ export const BatchActions = ({ batchActions, rowSelection, selectedRows, batchCo
       </Dropdown>
       {hasSelection ? (
         <Button
-          danger
           size="small"
-          icon={<DeleteOutlined />}
+          icon={<MinusSquareOutlined />}
           title={formatMessage({ id: 'Cancel' })}
           aria-label={formatMessage({ id: 'Cancel' })}
           className={style['table-toolbar-batch-clear-btn']}
@@ -172,11 +166,18 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
   } = filter || {};
   const { className: searchClassName, style: searchStyle, ...searchRest } = search || {};
 
-  // tab 已有选中态展示，已选筛选标签中不再重复显示 tab 的值
-  const displayFilterValue = hasTab ? (filterValue || []).filter(item => item?.name !== tab.name) : filterValue || [];
+  // tab 已有选中态展示，已选筛选标签中不再重复显示 tab 的值；多选清空后的 { value: [] } 也不展示
+  const displayFilterValue = (hasTab ? (filterValue || []).filter(item => item?.name !== tab.name) : filterValue || []).filter(item => {
+    const v = item?.value;
+    if (v === null || v === undefined) return false;
+    if (typeof v === 'string' && v.trim() === '') return false;
+    if (Array.isArray(v) && v.length === 0) return false;
+    return true;
+  });
   const handleValueDisplayChange = next => {
     const tabEntry = hasTab ? (filterValue || []).find(item => item?.name === tab.name) : null;
-    onFilterChange(tabEntry ? [...(next || []), tabEntry] : next);
+    const payload = tabEntry ? [...(next || []), tabEntry] : next;
+    onFilterChange(payload);
   };
 
   const hasValueDisplay = displayFilterValue.length > 0;

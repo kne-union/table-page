@@ -12,6 +12,29 @@
   max-width: 100%;
 }
 
+// withFetch 首帧可能 return null / 绝对定位 Spin：与内容叠在同一格子，用 reserve 撑住工具栏高度
+.fetch-stack {
+  display: grid;
+  grid-template-areas: 'stack';
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+
+  > * {
+    grid-area: stack;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+.toolbar-height-reserve {
+  visibility: hidden;
+  pointer-events: none;
+  // 对齐非移动端 .table-page-toolbar 最小高度 41px
+  min-height: 41px;
+  width: 100%;
+}
+
 .table-page-tabs-outer {
   margin-bottom: 8px;
 }
@@ -34,6 +57,11 @@
     overflow: visible;
   }
 
+  // 首包 loading 壳：工具栏 + 骨架表体
+  &.is-loading-shell {
+    border-bottom: 1px solid #f0f0f0;
+  }
+
   &.is-mobile-render {
     display: flex;
     flex-direction: column;
@@ -41,6 +69,10 @@
     border: none;
     border-radius: 0;
     overflow: visible;
+
+    &.is-loading-shell {
+      border-bottom: none;
+    }
   }
 
   :global(.table-page-toolbar) {
@@ -100,6 +132,18 @@
   :global(.ant-table-thead > tr.info-page-table-header:first-child > .ant-table-cell:last-child) {
     border-start-end-radius: 0 !important;
   }
+}
+
+.table-cell-skeleton {
+  max-width: 120px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  vertical-align: top;
+}
+
+.table-skeleton-spin {
+  width: 100%;
+  min-height: 160px;
 }
 
 .table-in-toolbar {
