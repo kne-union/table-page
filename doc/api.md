@@ -70,7 +70,7 @@
 | defaultValue | array | `[]` | 非受控初始筛选值，会合并进首次请求参数 |
 | onChange | function | - | 筛选值变化回调 `(value) => void` |
 | mapFilterValue | function | - | 自定义参数转换，默认 `getFilterValue` |
-| searchParamsValue | object | - | 与 `@kne/react-filter` 的 `useSearchParamsValue` **同参** `{ searchParams, setSearchParams?, fields }`。同步解析 URL 作初始筛选种子：非受控时 `mergeByName(defaultValue, fromUrl)`（同名 URL 覆盖）并写入 `defaultValue` + 首包参数；受控时不改写 `value`/`onChange`，首包用 `mergeByName(value, fromUrl)`。有 `setSearchParams` 时清理已消费 key。勿与外层 `useSearchParamsValue` 同时使用 |
+| searchParamsValue | object | - | 与 `@kne/react-filter` 的 `useSearchParamsValue` **同参** `{ searchParams, setSearchParams?, fields }`。`fields` 项为 `{ name, label, labelKey? }`，可选 `labelKey` 为选中值展示文案的 URL key。同步解析 URL 作初始筛选种子：非受控时 `mergeByName(defaultValue, fromUrl)`（同名 URL 覆盖）并写入 `defaultValue` + 首包参数；受控时不改写 `value`/`onChange`，首包用 `mergeByName(value, fromUrl)`。有 `setSearchParams` 时清理已消费 key（含 labelKey）。勿与外层 `useSearchParamsValue` 同时使用 |
 
 #### search
 
