@@ -1,9 +1,11 @@
 /**
  * 与 @kne/react-filter useSearchParamsValue 内部解析保持一致（不从该包导出）。
  *
+ * fields 项：`name` 为 URL key；`label` 为筛选项标题；可选 `labelKey` 为选中值展示文案的 URL key。
+ *
  * @param {Object} [options]
  * @param {URLSearchParams} [options.searchParams]
- * @param {Array<{ name: string, label?: string }>} [options.fields]
+ * @param {Array<{ name: string, label?: string, labelKey?: string }>} [options.fields]
  * @returns {{ items: Array, consumedKeys: string[] }}
  */
 export const parseSearchParamsValue = ({ searchParams, fields } = {}) => {
@@ -24,11 +26,22 @@ export const parseSearchParamsValue = ({ searchParams, fields } = {}) => {
       return;
     }
     consumedKeys.push(name);
+
+    let valueText = raw;
+    const labelKey = field.labelKey;
+    if (labelKey && searchParams.has(labelKey)) {
+      const fromLabelKey = searchParams.get(labelKey);
+      if (fromLabelKey != null && fromLabelKey !== '') {
+        valueText = fromLabelKey;
+        consumedKeys.push(labelKey);
+      }
+    }
+
     const label = field.label != null ? field.label : name;
     items.push({
       name,
       label,
-      value: { label: raw, value: raw }
+      value: { label: valueText, value: raw }
     });
   });
 
