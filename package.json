@@ -1,6 +1,6 @@
 {
   "name": "@kne/table-page",
-  "version": "0.1.24",
+  "version": "0.1.25",
   "description": "A React table page component based on Ant Design, supporting column config, filter, sort and batch operations.",
   "syntax": {
     "esmodules": true
@@ -109,6 +109,7 @@
     "@kne/react-fetch": "^1.5.7",
     "@kne/react-filter": "^2.0.5",
     "@kne/react-intl": "^0.1.15",
+    "@kne/react-sticky-scroller": "^0.1.0",
     "@kne/responsive-utils": "^0.1.10",
     "@kne/scroll-loader": "^0.1.14",
     "@kne/table-view": "^0.1.12",
