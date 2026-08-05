@@ -15,7 +15,8 @@ import { useIntl } from '@kne/react-intl';
 import { useIsMobile } from '@kne/responsive-utils';
 import style from './style.module.scss';
 import withLocale from '../withLocale';
-import HorizontalScroller from './HorizontalScroller';
+import StickyScroller from '@kne/react-sticky-scroller';
+import '@kne/react-sticky-scroller/dist/index.css';
 import '@kne/button-group/dist/index.css';
 import TableToolbar, { TablePageTabs, BatchActions, hasButtonGroupList } from './TableToolbar';
 import { scrollAnchorIntoView, normalizeScrollTopInsetCSSValue, resolveScrollTopInset } from './scrollUtils';
@@ -735,7 +736,7 @@ const TablePageInnerContent = withLocale(
     ) : null;
 
     const tableMain = (
-      <HorizontalScroller ref={tableContentRef} enabled={horizontalScroller && renderType === 'Table' && !isCardModeActive} getPortalContainer={getScrollContainer} className={style['table-content']}>
+      <StickyScroller ref={tableContentRef} enabled={horizontalScroller && renderType === 'Table' && !isCardModeActive} getPortalContainer={getScrollContainer} className={style['table-content']}>
         {showOuterTab ? <TablePageTabs filterValue={filterValue} onFilterChange={handleFilterChange} tab={tab} tabProps={tabProps} className={style['table-page-tabs-outer']} isMobileRender={isMobileRenderActive} /> : null}
         {wrapWithToolbar ? (
           <div
@@ -766,7 +767,7 @@ const TablePageInnerContent = withLocale(
         ) : (
           tableElement
         )}
-      </HorizontalScroller>
+      </StickyScroller>
     );
 
     return (
