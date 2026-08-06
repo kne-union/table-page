@@ -474,7 +474,8 @@ const Table = p => {
     }
 
     const getRowKey = record => resolveRowKey(rowKey, record);
-    const allKeys = isTree ? treeKeyMaps?.allKeys || [] : (dataSource || []).filter(item => !item.disabled).map(getRowKey);
+    // 全选判断/操作只针对可勾选行，排除 disabled
+    const allKeys = isTree ? (treeKeyMaps?.allKeys || []).filter(key => !treeKeyMaps.nodeMap.get(key)?.disabled) : (dataSource || []).filter(item => !item.disabled).map(getRowKey);
     const useTreeCheck = isTree && rowSelection.type === 'checkbox' && checkRelation !== 'independent' && treeKeyMaps;
 
     const renderSelectAllNode = () => {
@@ -507,7 +508,7 @@ const Table = p => {
         );
       }
       const checkedAll = rowSelection.isSelectedAll || (allKeys.length > 0 && allKeys.every(key => (rowSelection.selectedRowKeys || []).indexOf(key) > -1));
-      const indeterminate = !checkedAll && (rowSelection.selectedRowKeys || []).length > 0;
+      const indeterminate = !checkedAll && allKeys.some(key => (rowSelection.selectedRowKeys || []).indexOf(key) > -1);
       return (
         <Checkbox
           checked={checkedAll}
@@ -525,6 +526,9 @@ const Table = p => {
                 undefined,
                 { context, checked: false }
               );
+              return;
+            }
+            if (allKeys.length === 0) {
               return;
             }
             const merged = existing.slice();
@@ -630,35 +634,10 @@ const Table = p => {
     return {
       type: rowSelection.type === 'radio' ? 'radio' : 'checkbox',
       preserveSelectedRowKeys: true,
+      hideSelectAll: true,
       ...(hasFixedColumn ? { fixed: 'left' } : {}),
       selectedRowKeys: rowSelection.isSelectedAll ? allKeys : rowSelection.selectedRowKeys,
-      onChange: (selectedRowKeys, selectedRows, info) => {
-        if (info.type === 'all') {
-          const checked = selectedRowKeys.length > 0;
-          if (typeof rowSelection.onIsSelectAllChange === 'function') {
-            rowSelection.onIsSelectAllChange(checked);
-            return;
-          }
-          const pageKeys = (dataSource || []).filter(item => !item.disabled).map(getRowKey);
-          const existing = rowSelection.selectedRowKeys || [];
-          if (!checked) {
-            rowSelection.onChange(
-              existing.filter(key => pageKeys.indexOf(key) === -1),
-              undefined,
-              { context, checked: false }
-            );
-            return;
-          }
-          const merged = existing.slice();
-          pageKeys.forEach(key => {
-            if (merged.indexOf(key) === -1) {
-              merged.push(key);
-            }
-          });
-          rowSelection.onChange(merged, undefined, { context, checked: true });
-          return;
-        }
-
+      onChange: (selectedRowKeys, selectedRows) => {
         const currentKey = selectedRows.length > 0 ? getRowKey(selectedRows[selectedRows.length - 1]) : selectedRowKeys[selectedRowKeys.length - 1];
         const checked = selectedRowKeys.indexOf(currentKey) > -1;
         rowSelection.onChange(selectedRowKeys, currentKey, { context, checked });
@@ -668,14 +647,15 @@ const Table = p => {
       }),
       ...(rowSelection.type === 'checkbox'
         ? {
-            columnTitle: rowSelection.allowSelectedAll ? checkboxNode => wrapColContent(checkboxNode) : wrapColContent(<Checkbox style={{ visibility: 'hidden' }} />),
+            columnWidth: antdSelectionColumnWidth || 48,
+            columnTitle: wrapColContent(renderSelectAllNode()),
             renderCell: (checked, record, index, originNode) => wrapColContent(originNode),
             onCell: () => ({
               className: getAntCellClassName(style['selection-col'])
             })
           }
         : {
-            columnWidth: 30,
+            columnWidth: antdSelectionColumnWidth || 48,
             renderCell: (checked, record, index, originNode) => wrapColContent(originNode),
             onCell: () => ({
               className: getAntCellClassName(style['radio-col'])
@@ -743,11 +723,11 @@ const Table = p => {
     if (cssValue) {
       next['--scroll-top-inset'] = cssValue;
     }
-    if (isTree && antdSelectionColumnWidth) {
+    if (antdSelectionColumnWidth) {
       next['--selection-col-width'] = `${antdSelectionColumnWidth}px`;
     }
     return Object.keys(next).length > 0 ? next : undefined;
-  }, [resolvedScrollTopInset, isTree, antdSelectionColumnWidth]);
+  }, [resolvedScrollTopInset, antdSelectionColumnWidth]);
 
   const useTreeCheckForRow = isTree && rowSelection?.type === 'checkbox' && checkRelation !== 'independent' && treeKeyMaps;
 
