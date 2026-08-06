@@ -23,13 +23,13 @@ const resolveButtonGroupProps = (buttonGroup, getPopupContainer, { defaultSize, 
     return {};
   }
   const { size, moreType, showLength, list, getPopupContainer: userGetPopupContainer, ...rest } = buttonGroup;
-  const resolvedShowLength = Number.isInteger(showLength) ? Math.max(minShowLength, showLength) : defaultShowLength;
+  const resolvedShowLength = Number.isInteger(showLength) ? Math.max(minShowLength, showLength) : Number.isInteger(defaultShowLength) ? defaultShowLength : undefined;
   return {
     ...rest,
     list: normalizeButtonGroupList(list, defaultSize),
     ...(defaultSize !== undefined ? { size: size ?? defaultSize } : size !== undefined ? { size } : {}),
     moreType: moreType ?? 'link',
-    showLength: resolvedShowLength,
+    ...(resolvedShowLength !== undefined ? { showLength: resolvedShowLength } : {}),
     getPopupContainer: userGetPopupContainer ?? getPopupContainer
   };
 };
@@ -37,7 +37,8 @@ const resolveButtonGroupProps = (buttonGroup, getPopupContainer, { defaultSize, 
 export const resolveToolbarButtonGroupProps = (buttonGroup, getPopupContainer) => {
   return resolveButtonGroupProps(buttonGroup, getPopupContainer, {
     defaultSize: 'small',
-    defaultShowLength: 1,
+    // 未显式传 showLength 时走 ButtonGroup 自适应测宽（@kne/overflow-items）
+    defaultShowLength: undefined,
     minShowLength: 1
   });
 };
