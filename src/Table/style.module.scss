@@ -262,8 +262,24 @@
 }
 
 .selection-col {
-  width: 1%;
+  // 与 TableView SELECTION_CHECKBOX_WIDTH 对齐；勿用 width:1% 收缩，否则 checkbox 右边框会被 .col-content overflow 裁切
+  width: var(--selection-col-width, 48px) !important;
+  min-width: var(--selection-col-width, 48px) !important;
+  max-width: var(--selection-col-width, 48px) !important;
   white-space: nowrap;
+  overflow: visible !important;
+
+  :global(.info-page-table-col-content),
+  .col-content {
+    margin-inline: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
 }
 
 .tree-expand-col {
@@ -274,17 +290,38 @@
   overflow: visible !important;
 }
 
-.is-tree-table {
+.table {
   :global(.ant-table-selection-column) {
     width: var(--selection-col-width, 48px) !important;
     min-width: var(--selection-col-width, 48px) !important;
-    padding: 0 !important;
     overflow: visible !important;
+  }
+
+  &.is-tree-table {
+    :global(.ant-table-selection-column) {
+      padding: 0 !important;
+    }
   }
 }
 
 .radio-col {
-  width: 30px;
+  width: var(--selection-col-width, 48px) !important;
+  min-width: var(--selection-col-width, 48px) !important;
+  max-width: var(--selection-col-width, 48px) !important;
+  white-space: nowrap;
+  overflow: visible !important;
+
+  :global(.info-page-table-col-content),
+  .col-content {
+    margin-inline: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
 }
 
 .tree-selection-content {

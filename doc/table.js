@@ -9,7 +9,7 @@ const orderStatusMap = {
   已取消: { type: 'default', text: '已取消' }
 };
 
-const dataSource = [
+  const dataSource = [
   {
     id: 'ORD20240115001',
     customerName: '深圳市腾讯计算机系统有限公司',
@@ -58,7 +58,8 @@ const dataSource = [
     amount: 95000,
     status: '已取消',
     orderDate: '2024-01-12',
-    deliveryDate: ''
+    deliveryDate: '',
+    disabled: true
   }
 ];
 
@@ -85,11 +86,14 @@ const columns = [
   }
 ];
 
-const WithCheckbox = () => {
+  const WithCheckbox = () => {
   const [selectKeys, setSelectKeys] = useState([]);
   const totalAmount = selectKeys.reduce((sum, id) => sum + (dataSource.find(d => d.id === id)?.amount || 0), 0);
   return (
     <div>
+      <div style={{ marginBottom: 8, color: '#666' }}>
+        多选 + 全选 — 最后一行「已取消」为 <code>disabled</code>，全选勾选态与选中结果都会跳过该行
+      </div>
       <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
         <span>
           已选 <strong>{selectKeys.length}</strong> 个订单，总金额 <strong style={{ color: '#52c41a' }}>¥{totalAmount.toLocaleString()}</strong>

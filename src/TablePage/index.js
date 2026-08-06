@@ -10,7 +10,7 @@ import classnames from 'classnames';
 import get from 'lodash/get';
 import useRefCallback from '@kne/use-ref-callback';
 import useControlValue from '@kne/use-control-value';
-import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useIntl } from '@kne/react-intl';
 import { useIsMobile } from '@kne/responsive-utils';
 import style from './style.module.scss';
@@ -393,6 +393,7 @@ const TablePageInnerContent = withLocale(
     forceCard = false,
     mobileSortToolbar,
     filterSeedParams = {},
+    filterFetchApiRef,
     ...props
   }) => {
     const { formatMessage } = useIntl();
@@ -480,6 +481,30 @@ const TablePageInnerContent = withLocale(
       return merged;
     });
 
+    // react-fetch 的 reload 以 props.data（首包种子）为底合并，裸调会丢掉当前已选筛选。
+    // 对外（ref / batchActions / summary）统一注入 filterValue，保证 UI 与查询一致。
+    // handleFilterChange 仍走原始 reload：setState 前要用新 value 组参，不能读旧 filterValue。
+    const injectFilterParams = useRefCallback((sendProps = {}) => {
+      const paramsType = pagination.paramsType;
+      const incoming = get(sendProps, paramsType);
+      return Object.assign({}, sendProps, {
+        [paramsType]: buildRequestParamsWithFilter(filterValue, isPlainObject(incoming) ? incoming : {})
+      });
+    });
+    const reloadWithFilter = useRefCallback((sendProps, force) => reload(injectFilterParams(sendProps), force));
+    const refreshWithFilter = useRefCallback((sendProps, force) => refresh(injectFilterParams(sendProps), force));
+    const sendWithFilter = useRefCallback((sendProps, force) => send(injectFilterParams(sendProps), force));
+    const loadMoreWithFilter = useRefCallback((sendProps, callback, force) => loadMore(injectFilterParams(sendProps), callback, force));
+
+    if (filterFetchApiRef) {
+      filterFetchApiRef.current = {
+        reload: reloadWithFilter,
+        refresh: refreshWithFilter,
+        send: sendWithFilter,
+        loadMore: loadMoreWithFilter
+      };
+    }
+
     const formatData = useMemo(() => {
       return handlerDataFormat(data);
     }, [data, handlerDataFormat]);
@@ -491,14 +516,14 @@ const TablePageInnerContent = withLocale(
         data,
         fetchProps,
         requestParams,
-        refresh,
-        reload,
-        loadMore,
-        send,
+        refresh: refreshWithFilter,
+        reload: reloadWithFilter,
+        loadMore: loadMoreWithFilter,
+        send: sendWithFilter,
         dataFormat,
         pagination
       }),
-      [data, fetchProps, requestParams, refresh, reload, loadMore, send, dataFormat, pagination]
+      [data, fetchProps, requestParams, refreshWithFilter, reloadWithFilter, loadMoreWithFilter, sendWithFilter, dataFormat, pagination]
     );
 
     const hasTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
@@ -658,14 +683,14 @@ const TablePageInnerContent = withLocale(
         data,
         fetchProps,
         requestParams,
-        refresh,
-        reload,
-        loadMore,
-        send,
+        refresh: refreshWithFilter,
+        reload: reloadWithFilter,
+        loadMore: loadMoreWithFilter,
+        send: sendWithFilter,
         dataFormat,
         pagination
       }),
-      [data, fetchProps, requestParams, refresh, reload, loadMore, send, dataFormat, pagination]
+      [data, fetchProps, requestParams, refreshWithFilter, reloadWithFilter, loadMoreWithFilter, sendWithFilter, dataFormat, pagination]
     );
 
     const tableContext = {
@@ -814,9 +839,37 @@ const TablePageFetched = withFetch(TablePageInnerContent);
 const TablePageInner = forwardRef((props, ref) => {
   const isMobile = useIsMobile();
   const { loading: loadingProp, ...rest } = props;
+  const fetchRef = useRef(null);
+  const filterFetchApiRef = useRef(null);
   const reserveToolbar = hasToolbarArea(props, isMobile);
   const loading = loadingProp !== undefined ? loadingProp : <TablePageLoadingShell {...props} />;
-  const fetched = <TablePageFetched {...rest} loading={loading} ref={ref} />;
+
+  useImperativeHandle(ref, () => ({
+    get isLoading() {
+      return fetchRef.current?.isLoading;
+    },
+    get isComplete() {
+      return fetchRef.current?.isComplete;
+    },
+    get data() {
+      return fetchRef.current?.data;
+    },
+    get requestParams() {
+      return fetchRef.current?.requestParams;
+    },
+    get error() {
+      return fetchRef.current?.error;
+    },
+    get setData() {
+      return fetchRef.current?.setData;
+    },
+    send: (...args) => (filterFetchApiRef.current?.send || fetchRef.current?.send)?.(...args),
+    refresh: (...args) => (filterFetchApiRef.current?.refresh || fetchRef.current?.refresh)?.(...args),
+    reload: (...args) => (filterFetchApiRef.current?.reload || fetchRef.current?.reload)?.(...args),
+    loadMore: (...args) => (filterFetchApiRef.current?.loadMore || fetchRef.current?.loadMore)?.(...args)
+  }));
+
+  const fetched = <TablePageFetched {...rest} loading={loading} ref={fetchRef} filterFetchApiRef={filterFetchApiRef} />;
   if (!reserveToolbar) {
     return fetched;
   }
