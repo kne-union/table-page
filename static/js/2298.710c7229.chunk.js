@@ -1,0 +1,2 @@
+"use strict";(globalThis.webpackChunk_table_page_0_1_32||=[]).push([[2298],{70701(e,a,n){n.r(a);const t={TablePage:n(69666).A};n.d(a,["default",0,t,"manifest",0,{name:"table-page",version:"0.1.32","open-version":!0,"public-url":"/table-page",modules:[{name:"table-page",baseDir:"/home/runner/work/table-page/table-page",description:"A React table page component based on Ant Design, supporting column config, filter, sort and batch operations.",packageName:"@kne/table-page"}]}])}}]);
+//# sourceMappingURL=2298.710c7229.chunk.js.map
