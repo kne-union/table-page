@@ -202,7 +202,7 @@
 
 ### TableView
 
-表格视图组件，基于 Ant Design 的 Row/Col 布局实现，支持列配置、行选择等能力。
+表格视图组件，基于 CSS Grid 布局实现。实现位于 `@kne/table-view`，本包为兼容继续导出。
 
 #### 属性
 
@@ -381,7 +381,7 @@ const sortedData = useMemo(() => Table.sortDataSource(dataSource, sort, columns)
 
 ### Table
 
-表格组件，以 antd `Table` 作为展示层，外层 API 与 `TableView` 保持一致，可直接复用相同的 `columns`、`rowSelection` 等配置。此外支持透传 antd Table 的原生属性（如 `scroll`、`pagination`、`bordered` 等）。
+表格组件，以 antd `Table` 作为展示层。实现位于 `@kne/table-view`，本包为兼容继续导出。外层 API 与 `TableView` 保持一致。
 
 #### 属性
 
