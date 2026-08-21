@@ -378,8 +378,17 @@
 }
 
 .table-toolbar-value-display {
+  max-width: 100%;
+  min-width: 0;
+
   :global(.value-display),
   :global(.title) {
+    // Space 默认 inline-flex + width:100% + padding 在 content-box 下会比父级多出左右 padding 宽度
+    box-sizing: border-box;
+    display: flex !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     padding: 0 16px 6px !important;
     margin-top: 0 !important;
     line-height: 22px !important;
