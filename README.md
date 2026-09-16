@@ -197,7 +197,7 @@ npm i --save @kne/table-page
 #### 示例代码
 
 - TablePage
-- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、renderCard PC 卡片视图切换、tab 分类切换、列配置、总结栏、树形 dataType（含筛选/批量/操作列/卡片切换/懒加载）；空数据（total 为 0）时不显示分页器。文末含仅 SearchInput + renderMobile 自定义卡片示例（验证工具栏与卡片间距）
+- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、renderCard PC 卡片视图切换、pagination.forceLoadMore（PC Table 触底下拉）、tab 分类切换、列配置、总结栏、树形 dataType（含筛选/批量/操作列/卡片切换/懒加载）；空数据（total 为 0）时不显示分页器。文末含仅 SearchInput + renderMobile 自定义卡片示例（验证工具栏与卡片间距）
 - _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd),_ReactFilter(@kne/react-filter)[import * as _ReactFilter from "@kne/react-filter"],(@kne/react-filter/dist/index.css)
 
 ```jsx
@@ -478,6 +478,10 @@ const Tips = () => (
       <Tag style={TIP_TAG_STYLE} color="red">PC 卡片</Tag>
       传入 <code>renderCard</code>（签名同 <code>renderMobile</code>）后，工具栏 <code>buttonGroup</code> 前出现表格/卡片切换按钮，状态按 <code>name</code> 持久化到 localStorage；卡片模式下外框透明、默认触底下拉加载（<code>pagination.forcePagination</code> 可改回分页）；<code>forceCard</code> 强制卡片并隐藏切换按钮；移动端忽略。
     </div>
+    <div>
+      <Tag style={TIP_TAG_STYLE} color="lime">Table 下拉加载</Tag>
+      PC Table 默认底部分页；设置 <code>pagination.forceLoadMore</code> 可在不切换卡片的情况下触底下拉（与 <code>forcePagination</code> 同时为 true 时以后者为准）。开启后勿再设 Table <code>scroll.y</code>。
+    </div>
   </div>
 );
 
@@ -533,6 +537,7 @@ const BaseExample = () => {
   const tableRef = React.useRef();
   const [empty, setEmpty] = useState(false);
   const [cardForcePagination, setCardForcePagination] = useState(false);
+  const [tableForceLoadMore, setTableForceLoadMore] = useState(false);
   const [renderType, setRenderType] = useState('Table');
   const emptyRef = React.useRef(false);
   const slowReloadRef = React.useRef(false);
@@ -612,13 +617,22 @@ const BaseExample = () => {
           <span>卡片模式数据加载：</span>
           <Switch checkedChildren="分页" unCheckedChildren="下拉加载" checked={cardForcePagination} onChange={setCardForcePagination} />
         </Flex>
+        <Flex align="center" gap={8}>
+          <span>Table 数据加载：</span>
+          <Switch
+            checkedChildren="下拉加载"
+            unCheckedChildren="分页"
+            checked={tableForceLoadMore}
+            onChange={setTableForceLoadMore}
+          />
+        </Flex>
       </Space>
       <TablePage
         ref={tableRef}
         name="demo-employee-table"
         renderType={renderType}
-        sticky={renderType === 'Table'}
-        scroll={renderType === 'Table' ? { x: 1600, y: 400 } : undefined}
+        sticky={renderType === 'Table' && !tableForceLoadMore}
+        scroll={renderType === 'Table' ? (tableForceLoadMore ? { x: 1600 } : { x: 1600, y: 400 }) : undefined}
         size="large"
         renderMobile
         renderCard={renderEmployeeCard}
@@ -719,7 +733,8 @@ const BaseExample = () => {
           showSizeChanger: true,
           showQuickJumper: true,
           pageSizeOptions: ['10', '20', '50', '100'],
-          forcePagination: cardForcePagination
+          forcePagination: cardForcePagination,
+          forceLoadMore: tableForceLoadMore
         }}
         dataFormat={data => ({
           list: data.pageData,
@@ -4225,6 +4240,7 @@ render(<BaseExample />);
 | onChange | function | - | 自定义翻页回调 `(page, size) => void`，传入后覆盖默认请求逻辑 |
 | onShowSizeChange | function | - | 每页条数变化回调，组件内部已处理持久化 |
 | forcePagination | boolean | `false` | 移动端（`renderMobile` 激活时）与 PC 卡片模式（`renderCard` 生效且切到卡片视图时）默认改为触底下拉加载；设为 `true` 时强制仍使用分页器 |
+| forceLoadMore | boolean | `false` | PC Table / TableView（非移动端、非卡片视图）默认使用底部分页器；设为 `true` 时改为触底下拉加载并隐藏分页器。与 `forcePagination` 同时为 `true` 时以 `forcePagination` 为准。触底由外层 `ScrollLoader` 驱动，勿再给 Table 设 `scroll.y`（表体内滚动会导致触底不触发）；弹窗等场景请给外层定高 |
 | mergeList | function | 合并 `pageData` | 下拉加载时合并新旧数据 `(prev, next) => data`，需与 `loader` 返回结构一致 |
 | loadMore | object | - | 透传给 `@kne/scroll-loader` 的额外配置（如 `completeTips`、`maxFullCount`） |
 | mobile | object | - | 强制分页时的移动端分页器微调（如 `showSizeChanger`、`showLessItems`） |
@@ -4338,6 +4354,8 @@ render(<BaseExample />);
 `TablePage` 的分页器渲染在表格外侧（`antd Pagination`），不会出现在 `Table` 边框内部。表格本身始终设置 `pagination={false}`。当 `dataFormat` 返回的 `total` 为 0（无数据）时，分页器不会渲染。
 
 移动端（`renderMobile` 激活）默认使用触底下拉加载（`@kne/scroll-loader` + `react-fetch` 的 `loadMore`），不再展示分页器。若需移动端仍使用分页，请设置 `pagination.forcePagination: true`。
+
+PC 桌面 Table 默认使用底部分页器。若需在 Table 模式下也触底下拉加载，请设置 `pagination.forceLoadMore: true`（与 `forcePagination` 同时开启时以后者为准）。
 
 ##### renderType
 
