@@ -609,7 +609,9 @@ const TablePageInnerContent = withLocale(
     const useMobileLoadMore = isMobileRenderActive && pagination.open && !pagination.forcePagination;
     // PC 卡片模式默认下拉加载，pagination.forcePagination 为 true 时仍用分页
     const useCardLoadMore = isCardModeActive && pagination.open && !pagination.forcePagination;
-    const useLoadMoreMode = useMobileLoadMore || useCardLoadMore;
+    // PC Table：默认分页；pagination.forceLoadMore 强制触底下拉（与 forcePagination 互斥时以后者为准）
+    const useTableLoadMore = !isMobileRenderActive && !isCardModeActive && pagination.open && !!pagination.forceLoadMore && !pagination.forcePagination;
+    const useLoadMoreMode = useMobileLoadMore || useCardLoadMore || useTableLoadMore;
 
     const currentPage = get(requestParams, [pagination.paramsType, pagination.currentName], 1);
     const currentPageSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 20;

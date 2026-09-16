@@ -52,6 +52,7 @@
 | onChange | function | - | 自定义翻页回调 `(page, size) => void`，传入后覆盖默认请求逻辑 |
 | onShowSizeChange | function | - | 每页条数变化回调，组件内部已处理持久化 |
 | forcePagination | boolean | `false` | 移动端（`renderMobile` 激活时）与 PC 卡片模式（`renderCard` 生效且切到卡片视图时）默认改为触底下拉加载；设为 `true` 时强制仍使用分页器 |
+| forceLoadMore | boolean | `false` | PC Table / TableView（非移动端、非卡片视图）默认使用底部分页器；设为 `true` 时改为触底下拉加载并隐藏分页器。与 `forcePagination` 同时为 `true` 时以 `forcePagination` 为准。触底由外层 `ScrollLoader` 驱动，勿再给 Table 设 `scroll.y`（表体内滚动会导致触底不触发）；弹窗等场景请给外层定高 |
 | mergeList | function | 合并 `pageData` | 下拉加载时合并新旧数据 `(prev, next) => data`，需与 `loader` 返回结构一致 |
 | loadMore | object | - | 透传给 `@kne/scroll-loader` 的额外配置（如 `completeTips`、`maxFullCount`） |
 | mobile | object | - | 强制分页时的移动端分页器微调（如 `showSizeChanger`、`showLessItems`） |
@@ -165,6 +166,8 @@
 `TablePage` 的分页器渲染在表格外侧（`antd Pagination`），不会出现在 `Table` 边框内部。表格本身始终设置 `pagination={false}`。当 `dataFormat` 返回的 `total` 为 0（无数据）时，分页器不会渲染。
 
 移动端（`renderMobile` 激活）默认使用触底下拉加载（`@kne/scroll-loader` + `react-fetch` 的 `loadMore`），不再展示分页器。若需移动端仍使用分页，请设置 `pagination.forcePagination: true`。
+
+PC 桌面 Table 默认使用底部分页器。若需在 Table 模式下也触底下拉加载，请设置 `pagination.forceLoadMore: true`（与 `forcePagination` 同时开启时以后者为准）。
 
 #### renderType
 

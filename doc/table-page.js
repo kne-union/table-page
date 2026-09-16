@@ -275,6 +275,10 @@ const Tips = () => (
       <Tag style={TIP_TAG_STYLE} color="red">PC 卡片</Tag>
       传入 <code>renderCard</code>（签名同 <code>renderMobile</code>）后，工具栏 <code>buttonGroup</code> 前出现表格/卡片切换按钮，状态按 <code>name</code> 持久化到 localStorage；卡片模式下外框透明、默认触底下拉加载（<code>pagination.forcePagination</code> 可改回分页）；<code>forceCard</code> 强制卡片并隐藏切换按钮；移动端忽略。
     </div>
+    <div>
+      <Tag style={TIP_TAG_STYLE} color="lime">Table 下拉加载</Tag>
+      PC Table 默认底部分页；设置 <code>pagination.forceLoadMore</code> 可在不切换卡片的情况下触底下拉（与 <code>forcePagination</code> 同时为 true 时以后者为准）。开启后勿再设 Table <code>scroll.y</code>。
+    </div>
   </div>
 );
 
@@ -330,6 +334,7 @@ const BaseExample = () => {
   const tableRef = React.useRef();
   const [empty, setEmpty] = useState(false);
   const [cardForcePagination, setCardForcePagination] = useState(false);
+  const [tableForceLoadMore, setTableForceLoadMore] = useState(false);
   const [renderType, setRenderType] = useState('Table');
   const emptyRef = React.useRef(false);
   const slowReloadRef = React.useRef(false);
@@ -409,13 +414,22 @@ const BaseExample = () => {
           <span>卡片模式数据加载：</span>
           <Switch checkedChildren="分页" unCheckedChildren="下拉加载" checked={cardForcePagination} onChange={setCardForcePagination} />
         </Flex>
+        <Flex align="center" gap={8}>
+          <span>Table 数据加载：</span>
+          <Switch
+            checkedChildren="下拉加载"
+            unCheckedChildren="分页"
+            checked={tableForceLoadMore}
+            onChange={setTableForceLoadMore}
+          />
+        </Flex>
       </Space>
       <TablePage
         ref={tableRef}
         name="demo-employee-table"
         renderType={renderType}
-        sticky={renderType === 'Table'}
-        scroll={renderType === 'Table' ? { x: 1600, y: 400 } : undefined}
+        sticky={renderType === 'Table' && !tableForceLoadMore}
+        scroll={renderType === 'Table' ? (tableForceLoadMore ? { x: 1600 } : { x: 1600, y: 400 }) : undefined}
         size="large"
         renderMobile
         renderCard={renderEmployeeCard}
@@ -516,7 +530,8 @@ const BaseExample = () => {
           showSizeChanger: true,
           showQuickJumper: true,
           pageSizeOptions: ['10', '20', '50', '100'],
-          forcePagination: cardForcePagination
+          forcePagination: cardForcePagination,
+          forceLoadMore: tableForceLoadMore
         }}
         dataFormat={data => ({
           list: data.pageData,
