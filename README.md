@@ -197,7 +197,7 @@ npm i --save @kne/table-page
 #### 示例代码
 
 - TablePage
-- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、renderCard PC 卡片视图切换、pagination.forceLoadMore（PC Table 触底下拉）、tab 分类切换、列配置、总结栏、树形 dataType（含筛选/批量/操作列/卡片切换/懒加载）；空数据（total 为 0）时不显示分页器。文末含仅 SearchInput + renderMobile 自定义卡片示例（验证工具栏与卡片间距）
+- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、renderCard PC 卡片视图切换、pagination.forceLoadMore（PC Table 触底下拉）、tab 分类切换、列配置、总结栏、树形 dataType（含筛选/批量/操作列/卡片切换/懒加载）；空数据（total 为 0）时不显示分页器。文末对照仅 SearchInput 与 Search+全选/排序条两种移动端间距（开关可拆开全选/排序）
 - _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd),_ReactFilter(@kne/react-filter)[import * as _ReactFilter from "@kne/react-filter"],(@kne/react-filter/dist/index.css)
 
 ```jsx
@@ -460,7 +460,7 @@ const Tips = () => (
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="volcano">移动端</Tag>
-      设置 <code>renderMobile</code> 后，手机预览下启用卡片 List（含全选、排序工具栏）；桌面端仍为 antd Table。下方另有「仅 SearchInput + 自定义卡片」示例，用于确认 SearchInput 与卡片列表间距。
+      设置 <code>renderMobile</code> 后，手机预览下启用卡片 List（含全选、排序工具栏）；桌面端仍为 antd Table。文末对照「仅 SearchInput」与「Search + 全选/排序条」两种间距（情况 B 可用开关拆开全选/排序）。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="geekblue">固定表头</Tag>
@@ -817,7 +817,7 @@ const sharedGroups = [
 
 const sharedGroupColumns = [
   { name: 'id', title: 'ID', width: 80, renderType: 'small' },
-  { name: 'name', title: '共享组名称', width: 180, renderType: 'main' },
+  { name: 'name', title: '共享组名称', width: 180, renderType: 'main', sort: true },
   { name: 'description', title: '描述', width: 320, renderType: 'description', ellipsis: true },
   {
     name: 'options',
@@ -831,79 +831,127 @@ const sharedGroupColumns = [
   }
 ];
 
-const SharedGroupMobileCard = ({ item }) => (
-  <div
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 12,
-      padding: '14px 16px',
-      background: '#fff',
-      border: '1px solid #f0f0f0',
-      borderRadius: 12,
-      boxSizing: 'border-box'
-    }}
-  >
-    <div>
-      <div style={{ marginBottom: 8, fontSize: 16, fontWeight: 600, lineHeight: 1.4, color: 'rgba(0,0,0,0.88)' }}>
-        {item.name}
-      </div>
-      <Flex align="center" gap={8} wrap="wrap" style={{ marginBottom: 6, fontSize: 13, color: 'rgba(0,0,0,0.65)' }}>
-        <span>成员 {item.members.length}</span>
-        <span style={{ color: 'rgba(0,0,0,0.25)' }}>·</span>
-        <span>数据来源 {item.dataSources.length}</span>
-        <span style={{ color: 'rgba(0,0,0,0.25)' }}>·</span>
-        <span>模块 {item.sharedModules.length}</span>
-        <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>#{item.id}</span>
-      </Flex>
-      <div
-        style={{
-          display: '-webkit-box',
-          WebkitBoxOrient: 'vertical',
-          WebkitLineClamp: 2,
-          overflow: 'hidden',
-          fontSize: 13,
-          lineHeight: 1.5,
-          color: 'rgba(0,0,0,0.45)'
-        }}
-      >
-        {item.description}
-      </div>
-    </div>
-  </div>
-);
+/** 移动端间距：仅 Search vs Search + 全选/排序条（双情况对照，开关可拆开全选/排序） */
+const SearchSelectSortMobileExample = () => {
+  const searchOnlyRef = useRef();
+  const withToolbarRef = useRef();
+  const [enableSelectAll, setEnableSelectAll] = useState(true);
+  const [enableSort, setEnableSort] = useState(true);
+  const { selectedRows, getRowSelection, clearSelectedRows } = Table.useSelectedRow({ rowKey: 'id' });
+  const { sort, sortRender, mobileSortToolbar } = Table.useSort({
+    onSortChange: newSort => {
+      withToolbarRef.current?.reload({ data: { sort: newSort } });
+    }
+  });
 
-/** 仅 SearchInput + renderMobile：确认工具栏与卡片列表有间距、不紧贴 */
-const SearchMobileExample = () => (
-  <Flex vertical gap={12}>
-    <div style={{ color: '#666', fontSize: 13, lineHeight: 1.7 }}>
-      <Tag color="blue" style={{ marginRight: 8 }}>
-        search only
-      </Tag>
-      仅配置 <code>search</code>（无 filter / batch / tab），移动端开启 <code>renderMobile</code> 自定义卡片时，
-      SearchInput 与下方卡片列表应有间距，不可紧挨。请切换手机预览查看。
-    </div>
-    <TablePage
-      name="demo-search-mobile-gap"
-      pagination={{ open: false }}
-      search={{ name: 'keyword', label: '关键词', placeholder: '搜索共享组名称' }}
-      columns={sharedGroupColumns}
-      loader={() =>
-        Promise.resolve({
-          pageData: sharedGroups,
-          totalCount: sharedGroups.length
-        })
-      }
-      renderMobile={({ dataSource }) => (
-        <Flex vertical gap={12} className="info-page-table-mobile-card-list">
-          {(dataSource || []).map(item => (
-            <SharedGroupMobileCard key={item.id} item={item} />
-          ))}
+  const loadSharedGroups = ({ data, requestParams }, { applySort = false } = {}) => {
+    const keyword = String(data?.keyword ?? requestParams?.data?.keyword ?? '').trim().toLowerCase();
+    const sortParams = data?.sort ?? requestParams?.data?.sort ?? sort;
+    let list = sharedGroups;
+    if (keyword) {
+      list = list.filter(
+        item =>
+          String(item.name).toLowerCase().includes(keyword) ||
+          String(item.description).toLowerCase().includes(keyword)
+      );
+    }
+    const sorted =
+      applySort && sortParams?.length ? Table.sortDataSource(list, sortParams, sharedGroupColumns) : list;
+    return Promise.resolve({
+      pageData: sorted,
+      totalCount: sorted.length
+    });
+  };
+
+  const dataFormat = data => ({
+    list: data.pageData,
+    total: data.totalCount,
+    data
+  });
+
+  return (
+    <Flex vertical gap={24}>
+      <div style={{ color: '#666', fontSize: 13, lineHeight: 1.7 }}>
+        <Tag color="blue" style={{ marginRight: 8 }}>
+          移动端 Search 间距
+        </Tag>
+        对照两种布局（请切手机预览）：
+        <strong>仅 SearchInput</strong> → 与卡片列表有间距；
+        <strong>SearchInput + 全选/排序条</strong> → Search 与下方「全选 | 排序」行有间距。无 filter / tab / batch。
+      </div>
+
+      <Flex vertical gap={12} style={{ padding: 16, background: '#fafafa', borderRadius: 8 }}>
+        <div style={{ fontWeight: 600, color: 'rgba(0,0,0,0.88)' }}>情况 A：只有 SearchInput</div>
+        <div style={{ color: '#666', fontSize: 13, lineHeight: 1.7 }}>
+          只配 <code>search</code> + <code>renderMobile</code>，不配 <code>rowSelection</code> / <code>mobileSortToolbar</code>。
+          SearchInput 正下方应直接是卡片列表，中间保留间距。
+        </div>
+        <TablePage
+          ref={searchOnlyRef}
+          name="demo-mobile-gap-search-only"
+          pagination={{ open: false }}
+          search={{ name: 'keyword', label: '关键词', placeholder: '搜索共享组名称' }}
+          columns={sharedGroupColumns}
+          renderMobile
+          dataFormat={dataFormat}
+          loader={ctx => loadSharedGroups(ctx, { applySort: false })}
+        />
+      </Flex>
+
+      <Flex vertical gap={12} style={{ padding: 16, background: '#fafafa', borderRadius: 8 }}>
+        <Flex justify="space-between" align="center" wrap="wrap" gap={12}>
+          <div style={{ fontWeight: 600, color: 'rgba(0,0,0,0.88)' }}>情况 B：SearchInput + 全选 / 排序条</div>
+          <Space wrap>
+            <Flex align="center" gap={8}>
+              <Switch
+                checked={enableSelectAll}
+                onChange={checked => {
+                  setEnableSelectAll(checked);
+                  if (!checked) {
+                    clearSelectedRows();
+                  }
+                }}
+              />
+              <span>全选条</span>
+            </Flex>
+            <Flex align="center" gap={8}>
+              <Switch
+                checked={enableSort}
+                onChange={checked => {
+                  setEnableSort(checked);
+                  withToolbarRef.current?.reload({ data: { sort: checked ? sort : [] } });
+                }}
+              />
+              <span>排序条</span>
+            </Flex>
+          </Space>
         </Flex>
-      )}
-    />
-  </Flex>
-);
+        <div style={{ color: '#666', fontSize: 13, lineHeight: 1.7 }}>
+          默认同时开启全选与排序（工具栏左侧全选、右侧排序）。可用开关单独关掉某一项；两项都开时，SearchInput 与「全选 | 排序」行之间不可紧贴。
+        </div>
+        <TablePage
+          key={&#96;mobile-gap-with-toolbar-${enableSelectAll}-${enableSort}&#96;}
+          ref={withToolbarRef}
+          name="demo-mobile-gap-search-select-sort"
+          pagination={{ open: false }}
+          search={{ name: 'keyword', label: '关键词', placeholder: '搜索共享组名称' }}
+          columns={sharedGroupColumns}
+          renderMobile
+          sortRender={enableSort ? sortRender : undefined}
+          mobileSortToolbar={enableSort ? mobileSortToolbar : undefined}
+          rowSelection={
+            enableSelectAll
+              ? getRowSelection(sharedGroups, { type: 'checkbox', allowSelectedAll: true })
+              : undefined
+          }
+          selectedRows={enableSelectAll ? selectedRows : undefined}
+          dataFormat={dataFormat}
+          loader={ctx => loadSharedGroups(ctx, { applySort: enableSort })}
+        />
+      </Flex>
+    </Flex>
+  );
+};
 
 
 
@@ -1248,7 +1296,7 @@ render(
   <Flex vertical gap={32}>
     <BaseExample />
     <TreePageExample />
-    <SearchMobileExample />
+    <SearchSelectSortMobileExample />
   </Flex>
 );
 
