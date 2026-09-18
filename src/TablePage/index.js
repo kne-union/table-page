@@ -630,53 +630,75 @@ const TablePageInnerContent = withLocale(
       );
     });
 
-    const paginationConfig = useMemo(() => {
+    const paginationView = useMemo(() => {
       if (useLoadMoreMode || !pagination.open || !(formatData.total > 0)) {
         return null;
       }
 
-      const defaultShowTotal = total => (
+      const DEFAULT_PAGE_SIZE_OPTIONS = ['10', '20', '50', '100'];
+      const pageSizeOptions = pagination.pageSizeOptions || DEFAULT_PAGE_SIZE_OPTIONS;
+      const optionSizes = pageSizeOptions.map(Number).filter(n => Number.isFinite(n) && n > 0);
+      const minPageSize = optionSizes.length ? Math.min(...optionSizes) : pagination.pageSize || 20;
+      const total = formatData.total;
+      // 总数小于最小可选每页条数时，切换 pageSize 无实质意义，不展示分页条
+      if (total < minPageSize) {
+        return null;
+      }
+
+      const pageSize = Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 20;
+      const isSinglePage = total <= pageSize;
+      // hideOnSinglePage 默认 true：仅一页时改为精简条（总数 + 每页条数），而非整块隐藏，避免 pageSize 调大后无法切回
+      const useCompact = pagination.hideOnSinglePage !== false && isSinglePage;
+
+      const defaultShowTotal = showTotal => (
         <>
           {formatMessage({ id: 'TotalText' })}&nbsp;
-          <span className={style['total_text']}>{total}</span>
+          <span className={style['total_text']}>{showTotal}</span>
           &nbsp;
           {formatMessage({ id: 'ItemText' })}
         </>
       );
 
       const baseConfig = {
-        total: formatData.total,
+        total,
         ...(pagination.showTotal !== false
           ? {
               showTotal: typeof pagination.showTotal === 'function' ? pagination.showTotal : defaultShowTotal
             }
           : {}),
         current: get(requestParams, [pagination.paramsType, pagination.currentName], 1),
-        pageSize: Number(get(requestParams, [pagination.paramsType, pagination.pageSizeName], pagination.pageSize)) || pagination.pageSize || 20,
+        pageSize,
         onChange: handlePaginationChange,
         size: pagination.size,
-        hideOnSinglePage: pagination.hideOnSinglePage,
+        // 可见性由上方逻辑接管，避免 antd hideOnSinglePage 把 sizeChanger 一并藏掉
+        hideOnSinglePage: false,
         showSizeChanger: pagination.showSizeChanger,
-        showQuickJumper: pagination.showQuickJumper,
-        pageSizeOptions: pagination.pageSizeOptions
+        showQuickJumper: useCompact ? false : pagination.showQuickJumper,
+        pageSizeOptions
       };
 
       if (!isMobileRenderActive) {
-        return baseConfig;
+        return { config: baseConfig, compact: useCompact };
       }
 
       const mobilePagination = pagination.mobile || {};
 
       return {
-        ...baseConfig,
-        onShowSizeChange: handlePaginationChange,
-        size: mobilePagination.size,
-        showSizeChanger: mobilePagination.showSizeChanger !== false && pagination.showSizeChanger !== false,
-        showQuickJumper: mobilePagination.showQuickJumper === true,
-        showLessItems: mobilePagination.showLessItems ?? true,
-        pageSizeOptions: pagination.pageSizeOptions || ['10', '20', '50', '100']
+        config: {
+          ...baseConfig,
+          onShowSizeChange: handlePaginationChange,
+          size: mobilePagination.size,
+          showSizeChanger: mobilePagination.showSizeChanger !== false && pagination.showSizeChanger !== false,
+          showQuickJumper: useCompact ? false : mobilePagination.showQuickJumper === true,
+          showLessItems: mobilePagination.showLessItems ?? true,
+          pageSizeOptions
+        },
+        compact: useCompact
       };
     }, [pagination, formatData.total, requestParams, formatMessage, handlePaginationChange, isMobileRenderActive, useLoadMoreMode]);
+
+    const paginationConfig = paginationView?.config || null;
+    const paginationCompact = !!paginationView?.compact;
 
     const batchContext = useMemo(
       () => ({
@@ -821,7 +843,8 @@ const TablePageInnerContent = withLocale(
             {paginationConfig ? (
               <Pagination
                 className={classnames(style['pagination'], {
-                  [style['is-mobile-render']]: isMobileRenderActive
+                  [style['is-mobile-render']]: isMobileRenderActive,
+                  [style['is-single-page-compact']]: paginationCompact
                 })}
                 {...paginationConfig}
               />

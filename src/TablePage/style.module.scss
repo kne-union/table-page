@@ -219,6 +219,19 @@
       box-shadow: none !important;
     }
   }
+
+  // 仅一页：只保留总数 + 每页条数，隐藏页码导航（避免 pageSize 调大后无法切回）
+  &.is-single-page-compact {
+    justify-content: flex-end;
+
+    :global(.ant-pagination-prev),
+    :global(.ant-pagination-item),
+    :global(.ant-pagination-jump-prev),
+    :global(.ant-pagination-jump-next),
+    :global(.ant-pagination-next) {
+      display: none !important;
+    }
+  }
 }
 
 .total_text {
