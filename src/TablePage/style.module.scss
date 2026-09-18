@@ -65,7 +65,8 @@
   &.is-mobile-render {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    // 与 tableToolbar search-only 的 padding-bottom:0 配合：由本 gap 承担搜索区与卡片间距
+    gap: 8px;
     border: none;
     border-radius: 0;
     overflow: visible;
