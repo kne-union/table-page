@@ -23,7 +23,7 @@ npm i --save @kne/table-page
 - **`Table` 模式**（默认）：基于 antd `Table`，支持列宽拖动、字段显示/隐藏、分组表头、粘性表头等
 - **`TableView` 模式**：基于 `@kne/table-view` CSS Grid，适合移动端或卡片式表格场景
 
-通过 `loader` 或 `url` 配置数据源，通过 `dataFormat` 适配不同的接口数据结构。分页器渲染在表格外侧，翻页默认采用 `reload` 方式（不显示全屏 loading）。在 `pagination` 上同时传入 `searchParams` 与 `setSearchParams` 可将当前页、每页条数同步到 URL（参数名复用 `currentName` / `pageSizeName`）。
+通过 `loader` 或 `url` 配置数据源，通过 `dataFormat` 适配不同的接口数据结构。分页器渲染在表格外侧，翻页默认采用 `reload` 方式（不显示全屏 loading）。默认 `hideOnSinglePage`：总数小于最小 `pageSizeOptions` 时不展示分页条；仅一页时只展示总数与每页条数切换。在 `pagination` 上同时传入 `searchParams` 与 `setSearchParams` 可将当前页、每页条数同步到 URL（参数名复用 `currentName` / `pageSizeName`）。
 
 同时内置了顶部工具栏（`TableToolbar`），整合筛选、搜索、Tab 分类、批量操作等能力：
 
@@ -191,7 +191,7 @@ npm i --save @kne/table-page
 #### 示例代码
 
 - TablePage
-- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、renderCard PC 卡片视图切换、pagination.forceLoadMore（PC Table 触底下拉）、tab 分类切换、列配置、总结栏、树形 dataType（含筛选/批量/操作列/卡片切换/懒加载）；空数据（total 为 0）时不显示分页器。文末对照仅 SearchInput 与 Search+全选/排序条两种移动端间距（开关可拆开全选/排序）
+- 表格页面组件，基于 @kne/react-fetch 实现数据加载与分页，支持 sticky 固定表头、useSort 服务端排序、renderMobile 移动端卡片、renderCard PC 卡片视图切换、pagination.forceLoadMore（PC Table 触底下拉）、tab 分类切换、列配置、总结栏、树形 dataType（含筛选/批量/操作列/卡片切换/懒加载）；total 为 0 或小于最小 pageSizeOptions 时不显示分页器，仅一页时只展示总数与每页条数。文末对照仅 SearchInput 与 Search+全选/排序条两种移动端间距（开关可拆开全选/排序）
 - _TablePage(@kne/current-lib_table-page)[import * as _TablePage from "@kne/table-page"],(@kne/current-lib_table-page/dist/index.css),antd(antd),_ReactFilter(@kne/react-filter)[import * as _ReactFilter from "@kne/react-filter"],(@kne/react-filter/dist/index.css)
 
 ```jsx
@@ -4275,7 +4275,7 @@ render(<BaseExample />);
 | requestType | `'reload'` \| `'refresh'` | `'reload'` | 翻页时的请求方式，`reload` 不切换 loading，`refresh` 会重新 loading |
 | showSizeChanger | boolean | `true` | 是否展示每页条数切换 |
 | showQuickJumper | boolean | `true` | 是否展示快速跳转 |
-| hideOnSinglePage | boolean | `true` | 仅一页时是否隐藏分页器 |
+| hideOnSinglePage | boolean | `true` | 为 `true` 时：总数小于最小 `pageSizeOptions` 则不展示分页条；仅一页时只展示总数与每页条数切换（仍可改 pageSize）；多页时完整分页。为 `false` 时单页也展示完整分页器 |
 | pageSizeOptions | array | - | 每页条数选项 |
 | pageSize | number | `20` | 默认每页条数，会持久化到 localStorage |
 | showTotal | function | - | 自定义总数展示 `(total) => ReactNode` |
@@ -4393,7 +4393,7 @@ render(<BaseExample />);
 
 #### 与 Table 分页的差异
 
-`TablePage` 的分页器渲染在表格外侧（`antd Pagination`），不会出现在 `Table` 边框内部。表格本身始终设置 `pagination={false}`。当 `dataFormat` 返回的 `total` 为 0（无数据）时，分页器不会渲染。
+`TablePage` 的分页器渲染在表格外侧（`antd Pagination`），不会出现在 `Table` 边框内部。表格本身始终设置 `pagination={false}`。当 `dataFormat` 返回的 `total` 为 0（无数据），或 `total` 小于最小可选每页条数（`pageSizeOptions` 最小值，默认 10）时，分页器不会渲染。默认 `hideOnSinglePage: true`：数据仅一页时只展示总数与每页条数切换，避免将 pageSize 调大后无法切回。
 
 移动端（`renderMobile` 激活）默认使用触底下拉加载（`@kne/scroll-loader` + `react-fetch` 的 `loadMore`），不再展示分页器。若需移动端仍使用分页，请设置 `pagination.forcePagination: true`。
 

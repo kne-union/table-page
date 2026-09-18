@@ -45,7 +45,7 @@
 | requestType | `'reload'` \| `'refresh'` | `'reload'` | 翻页时的请求方式，`reload` 不切换 loading，`refresh` 会重新 loading |
 | showSizeChanger | boolean | `true` | 是否展示每页条数切换 |
 | showQuickJumper | boolean | `true` | 是否展示快速跳转 |
-| hideOnSinglePage | boolean | `true` | 仅一页时是否隐藏分页器 |
+| hideOnSinglePage | boolean | `true` | 为 `true` 时：总数小于最小 `pageSizeOptions` 则不展示分页条；仅一页时只展示总数与每页条数切换（仍可改 pageSize）；多页时完整分页。为 `false` 时单页也展示完整分页器 |
 | pageSizeOptions | array | - | 每页条数选项 |
 | pageSize | number | `20` | 默认每页条数，会持久化到 localStorage |
 | showTotal | function | - | 自定义总数展示 `(total) => ReactNode` |
@@ -163,7 +163,7 @@
 
 #### 与 Table 分页的差异
 
-`TablePage` 的分页器渲染在表格外侧（`antd Pagination`），不会出现在 `Table` 边框内部。表格本身始终设置 `pagination={false}`。当 `dataFormat` 返回的 `total` 为 0（无数据）时，分页器不会渲染。
+`TablePage` 的分页器渲染在表格外侧（`antd Pagination`），不会出现在 `Table` 边框内部。表格本身始终设置 `pagination={false}`。当 `dataFormat` 返回的 `total` 为 0（无数据），或 `total` 小于最小可选每页条数（`pageSizeOptions` 最小值，默认 10）时，分页器不会渲染。默认 `hideOnSinglePage: true`：数据仅一页时只展示总数与每页条数切换，避免将 pageSize 调大后无法切回。
 
 移动端（`renderMobile` 激活）默认使用触底下拉加载（`@kne/scroll-loader` + `react-fetch` 的 `loadMore`），不再展示分页器。若需移动端仍使用分页，请设置 `pagination.forcePagination: true`。
 
