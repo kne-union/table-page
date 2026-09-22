@@ -190,6 +190,15 @@
 }
 
 @include resp.mobile-container {
+  // 16px 避免 iOS 聚焦输入框时自动放大页面
+  .table-toolbar-search {
+    :global(.ant-input-search) {
+      :global(.ant-input) {
+        font-size: 16px;
+      }
+    }
+  }
+
   .table-toolbar.is-mobile {
     flex-direction: column;
     align-items: stretch;
