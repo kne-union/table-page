@@ -129,6 +129,33 @@
       ]
     },
     {
+      "title": "TablePage large data",
+      "description": "大数据量加载：首包走骨架屏加载壳，每页 100~1000 行订单，含省略号、标签、固定操作列、多选与批量操作；实时显示数据返回到渲染完成、勾选响应耗时，可重新挂载反复观察首屏",
+      "code": "./large-data.js",
+      "scope": [
+        {
+          "name": "_TablePage",
+          "packageName": "@kne/current-lib_table-page",
+          "importStatement": "import * as _TablePage from \"@kne/table-page\""
+        },
+        {
+          "packageName": "@kne/current-lib_table-page/dist/index.css"
+        },
+        {
+          "name": "antd",
+          "packageName": "antd"
+        },
+        {
+          "name": "_ReactFilter",
+          "packageName": "@kne/react-filter",
+          "importStatement": "import * as _ReactFilter from \"@kne/react-filter\""
+        },
+        {
+          "packageName": "@kne/react-filter/dist/index.css"
+        }
+      ]
+    },
+    {
       "title": "TableView",
       "description": "表格视图组件，支持行选择、列宽设置等",
       "code": "./table-view.js",

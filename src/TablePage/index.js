@@ -21,6 +21,28 @@ import { scrollAnchorIntoView, normalizeScrollTopInsetCSSValue, resolveScrollTop
 import { parseSearchParamsValue, mergeFilterByName, stripConsumedUrlParams, parsePaginationSearchParams, patchPaginationSearchParams, isPaginationSearchParamsEnabled } from './searchParamsValue';
 
 const noop = () => {};
+const EMPTY_COLUMN_RENDER_PROPS = {};
+
+const shallowEqual = (a, b) => {
+  if (a === b) {
+    return true;
+  }
+  if (!a || !b) {
+    return false;
+  }
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  return keysA.length === keysB.length && keysA.every(key => Object.prototype.hasOwnProperty.call(b, key) && a[key] === b[key]);
+};
+
+/** react-fetch 每次渲染都 pick 出新的 fetchProps；浅比较相同时沿用旧引用 */
+const useShallowStable = value => {
+  const ref = useRef(value);
+  if (!shallowEqual(ref.current, value)) {
+    ref.current = value;
+  }
+  return ref.current;
+};
 
 const SKELETON_ROW_COUNT = 8;
 const FALLBACK_SKELETON_COLUMNS = 5;
@@ -370,7 +392,7 @@ const TablePageInnerContent = withLocale(
     columns,
     getColumns,
     pagination = {},
-    columnRenderProps = {},
+    columnRenderProps = EMPTY_COLUMN_RENDER_PROPS,
     summary,
     sticky,
     scrollTopInset,
@@ -507,7 +529,8 @@ const TablePageInnerContent = withLocale(
       return handlerDataFormat(data);
     }, [data, handlerDataFormat]);
 
-    const resolvedColumns = typeof getColumns === 'function' ? getColumns(data) : typeof columns === 'function' ? columns(data) : columns;
+    // 列定义与 context 保持引用稳定：table-view 据此复用单元格内容，避免无关重渲染刷新整表
+    const resolvedColumns = useMemo(() => (typeof getColumns === 'function' ? getColumns(data) : typeof columns === 'function' ? columns(data) : columns), [getColumns, columns, data]);
 
     const fetchContext = useMemo(
       () => ({
@@ -693,12 +716,16 @@ const TablePageInnerContent = withLocale(
       [data, fetchProps, requestParams, refreshWithFilter, reloadWithFilter, loadMoreWithFilter, sendWithFilter, dataFormat, pagination]
     );
 
-    const tableContext = {
-      ...columnRenderProps,
-      requestParams,
-      fetchProps,
-      data
-    };
+    const stableFetchProps = useShallowStable(fetchProps);
+    const tableContext = useMemo(
+      () => ({
+        ...columnRenderProps,
+        requestParams,
+        fetchProps: stableFetchProps,
+        data
+      }),
+      [columnRenderProps, requestParams, stableFetchProps, data]
+    );
 
     // 移动端卡片模式下批量操作渲染在「全选/排序」行的排序后面
     const showMobileBatchInCardToolbar = isMobileRenderActive && Array.isArray(batchActions) && batchActions.length > 0;
