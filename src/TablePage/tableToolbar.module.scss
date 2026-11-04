@@ -190,15 +190,6 @@
 }
 
 @include resp.mobile-container {
-  // 16px 避免 iOS 聚焦输入框时自动放大页面
-  .table-toolbar-search {
-    :global(.ant-input-search) {
-      :global(.ant-input) {
-        font-size: 16px;
-      }
-    }
-  }
-
   // 需 @kne/button-group >= 0.1.43，旧版本变量不生效
   .table-toolbar-button-group {
     --button-group-more-height: 32px;
@@ -314,6 +305,16 @@
     width: 100% !important;
     max-width: 100%;
     box-sizing: border-box;
+  }
+
+  // 16px 避免 iOS 聚焦放大；写在 search-row 上，不依赖宿主 kne-responsive container
+  // 同时覆盖 antd css-var / affix-wrapper（仅改 .ant-input 会被 inherit 顶掉）
+  :global(.ant-input-search) {
+    :global(.ant-input-affix-wrapper),
+    :global(.ant-input) {
+      font-size: 16px !important;
+      --ant-input-input-font-size: 16px;
+    }
   }
 }
 
