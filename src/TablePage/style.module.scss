@@ -195,6 +195,17 @@
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+
+  // 仅一页：只保留总数 + 每页条数，隐藏页码导航（避免 pageSize 调大后无法切回）
+  &.is-single-page-compact {
+    :global(.ant-pagination-prev),
+    :global(.ant-pagination-item),
+    :global(.ant-pagination-jump-prev),
+    :global(.ant-pagination-jump-next),
+    :global(.ant-pagination-next) {
+      display: none !important;
+    }
+  }
 }
 
 .mobile-pagination {

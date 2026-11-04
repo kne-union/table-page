@@ -9,7 +9,7 @@
 - **`Table` 模式**（默认）：基于 antd `Table`，支持列宽拖动、字段显示/隐藏、分组表头、粘性表头等
 - **`TableView` 模式**：基于 `@kne/table-view` CSS Grid，适合移动端或卡片式表格场景
 
-通过 `loader` 或 `url` 配置数据源，通过 `dataFormat` 适配不同的接口数据结构。分页器渲染在表格外侧，翻页默认采用 `reload` 方式（不显示全屏 loading）。在 `pagination` 上同时传入 `searchParams` 与 `setSearchParams` 可将当前页、每页条数同步到 URL（参数名复用 `currentName` / `pageSizeName`）。
+通过 `loader` 或 `url` 配置数据源，通过 `dataFormat` 适配不同的接口数据结构。分页器渲染在表格外侧，翻页默认采用 `reload` 方式（不显示全屏 loading）。默认 `hideOnSinglePage`：总数小于最小 `pageSizeOptions` 时不展示分页条；仅一页时只展示总数与每页条数切换。在 `pagination` 上同时传入 `searchParams` 与 `setSearchParams` 可将当前页、每页条数同步到 URL（参数名复用 `currentName` / `pageSizeName`）。
 
 同时内置了顶部工具栏（`TableToolbar`），整合筛选、搜索、Tab 分类、批量操作等能力：
 
