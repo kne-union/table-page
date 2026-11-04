@@ -1,6 +1,9 @@
 const locale = {
   TotalText: '共',
   ItemText: '条',
+  PrevPage: '上一页',
+  NextPage: '下一页',
+  PageSizeText: '{size} 条/页',
   UnnamedColumn: '未命名列',
   EditTable: '编辑表格',
   RestoreDefault: '恢复默认',

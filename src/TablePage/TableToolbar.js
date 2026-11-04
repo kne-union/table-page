@@ -24,6 +24,7 @@ const getTabActiveKey = (filterValue, tabName) => {
 export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, className, isMobileRender }) => {
   const { formatMessage } = useIntl();
   const getPopupContainer = usePopupContainer();
+  const isMobile = useIsMobile();
   const showTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
   const { getPopupContainer: userGetPopupContainer, ...restTabProps } = tabProps || {};
 
@@ -65,7 +66,7 @@ export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, clas
         [style['is-mobile-render']]: isMobileRender
       })}
     >
-      <Tabs size="small" {...restTabProps} getPopupContainer={userGetPopupContainer ?? getPopupContainer} activeKey={getTabActiveKey(filterValue, tab.name)} onChange={handleTabChange} items={tabItems} />
+      <Tabs size={isMobile ? 'middle' : 'small'} {...restTabProps} getPopupContainer={userGetPopupContainer ?? getPopupContainer} activeKey={getTabActiveKey(filterValue, tab.name)} onChange={handleTabChange} items={tabItems} />
     </div>
   );
 };
@@ -73,6 +74,8 @@ export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, clas
 export const BatchActions = ({ batchActions, rowSelection, selectedRows, batchContext, className }) => {
   const { formatMessage } = useIntl();
   const getPopupContainer = usePopupContainer();
+  const isMobile = useIsMobile();
+  const buttonSize = isMobile ? 'middle' : 'small';
   const selectedRowKeys = rowSelection?.selectedRowKeys || [];
   const hasSelection = selectedRowKeys.length > 0;
 
@@ -112,14 +115,14 @@ export const BatchActions = ({ batchActions, rowSelection, selectedRows, batchCo
   return (
     <div className={classnames(style['table-toolbar-batch'], className)}>
       <Dropdown disabled={!hasSelection} menu={{ items: batchMenuItems }} trigger={['click']} getPopupContainer={getPopupContainer}>
-        <Button size="small" disabled={!hasSelection} className={style['table-toolbar-batch-btn']}>
+        <Button size={buttonSize} disabled={!hasSelection} className={style['table-toolbar-batch-btn']}>
           {batchButtonLabel}
           <DownOutlined />
         </Button>
       </Dropdown>
       {hasSelection ? (
         <Button
-          size="small"
+          size={buttonSize}
           icon={<MinusSquareOutlined />}
           title={formatMessage({ id: 'Cancel' })}
           aria-label={formatMessage({ id: 'Cancel' })}
@@ -200,7 +203,7 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
 
   const buttonGroupNode = showButtonGroup ? (
     <div className={style['table-toolbar-button-group']}>
-      <ButtonGroup {...resolveToolbarButtonGroupProps(buttonGroup, getPopupContainer)} />
+      <ButtonGroup {...resolveToolbarButtonGroupProps(buttonGroup, getPopupContainer, isMobile)} />
     </div>
   ) : null;
 

@@ -199,6 +199,13 @@
     }
   }
 
+  // 需 @kne/button-group >= 0.1.43，旧版本变量不生效
+  .table-toolbar-button-group {
+    --button-group-more-height: 32px;
+    --button-group-more-min-width: 32px;
+    --button-group-more-icon-size: 20px;
+  }
+
   .table-toolbar.is-mobile {
     flex-direction: column;
     align-items: stretch;
@@ -234,6 +241,12 @@
   .table-toolbar-section.has-tabs {
     .table-page-tabs {
       padding-inline: 16px;
+    }
+  }
+
+  .table-page-tabs {
+    :global(.ant-tabs-tab) {
+      font-size: 15px;
     }
   }
 }
