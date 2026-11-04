@@ -1,6 +1,9 @@
 const locale = {
   TotalText: 'Total',
   ItemText: 'items',
+  PrevPage: 'Prev',
+  NextPage: 'Next',
+  PageSizeText: '{size} / page',
   UnnamedColumn: 'Unnamed',
   EditTable: 'Edit Table',
   RestoreDefault: 'Restore Default',

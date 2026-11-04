@@ -200,7 +200,7 @@ const TableToolbar = ({ filterValue, onFilterChange, filter, search, tab, tabPro
 
   const buttonGroupNode = showButtonGroup ? (
     <div className={style['table-toolbar-button-group']}>
-      <ButtonGroup {...resolveToolbarButtonGroupProps(buttonGroup, getPopupContainer)} />
+      <ButtonGroup {...resolveToolbarButtonGroupProps(buttonGroup, getPopupContainer, isMobile)} />
     </div>
   ) : null;
 

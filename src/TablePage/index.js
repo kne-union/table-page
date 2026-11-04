@@ -17,6 +17,7 @@ import StickyScroller from '@kne/react-sticky-scroller';
 import '@kne/react-sticky-scroller/dist/index.css';
 import '@kne/button-group/dist/index.css';
 import TableToolbar, { TablePageTabs, BatchActions, hasButtonGroupList } from './TableToolbar';
+import MobilePagination from './MobilePagination';
 import { scrollAnchorIntoView, normalizeScrollTopInsetCSSValue, resolveScrollTopInset } from './scrollUtils';
 import { parseSearchParamsValue, mergeFilterByName, stripConsumedUrlParams, parsePaginationSearchParams, patchPaginationSearchParams, isPaginationSearchParamsEnabled } from './searchParamsValue';
 
@@ -668,12 +669,13 @@ const TablePageInnerContent = withLocale(
       const mobilePagination = pagination.mobile || {};
 
       return {
-        ...baseConfig,
-        onShowSizeChange: handlePaginationChange,
-        size: mobilePagination.size,
-        showSizeChanger: mobilePagination.showSizeChanger !== false && pagination.showSizeChanger !== false,
-        showQuickJumper: mobilePagination.showQuickJumper === true,
-        showLessItems: mobilePagination.showLessItems ?? true,
+        total: baseConfig.total,
+        showTotal: baseConfig.showTotal,
+        current: baseConfig.current,
+        pageSize: baseConfig.pageSize,
+        onChange: handlePaginationChange,
+        hideOnSinglePage: pagination.hideOnSinglePage,
+        showSizeChanger: mobilePagination.showSizeChanger === true && pagination.showSizeChanger !== false,
         pageSizeOptions: pagination.pageSizeOptions || ['10', '20', '50', '100']
       };
     }, [pagination, formatData.total, requestParams, formatMessage, handlePaginationChange, isMobileRenderActive, useLoadMoreMode]);
@@ -818,14 +820,7 @@ const TablePageInnerContent = withLocale(
         ) : (
           <>
             {tableMain}
-            {paginationConfig ? (
-              <Pagination
-                className={classnames(style['pagination'], {
-                  [style['is-mobile-render']]: isMobileRenderActive
-                })}
-                {...paginationConfig}
-              />
-            ) : null}
+            {paginationConfig ? isMobileRenderActive ? <MobilePagination {...paginationConfig} /> : <Pagination className={style['pagination']} {...paginationConfig} /> : null}
           </>
         )}
       </div>

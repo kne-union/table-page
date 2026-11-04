@@ -34,9 +34,9 @@ const resolveButtonGroupProps = (buttonGroup, getPopupContainer, { defaultSize, 
   };
 };
 
-export const resolveToolbarButtonGroupProps = (buttonGroup, getPopupContainer) => {
+export const resolveToolbarButtonGroupProps = (buttonGroup, getPopupContainer, isMobile) => {
   return resolveButtonGroupProps(buttonGroup, getPopupContainer, {
-    defaultSize: 'small',
+    defaultSize: isMobile ? 'middle' : 'small',
     // 未显式传 showLength 时走 ButtonGroup 自适应测宽（@kne/overflow-items）
     defaultShowLength: undefined,
     minShowLength: 1
