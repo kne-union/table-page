@@ -198,6 +198,7 @@
 
   &.is-mobile-render {
     justify-content: center;
+    gap: 4px;
 
     :global(.ant-pagination-prev),
     :global(.ant-pagination-item),
