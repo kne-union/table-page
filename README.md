@@ -4495,7 +4495,7 @@ render(<BaseExample />);
 | forceLoadMore | boolean | `false` | PC Table / TableView（非移动端、非卡片视图）默认使用底部分页器；设为 `true` 时改为触底下拉加载并隐藏分页器。与 `forcePagination` 同时为 `true` 时以 `forcePagination` 为准。触底由外层 `ScrollLoader` 驱动，勿再给 Table 设 `scroll.y`（表体内滚动会导致触底不触发）；弹窗等场景请给外层定高 |
 | mergeList | function | 合并 `pageData` | 下拉加载时合并新旧数据 `(prev, next) => data`，需与 `loader` 返回结构一致 |
 | loadMore | object | - | 透传给 `@kne/scroll-loader` 的额外配置（如 `completeTips`、`maxFullCount`） |
-| mobile | object | - | 强制分页时的移动端分页器配置。移动端渲染为左侧总数、右侧「‹ 当前页 / 总页数 ›」胶囊翻页条；`mobile.showSizeChanger: true` 时显示每页条数选择（默认不显示） |
+| mobile | object | - | 强制分页时的移动端分页器配置。移动端渲染为左侧总数、右侧「‹ 当前页 / 总页数 ›」胶囊翻页条，仅一页时只展示总数；`mobile.showSizeChanger: true` 时显示每页条数选择（默认不显示） |
 | searchParams | `URLSearchParams` | - | 与 `setSearchParams` 同时传入时开启分页 URL 状态同步；参数名复用 `currentName` / `pageSizeName`（默认 `currentPage`、`perPage`） |
 | setSearchParams | function | - | `(next: URLSearchParams, opts?) => void`；翻页、改每页条数、筛选重置到第 1 页时以 `replace: true` 写回 URL。触底下拉 `loadMore` 不写回。可与 `filter.searchParamsValue` 共用同一对实例 |
 
