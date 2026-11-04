@@ -243,6 +243,12 @@
       padding-inline: 16px;
     }
   }
+
+  .table-page-tabs {
+    :global(.ant-tabs-tab) {
+      font-size: 15px;
+    }
+  }
 }
 
 // 仅移动端 JS 渲染，不依赖容器查询；左侧无 filter 时操作按钮也需居右
