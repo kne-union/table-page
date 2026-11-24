@@ -1,0 +1,2 @@
+"use strict";(Array.isArray(globalThis.webpackChunk_table_page_0_1_43)?globalThis.webpackChunk_table_page_0_1_43:globalThis.webpackChunk_table_page_0_1_43=[]).push([[10,7629],{10010(a,e,_){var t=_(85714);e.createRoot=t.createRoot,e.hydrateRoot=t.hydrateRoot}}]);
+//# sourceMappingURL=10.591a3754.chunk.js.map
