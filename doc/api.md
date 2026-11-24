@@ -107,13 +107,14 @@
 
 #### tab
 
-顶部 Tab 分类切换。默认选中「全部」（不写入筛选值）；切换到具体项时，将 `{ name, label, value: { value, label } }` 写入 filter value，并触发 `reload` 回到第 1 页。桌面端显示在表格边框外侧上方；移动端（含 `renderMobile`）显示在 `SearchInput` 下方。选中值参与请求参数，但 Tab 本身已有选中态，不在已选筛选标签中重复展示。
+顶部 Tab 分类切换。默认选中「全部」（不写入筛选值）；切换到具体项时，将 `{ name, label, value: { value, label } }` 写入 filter value，并触发 `reload` 回到第 1 页。桌面端显示在表格边框外侧上方；移动端（含 `renderMobile`）显示在 `SearchInput` 下方。选中值参与请求参数，但 Tab 本身已有选中态，不在已选筛选标签中重复展示。设 `showAll: false` 时不渲染「全部」，默认选中 `list` 第一项并写入筛选值（非受控会补进 `filter.defaultValue`；受控请自行在 `value` 中带上该项）。
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | name | string | - | 必填，写入筛选值的字段名 |
 | label | string | - | 筛选字段标签 |
 | list | `Array<{ label, value }>` | - | Tab 选项列表 |
+| showAll | boolean | `true` | 是否在最前展示「全部」；为 `false` 时默认选中 `list` 首项 |
 
 #### tabProps
 
@@ -124,6 +125,7 @@
   tab={{
     name: 'position',
     label: '职位',
+    // showAll: false, // 不展示「全部」，默认选中 list 首项
     list: [
       { label: '工程师', value: '工程师' },
       { label: '经理', value: '经理' }

@@ -12,13 +12,20 @@ import style from './tableToolbar.module.scss';
 
 const TAB_ALL_KEY = '__all__';
 
-const getTabActiveKey = (filterValue, tabName) => {
+const isTabShowAll = tab => tab?.showAll !== false;
+
+const getTabFirstKey = tab => (tab?.list?.[0] != null ? String(tab.list[0].value) : TAB_ALL_KEY);
+
+const getTabActiveKey = (filterValue, tab) => {
+  const tabName = tab?.name;
+  const showAll = isTabShowAll(tab);
+  const fallbackKey = showAll ? TAB_ALL_KEY : getTabFirstKey(tab);
   if (!tabName || !Array.isArray(filterValue)) {
-    return TAB_ALL_KEY;
+    return fallbackKey;
   }
   const entry = filterValue.find(item => item?.name === tabName);
   const value = entry?.value?.value;
-  return value == null || value === '' ? TAB_ALL_KEY : String(value);
+  return value == null || value === '' ? fallbackKey : String(value);
 };
 
 export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, className, isMobileRender }) => {
@@ -26,20 +33,22 @@ export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, clas
   const getPopupContainer = usePopupContainer();
   const isMobile = useIsMobile();
   const showTab = !!(tab?.name && Array.isArray(tab.list) && tab.list.length > 0);
+  const showAll = isTabShowAll(tab);
   const { getPopupContainer: userGetPopupContainer, ...restTabProps } = tabProps || {};
 
   const tabItems = useMemo(() => {
     if (!showTab) {
       return [];
     }
-    return [
-      { key: TAB_ALL_KEY, label: formatMessage({ id: 'All' }) },
-      ...tab.list.map(item => ({
-        key: String(item.value),
-        label: item.label
-      }))
-    ];
-  }, [showTab, tab?.list, formatMessage]);
+    const items = tab.list.map(item => ({
+      key: String(item.value),
+      label: item.label
+    }));
+    if (!showAll) {
+      return items;
+    }
+    return [{ key: TAB_ALL_KEY, label: formatMessage({ id: 'All' }) }, ...items];
+  }, [showTab, showAll, tab?.list, formatMessage]);
 
   if (!showTab) {
     return null;
@@ -66,7 +75,7 @@ export const TablePageTabs = ({ filterValue, onFilterChange, tab, tabProps, clas
         [style['is-mobile-render']]: isMobileRender
       })}
     >
-      <Tabs size={isMobile ? 'middle' : 'small'} {...restTabProps} getPopupContainer={userGetPopupContainer ?? getPopupContainer} activeKey={getTabActiveKey(filterValue, tab.name)} onChange={handleTabChange} items={tabItems} />
+      <Tabs size={isMobile ? 'middle' : 'small'} {...restTabProps} getPopupContainer={userGetPopupContainer ?? getPopupContainer} activeKey={getTabActiveKey(filterValue, tab)} onChange={handleTabChange} items={tabItems} />
     </div>
   );
 };
