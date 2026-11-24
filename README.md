@@ -31,7 +31,7 @@ npm i --save @kne/table-page
 - **分页 URL 状态**：`pagination.searchParams` + `pagination.setSearchParams` 开启后，当前页与每页条数与 URL 双向同步（筛选重置页码时也会写回；`loadMore` 不写回）
 - **搜索（search）**：基于 `@kne/react-filter` 的 `SearchInput`，支持关键词搜索与防抖自动提交，与筛选器共享筛选值状态；移动端开启 `renderMobile` 时，SearchInput 与下方卡片列表之间保留间距
 - **操作按钮（buttonGroup）**：透传 `@kne/button-group` 参数；桌面端显示在 SearchInput 右侧（small、至少 1 个外露），移动端与筛选同行两端对齐（筛选靠左、按钮组靠右，middle、外露 1 个），批量操作显示在「全选/排序」行的排序后面
-- **Tab（tab）**：顶部分类切换，默认「全部」，选中值写入 filter value 参与请求但不在已选标签中重复展示；桌面端在表格边框外侧，移动端显示在 SearchInput 下方；可通过 `tabProps` 透传 antd Tabs 属性
+- **Tab（tab）**：顶部分类切换，默认「全部」，选中值写入 filter value 参与请求但不在已选标签中重复展示；`showAll: false` 可隐藏「全部」并默认选中 `list` 首项；桌面端在表格边框外侧，移动端显示在 SearchInput 下方；可通过 `tabProps` 透传 antd Tabs 属性
 - **批量操作（batchActions）**：配合 `rowSelection` 和 `useSelectedRow`，提供下拉菜单形式的批量操作（如批量导出、批量通知），未选中时自动禁用
 - **PC 卡片视图（renderCard）**：取值同 `renderMobile`（true / function / preset 字符串），生效后 PC 端可切换表格/卡片（状态按 `name` 存 localStorage）；`forceCard` 强制卡片并不显示切换按钮；卡片模式下外框透明、默认触底下拉加载；移动端忽略
 - **树形数据**：透传 `dataType`（`tree` / `treeList`）、`expandedKeys`、`onLoadChildren`、`rowSelection.checkRelation` 等给内部 Table / TableView
@@ -442,7 +442,7 @@ const Tips = () => (
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="lime">Tab</Tag>
-      通过 <code>tab</code> 配置顶部分类切换（默认「全部」），选中值写入 filter value 参与请求，但不在已选筛选标签中重复展示；桌面端在表格边框外，移动端在 SearchInput 下方；可用 <code>tabProps</code> 透传 Tabs 属性（如 <code>tabBarExtraContent</code>）。
+      通过 <code>tab</code> 配置顶部分类切换（默认「全部」，可用 <code>showAll: false</code> 关闭并默认选中 list 首项），选中值写入 filter value 参与请求，但不在已选筛选标签中重复展示；桌面端在表格边框外，移动端在 SearchInput 下方；可用 <code>tabProps</code> 透传 Tabs 属性（如 <code>tabBarExtraContent</code>）。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="orange">列配置</Tag>
@@ -4547,13 +4547,14 @@ render(<BaseExample />);
 
 #### tab
 
-顶部 Tab 分类切换。默认选中「全部」（不写入筛选值）；切换到具体项时，将 `{ name, label, value: { value, label } }` 写入 filter value，并触发 `reload` 回到第 1 页。桌面端显示在表格边框外侧上方；移动端（含 `renderMobile`）显示在 `SearchInput` 下方。选中值参与请求参数，但 Tab 本身已有选中态，不在已选筛选标签中重复展示。
+顶部 Tab 分类切换。默认选中「全部」（不写入筛选值）；切换到具体项时，将 `{ name, label, value: { value, label } }` 写入 filter value，并触发 `reload` 回到第 1 页。桌面端显示在表格边框外侧上方；移动端（含 `renderMobile`）显示在 `SearchInput` 下方。选中值参与请求参数，但 Tab 本身已有选中态，不在已选筛选标签中重复展示。设 `showAll: false` 时不渲染「全部」，默认选中 `list` 第一项并写入筛选值（非受控会补进 `filter.defaultValue`；受控请自行在 `value` 中带上该项）。
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | name | string | - | 必填，写入筛选值的字段名 |
 | label | string | - | 筛选字段标签 |
 | list | `Array<{ label, value }>` | - | Tab 选项列表 |
+| showAll | boolean | `true` | 是否在最前展示「全部」；为 `false` 时默认选中 `list` 首项 |
 
 #### tabProps
 
@@ -4564,6 +4565,7 @@ render(<BaseExample />);
   tab={{
     name: 'position',
     label: '职位',
+    // showAll: false, // 不展示「全部」，默认选中 list 首项
     list: [
       { label: '工程师', value: '工程师' },
       { label: '经理', value: '经理' }
