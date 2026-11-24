@@ -245,7 +245,7 @@ const Tips = () => (
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="lime">Tab</Tag>
-      通过 <code>tab</code> 配置顶部分类切换（默认「全部」），选中值写入 filter value 参与请求，但不在已选筛选标签中重复展示；桌面端在表格边框外，移动端在 SearchInput 下方；可用 <code>tabProps</code> 透传 Tabs 属性（如 <code>tabBarExtraContent</code>）。
+      通过 <code>tab</code> 配置顶部分类切换（默认「全部」，可用 <code>showAll: false</code> 关闭并默认选中 list 首项），选中值写入 filter value 参与请求，但不在已选筛选标签中重复展示；桌面端在表格边框外，移动端在 SearchInput 下方；可用 <code>tabProps</code> 透传 Tabs 属性（如 <code>tabBarExtraContent</code>）。
     </div>
     <div>
       <Tag style={TIP_TAG_STYLE} color="orange">列配置</Tag>

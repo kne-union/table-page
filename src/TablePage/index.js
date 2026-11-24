@@ -251,6 +251,31 @@ const resolveInitialFilterValue = filter => {
   return filter.defaultValue || [];
 };
 
+/** tab.showAll === false 时无「全部」，缺省写入 list 首项，保证 UI 与首包请求一致 */
+const buildTabDefaultFilterEntry = tab => {
+  if (tab?.showAll !== false || !tab?.name || !Array.isArray(tab.list) || tab.list.length === 0) {
+    return null;
+  }
+  const option = tab.list[0];
+  return {
+    name: tab.name,
+    label: tab.label,
+    value: { value: option.value, label: option.label }
+  };
+};
+
+const mergeTabDefaultFilterValue = (value, tab) => {
+  const entry = buildTabDefaultFilterEntry(tab);
+  if (!entry) {
+    return Array.isArray(value) ? value : [];
+  }
+  const list = Array.isArray(value) ? value : [];
+  if (list.some(item => item?.name === tab.name)) {
+    return list;
+  }
+  return list.concat(entry);
+};
+
 const readPageSize = key => {
   try {
     const value = localStorage.getItem(key);
@@ -935,7 +960,7 @@ const TablePageInner = forwardRef((props, ref) => {
   );
 });
 
-const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScrollContainer, filter: filterProp, ...props }, ref) => {
+const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScrollContainer, filter: filterProp, tab, ...props }, ref) => {
   pagination = Object.assign(
     {},
     {
@@ -976,6 +1001,10 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
 
   const filter = useMemo(() => {
     if (!filterProp) {
+      // showAll:false 时仍需 defaultValue 写入首项，否则首包无 tab 筛选
+      if (tab?.showAll === false) {
+        return { defaultValue: mergeTabDefaultFilterValue([], tab) };
+      }
       return filterProp;
     }
     const { searchParamsValue: _searchParamsValue, ...rest } = filterProp;
@@ -983,19 +1012,17 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
       return rest;
     }
     return Object.assign({}, rest, {
-      defaultValue: mergeFilterByName(filterProp.defaultValue || [], fromUrl)
+      defaultValue: mergeTabDefaultFilterValue(mergeFilterByName(filterProp.defaultValue || [], fromUrl), tab)
     });
-  }, [filterProp, fromUrl]);
+  }, [filterProp, fromUrl, tab]);
 
   const params = props[pagination.paramsType];
   // 仅作首包种子；后续筛选走 handleFilterChange → reload，避免受控 value 变化改 requestToken 触发 refresh 卸载表格
   const [filterDefaultParams] = useState(() => {
-    if (!filterProp) {
-      return {};
-    }
-    const mapFn = filterProp.mapFilterValue || getFilterValue;
-    const initialValue = 'value' in filterProp ? mergeFilterByName(filterProp.value || [], fromUrl) : mergeFilterByName(filterProp.defaultValue || [], fromUrl);
-    if (!initialValue.length && !filterProp.mapFilterValue) {
+    const mapFn = filterProp?.mapFilterValue || getFilterValue;
+    const baseValue = filterProp ? ('value' in filterProp ? mergeFilterByName(filterProp.value || [], fromUrl) : mergeFilterByName(filterProp.defaultValue || [], fromUrl)) : [];
+    const initialValue = mergeTabDefaultFilterValue(baseValue, tab);
+    if (!initialValue.length && !filterProp?.mapFilterValue) {
       return {};
     }
     return mapFn(initialValue) || {};
@@ -1030,6 +1057,7 @@ const TablePage = forwardRef(({ pagination, horizontalScroller = true, getScroll
     <TablePageInner
       {...props}
       {...fetchParams}
+      tab={tab}
       filter={filter}
       filterSeedParams={filterDefaultParams}
       horizontalScroller={horizontalScroller}
